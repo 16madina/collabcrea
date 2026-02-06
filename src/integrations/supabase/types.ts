@@ -222,9 +222,13 @@ export type Database = {
           category: string | null
           country: string | null
           created_at: string
+          email_verified: boolean | null
           followers: string | null
           full_name: string
           id: string
+          identity_document_url: string | null
+          identity_submitted_at: string | null
+          identity_verified: boolean | null
           instagram_followers: string | null
           pricing: Json | null
           snapchat_followers: string | null
@@ -239,9 +243,13 @@ export type Database = {
           category?: string | null
           country?: string | null
           created_at?: string
+          email_verified?: boolean | null
           followers?: string | null
           full_name: string
           id?: string
+          identity_document_url?: string | null
+          identity_submitted_at?: string | null
+          identity_verified?: boolean | null
           instagram_followers?: string | null
           pricing?: Json | null
           snapchat_followers?: string | null
@@ -256,9 +264,13 @@ export type Database = {
           category?: string | null
           country?: string | null
           created_at?: string
+          email_verified?: boolean | null
           followers?: string | null
           full_name?: string
           id?: string
+          identity_document_url?: string | null
+          identity_submitted_at?: string | null
+          identity_verified?: boolean | null
           instagram_followers?: string | null
           pricing?: Json | null
           snapchat_followers?: string | null
@@ -306,6 +318,7 @@ export type Database = {
         Args: { _conversation_id: string }
         Returns: boolean
       }
+      is_user_verified: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "creator" | "brand"
