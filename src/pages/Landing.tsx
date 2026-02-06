@@ -231,6 +231,32 @@ const Landing = () => {
               </div>
             ))}
           </motion.div>
+
+          {/* Créateurs vedettes - Carousel horizontal */}
+          <motion.div variants={fadeInUp} className="mt-6">
+            <p className="text-xs text-muted-foreground mb-3">Créateurs populaires</p>
+            <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-6 px-6 pb-2">
+              {allCreators.slice(0, 4).map((creator, index) => (
+                <motion.div
+                  key={creator.firstName}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 + index * 0.1 }}
+                  className="flex-shrink-0 flex items-center gap-2 glass rounded-full pr-3 pl-1 py-1"
+                >
+                  <img
+                    src={creator.image}
+                    alt={creator.firstName}
+                    className="w-8 h-8 rounded-full object-cover"
+                  />
+                  <div>
+                    <p className="text-xs font-medium text-foreground">{creator.firstName}</p>
+                    <p className="text-[9px] text-gold">{creator.category}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
         </motion.div>
       </section>
 
