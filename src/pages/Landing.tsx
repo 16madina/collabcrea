@@ -1,11 +1,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Sparkles, Users, Star, HelpCircle, X, Briefcase, DollarSign, Calendar, MapPin, Send } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/useAuth";
-import ApplyModal from "@/components/ApplyModal";
-import { toast } from "sonner";
 import LandingNav from "@/components/LandingNav";
 import heroImage from "@/assets/hero-creator.jpg";
 import creatorTech from "@/assets/creator-tech.jpg";
@@ -131,11 +128,10 @@ const howItWorks = [
   },
 ];
 
-// Offres disponibles (mock data - en production, ces données viendraient de la base de données)
+// Offres disponibles
 const allOffers = [
   {
-    id: "mock-offer-1",
-    brandId: "mock-brand-1", // En production, ce serait l'UUID du brand
+    id: 1,
     brand: "Karité d'Or",
     logo: logoKariteDor,
     location: "Côte d'Ivoire",
@@ -147,8 +143,7 @@ const allOffers = [
     description: "Recherche créateurs beauté pour promouvoir notre nouvelle gamme de soins au karité.",
   },
   {
-    id: "mock-offer-2",
-    brandId: "mock-brand-2",
+    id: 2,
     brand: "TechAfrik",
     logo: logoTechAfrik,
     location: "Nigeria",
@@ -160,8 +155,7 @@ const allOffers = [
     description: "Besoin de YouTubers tech pour unboxing et review de notre nouveau smartphone.",
   },
   {
-    id: "mock-offer-3",
-    brandId: "mock-brand-3",
+    id: 3,
     brand: "Nestlé Afrique",
     logo: logoNestleAfrique,
     location: "Sénégal",
@@ -173,8 +167,7 @@ const allOffers = [
     description: "Partagez des recettes originales avec nos produits café.",
   },
   {
-    id: "mock-offer-4",
-    brandId: "mock-brand-4",
+    id: 4,
     brand: "Nike Afrique",
     logo: logoNikeAfrique,
     location: "Ghana",
@@ -186,8 +179,7 @@ const allOffers = [
     description: "Lancez un challenge fitness avec nos nouveaux équipements.",
   },
   {
-    id: "mock-offer-5",
-    brandId: "mock-brand-5",
+    id: 5,
     brand: "L'Oréal Afrique",
     logo: logoLorealAfrique,
     location: "Cameroun",
@@ -199,8 +191,7 @@ const allOffers = [
     description: "Créez des tutoriels avec notre nouvelle gamme de maquillage.",
   },
   {
-    id: "mock-offer-6",
-    brandId: "mock-brand-6",
+    id: 6,
     brand: "MTN",
     logo: logoMtn,
     location: "Côte d'Ivoire",
@@ -213,36 +204,11 @@ const allOffers = [
   },
 ];
 
-type OfferType = typeof allOffers[0];
-
 type TabType = "creators" | "offers";
 
 const Landing = () => {
-  const { user, role } = useAuth();
-  const navigate = useNavigate();
   const [showHowItWorks, setShowHowItWorks] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>("creators");
-  const [selectedOffer, setSelectedOffer] = useState<OfferType | null>(null);
-
-  const handleApplyClick = (offer: OfferType) => {
-    if (!user) {
-      toast.info("Connectez-vous pour postuler", {
-        description: "Créez un compte créateur pour postuler aux offres.",
-        action: {
-          label: "S'inscrire",
-          onClick: () => navigate("/auth?role=creator"),
-        },
-      });
-      return;
-    }
-
-    if (role !== "creator") {
-      toast.error("Seuls les créateurs peuvent postuler aux offres");
-      return;
-    }
-
-    setSelectedOffer(offer);
-  };
 
   return (
     <div className="min-h-screen bg-background overflow-hidden">
@@ -451,25 +417,25 @@ const Landing = () => {
                   </Link>
                 </div>
 
-                {/* Liste de cartes créateurs - Style ID Card */}
-                <div className="space-y-3">
+                {/* Grille de cartes créateurs */}
+                <div className="grid grid-cols-2 gap-3">
                   {allCreators.map((creator, index) => (
                     <motion.div
                       key={creator.firstName + creator.lastName}
-                      initial={{ opacity: 0, x: -20 }}
-                      whileInView={{ opacity: 1, x: 0 }}
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true }}
                       transition={{ delay: index * 0.05 }}
-                      className="glass-card overflow-hidden flex"
+                      className="glass-card overflow-hidden"
                     >
-                      {/* Photo - Gauche */}
-                      <div className="relative w-28 h-32 flex-shrink-0 overflow-hidden">
+                      {/* Photo */}
+                      <div className="relative aspect-square overflow-hidden">
                         <img
                           src={creator.image}
                           alt={`${creator.firstName} ${creator.lastName}`}
                           className="w-full h-full object-cover"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent to-card/30" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
                         
                         {/* Catégorie Badge */}
                         <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-medium bg-gold text-primary-foreground">
@@ -477,29 +443,23 @@ const Landing = () => {
                         </span>
                       </div>
 
-                      {/* Infos - Droite */}
-                      <div className="flex-1 p-3 flex flex-col justify-between">
-                        <div>
-                          <h4 className="font-semibold text-sm text-foreground">
-                            {creator.firstName} {creator.lastName}
-                          </h4>
-                          
-                          {/* Pays */}
-                          <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-1">
-                            <span>{creator.flag}</span>
-                            <span>{creator.country}</span>
-                          </div>
+                      {/* Infos */}
+                      <div className="p-3">
+                        <h4 className="font-semibold text-sm text-foreground">
+                          {creator.firstName} {creator.lastName}
+                        </h4>
+                        
+                        {/* Pays */}
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-1">
+                          <span>{creator.flag}</span>
+                          <span>{creator.country}</span>
                         </div>
 
                         {/* Followers */}
                         <div className="flex items-center gap-1 mt-2">
                           <Users className="w-3 h-3 text-gold" />
-                          <span className="text-gold font-bold text-sm">
-                            {creator.followers}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground">
-                            abonnés
-                          </span>
+                          <span className="text-xs font-semibold text-gold">{creator.followers}</span>
+                          <span className="text-[10px] text-muted-foreground">abonnés</span>
                         </div>
                       </div>
                     </motion.div>
@@ -591,13 +551,12 @@ const Landing = () => {
                         </div>
 
                         {/* CTA Button - Gold outlined */}
-                        <button 
-                          onClick={() => handleApplyClick(offer)}
-                          className="w-full py-3 rounded-xl border-2 border-gold/60 text-foreground font-medium flex items-center justify-center gap-2 hover:bg-gold/10 hover:border-gold transition-all"
-                        >
-                          <Send className="w-4 h-4" />
-                          Postuler
-                        </button>
+                        <Link to="/auth?role=creator" className="block">
+                          <button className="w-full py-3 rounded-xl border-2 border-gold/60 text-foreground font-medium flex items-center justify-center gap-2 hover:bg-gold/10 hover:border-gold transition-all">
+                            <Send className="w-4 h-4" />
+                            Postuler
+                          </button>
+                        </Link>
                       </div>
                     </motion.div>
                   ))}
@@ -713,22 +672,6 @@ const Landing = () => {
               </div>
             </motion.div>
           </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Apply Modal */}
-      <AnimatePresence>
-        {selectedOffer && (
-          <ApplyModal
-            offer={{
-              id: selectedOffer.id,
-              brand: selectedOffer.brand,
-              brandId: selectedOffer.brandId,
-              title: selectedOffer.title,
-              budget: selectedOffer.budget,
-            }}
-            onClose={() => setSelectedOffer(null)}
-          />
         )}
       </AnimatePresence>
     </div>

@@ -67,63 +67,51 @@ const CreatorProfile = () => {
         </motion.div>
       </div>
 
-      {/* Profile Card - ID Card Style */}
+      {/* Profile Card */}
       <div className="px-6 mt-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass-card overflow-hidden relative"
+          className="glass-card p-6 text-center relative"
         >
           <button
             onClick={() => setIsEditing(!isEditing)}
-            className="absolute top-4 right-4 touch-target z-10"
+            className="absolute top-4 right-4 touch-target"
           >
             <Edit3 className="w-5 h-5 text-gold" />
           </button>
 
-          <div className="flex">
-            {/* Photo - Left Side */}
-            <div className="relative w-36 h-48 flex-shrink-0 bg-gold/20">
-              <div className="w-full h-full flex items-center justify-center">
-                <span className="text-gold font-bold text-5xl">A</span>
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent to-card/30" />
+          <div className="w-24 h-24 rounded-full bg-gold/20 flex items-center justify-center mx-auto mb-4 ring-4 ring-gold/30">
+            <span className="text-gold font-bold text-3xl">A</span>
+          </div>
+
+          <h2 className="font-display text-2xl font-bold">Aïcha Ndiaye</h2>
+          <p className="text-gold text-sm font-medium mt-1">Créatrice Beauté & Lifestyle</p>
+          
+          <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm mt-2">
+            <MapPin className="w-4 h-4" />
+            <span>Dakar, Sénégal</span>
+          </div>
+
+          <p className="text-muted-foreground text-sm mt-4 max-w-xs mx-auto">
+            Passionnée de beauté africaine 🌍 Je partage mes routines, conseils et découvertes avec ma communauté.
+          </p>
+
+          <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-border">
+            <div>
+              <p className="text-2xl font-bold text-gold-gradient">259K</p>
+              <p className="text-xs text-muted-foreground">Abonnés</p>
             </div>
-
-            {/* Details - Right Side */}
-            <div className="flex-1 p-4 flex flex-col justify-between">
-              <div>
-                <h2 className="font-display text-xl font-bold">Aïcha Ndiaye</h2>
-                <p className="text-gold text-sm font-medium mt-1">Créatrice Beauté & Lifestyle</p>
-                
-                <div className="flex items-center gap-2 text-muted-foreground text-xs mt-2">
-                  <MapPin className="w-3 h-3" />
-                  <span>Dakar, Sénégal</span>
-                </div>
-
-                <p className="text-muted-foreground text-xs mt-3 line-clamp-2">
-                  Passionnée de beauté africaine 🌍 Je partage mes routines et découvertes.
-                </p>
+            <div>
+              <p className="text-2xl font-bold text-gold-gradient">4.9</p>
+              <div className="flex items-center justify-center gap-1">
+                <Star className="w-3 h-3 text-gold fill-gold" />
+                <p className="text-xs text-muted-foreground">Note</p>
               </div>
-
-              {/* Stats Row */}
-              <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-border">
-                <div className="text-center">
-                  <p className="text-lg font-bold text-gold-gradient">259K</p>
-                  <p className="text-[10px] text-muted-foreground">Abonnés</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-lg font-bold text-gold-gradient">4.9</p>
-                  <div className="flex items-center justify-center gap-0.5">
-                    <Star className="w-2.5 h-2.5 text-gold fill-gold" />
-                    <p className="text-[10px] text-muted-foreground">Note</p>
-                  </div>
-                </div>
-                <div className="text-center">
-                  <p className="text-lg font-bold text-gold-gradient">23</p>
-                  <p className="text-[10px] text-muted-foreground">Collabs</p>
-                </div>
-              </div>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gold-gradient">23</p>
+              <p className="text-xs text-muted-foreground">Collabs</p>
             </div>
           </div>
         </motion.div>
