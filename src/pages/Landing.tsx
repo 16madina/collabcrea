@@ -1,8 +1,12 @@
 import { motion } from "framer-motion";
-import { ArrowRight, Sparkles, Users, TrendingUp } from "lucide-react";
+import { ArrowRight, Sparkles, Users, TrendingUp, Star, Instagram, Youtube, CheckCircle, Play } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/hero-creator.jpg";
+import creatorTech from "@/assets/creator-tech.jpg";
+import creatorFashion from "@/assets/creator-fashion.jpg";
+import creatorFitness from "@/assets/creator-fitness.jpg";
+import creatorCuisine from "@/assets/creator-cuisine.jpg";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 30 },
@@ -17,6 +21,59 @@ const stagger = {
     }
   }
 };
+
+const featuredCreators = [
+  {
+    name: "Kofi Mensah",
+    category: "Tech",
+    followers: "320K",
+    rating: 4.9,
+    image: creatorTech,
+    platforms: ["YouTube", "Instagram"],
+  },
+  {
+    name: "Amara Diallo",
+    category: "Mode",
+    followers: "450K",
+    rating: 5.0,
+    image: creatorFashion,
+    platforms: ["Instagram", "TikTok"],
+  },
+  {
+    name: "Moussa Traoré",
+    category: "Fitness",
+    followers: "280K",
+    rating: 4.8,
+    image: creatorFitness,
+    platforms: ["YouTube", "TikTok"],
+  },
+  {
+    name: "Fatou Ndiaye",
+    category: "Cuisine",
+    followers: "190K",
+    rating: 4.9,
+    image: creatorCuisine,
+    platforms: ["YouTube", "Instagram"],
+  },
+];
+
+const howItWorks = [
+  {
+    step: "01",
+    title: "Créez votre profil",
+    description: "Inscrivez-vous et personnalisez votre profil avec votre portfolio et tarifs.",
+  },
+  {
+    step: "02",
+    title: "Recevez des offres",
+    description: "Les marques vous découvrent et vous envoient des propositions de collaboration.",
+  },
+  {
+    step: "03",
+    title: "Collaborez & Gagnez",
+    description: "Négociez, créez du contenu et recevez votre paiement en FCFA.",
+  },
+];
 
 const Landing = () => {
   return (
@@ -67,6 +124,7 @@ const Landing = () => {
             </span>
           </motion.div>
 
+          {/* Slogan Principal */}
           <motion.h2
             variants={fadeInUp}
             className="font-display text-4xl md:text-5xl font-bold text-foreground leading-tight mb-4"
@@ -108,7 +166,7 @@ const Landing = () => {
           className="grid grid-cols-3 gap-4"
         >
           {[
-            { value: "54+", label: "Pays", icon: Users },
+            { value: "54+", label: "Pays africains", icon: Users },
             { value: "10K+", label: "Créateurs", icon: Sparkles },
             { value: "500+", label: "Marques", icon: TrendingUp },
           ].map((stat, index) => (
@@ -128,6 +186,116 @@ const Landing = () => {
         </motion.div>
       </section>
 
+      {/* Featured Creators */}
+      <section className="px-6 py-12">
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="font-display text-2xl font-bold">
+              Créateurs <span className="text-gold-gradient">vedettes</span>
+            </h3>
+            <Link to="/auth?role=brand" className="text-gold text-sm flex items-center gap-1">
+              Voir tous <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4 -mx-6 px-6">
+            {featuredCreators.map((creator, index) => (
+              <motion.div
+                key={creator.name}
+                initial={{ opacity: 0, x: 20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className="flex-shrink-0 w-[200px]"
+              >
+                <div className="glass-card overflow-hidden group">
+                  {/* Image */}
+                  <div className="relative aspect-square overflow-hidden">
+                    <img
+                      src={creator.image}
+                      alt={creator.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
+                    
+                    {/* Category Badge */}
+                    <span className="absolute top-3 left-3 px-2 py-1 rounded-full text-xs font-medium bg-gold/90 text-primary-foreground">
+                      {creator.category}
+                    </span>
+
+                    {/* Rating */}
+                    <div className="absolute bottom-3 right-3 flex items-center gap-1 px-2 py-1 rounded-full glass text-xs">
+                      <Star className="w-3 h-3 text-gold fill-gold" />
+                      <span className="text-foreground">{creator.rating}</span>
+                    </div>
+                  </div>
+
+                  {/* Info */}
+                  <div className="p-4">
+                    <h4 className="font-semibold text-foreground">{creator.name}</h4>
+                    <p className="text-gold text-sm font-medium">{creator.followers} abonnés</p>
+                    
+                    {/* Platforms */}
+                    <div className="flex gap-2 mt-3">
+                      {creator.platforms.map((platform) => (
+                        <span
+                          key={platform}
+                          className="px-2 py-1 rounded-md text-xs bg-muted text-muted-foreground"
+                        >
+                          {platform}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      </section>
+
+      {/* How It Works */}
+      <section className="px-6 py-12 bg-violet-gradient">
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+        >
+          <h3 className="font-display text-2xl font-bold text-center mb-8">
+            Comment ça <span className="text-gold-gradient">marche</span> ?
+          </h3>
+
+          <div className="space-y-6">
+            {howItWorks.map((item, index) => (
+              <motion.div
+                key={item.step}
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.15 }}
+                className="flex gap-4"
+              >
+                <div className="flex-shrink-0 w-12 h-12 rounded-2xl bg-gold/20 flex items-center justify-center">
+                  <span className="text-gold font-bold">{item.step}</span>
+                </div>
+                <div>
+                  <h4 className="font-display text-lg font-semibold text-gold mb-1">
+                    {item.title}
+                  </h4>
+                  <p className="text-muted-foreground text-sm">
+                    {item.description}
+                  </p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      </section>
+
       {/* Features Section */}
       <section className="px-6 py-12">
         <motion.h3
@@ -143,12 +311,22 @@ const Landing = () => {
           {[
             {
               title: "Pour les Créateurs",
-              description: "Exposez votre talent, fixez vos tarifs en FCFA et recevez des offres de marques premium.",
+              features: [
+                "Exposez votre talent à 500+ marques",
+                "Fixez vos tarifs en FCFA",
+                "Messagerie intégrée sécurisée",
+                "Portfolio professionnel",
+              ],
               gradient: "from-gold/20 to-transparent",
             },
             {
               title: "Pour les Marques",
-              description: "Découvrez des talents authentiques africains et lancez des campagnes d'influence impactantes.",
+              features: [
+                "Accès à 10K+ créateurs vérifiés",
+                "Filtres par catégorie et pays",
+                "Gestion des campagnes simplifiée",
+                "Analytics détaillés",
+              ],
               gradient: "from-violet-light/20 to-transparent",
             },
           ].map((feature, index) => (
@@ -160,12 +338,17 @@ const Landing = () => {
               transition={{ delay: index * 0.1 }}
               className={`glass-card p-6 bg-gradient-to-r ${feature.gradient}`}
             >
-              <h4 className="font-display text-lg font-semibold text-gold mb-2">
+              <h4 className="font-display text-lg font-semibold text-gold mb-4">
                 {feature.title}
               </h4>
-              <p className="text-muted-foreground text-sm">
-                {feature.description}
-              </p>
+              <ul className="space-y-3">
+                {feature.features.map((item) => (
+                  <li key={item} className="flex items-center gap-3 text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-gold flex-shrink-0" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
             </motion.div>
           ))}
         </div>
@@ -188,16 +371,63 @@ const Landing = () => {
           viewport={{ once: true }}
           className="flex flex-wrap justify-center gap-2"
         >
-          {["Beauté", "Mode", "Cuisine", "Humour", "Tech", "Lifestyle", "Fitness", "Musique"].map(
-            (category) => (
-              <span
+          {["Beauté", "Mode", "Cuisine", "Humour", "Tech", "Lifestyle", "Fitness", "Musique", "Business", "Éducation"].map(
+            (category, index) => (
+              <motion.span
                 key={category}
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.05 }}
                 className="px-4 py-2 rounded-full glass text-sm text-gold border-gold/20 hover:border-gold/40 transition-colors cursor-pointer"
               >
                 {category}
-              </span>
+              </motion.span>
             )
           )}
+        </motion.div>
+      </section>
+
+      {/* Pricing Types */}
+      <section className="px-6 py-12">
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+        >
+          <h3 className="font-display text-2xl font-bold text-center mb-2">
+            Types de <span className="text-gold-gradient">contenu</span>
+          </h3>
+          <p className="text-muted-foreground text-center text-sm mb-8">
+            Tarification flexible en FCFA
+          </p>
+
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { type: "Story Instagram", icon: Instagram, range: "30K - 100K" },
+              { type: "Reel / TikTok", icon: Play, range: "50K - 200K" },
+              { type: "Vidéo YouTube", icon: Youtube, range: "150K - 500K" },
+              { type: "Live", icon: Play, range: "100K - 300K" },
+            ].map((item, index) => {
+              const Icon = item.icon;
+              return (
+                <motion.div
+                  key={item.type}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                  className="glass-card p-4 text-center"
+                >
+                  <div className="w-12 h-12 rounded-2xl bg-gold/20 flex items-center justify-center mx-auto mb-3">
+                    <Icon className="w-6 h-6 text-gold" />
+                  </div>
+                  <h4 className="font-semibold text-sm mb-1">{item.type}</h4>
+                  <p className="text-gold text-xs font-medium">{item.range} FCFA</p>
+                </motion.div>
+              );
+            })}
+          </div>
         </motion.div>
       </section>
 
@@ -209,18 +439,26 @@ const Landing = () => {
           viewport={{ once: true }}
           className="glass-card p-8 border-gold/30"
         >
-          <h3 className="font-display text-2xl font-bold mb-4">
+          <Sparkles className="w-12 h-12 text-gold mx-auto mb-4" />
+          <h3 className="font-display text-2xl font-bold mb-2">
             Prêt à <span className="text-gold-gradient">briller</span> ?
           </h3>
-          <p className="text-muted-foreground mb-6">
-            Rejoignez la communauté Collab'Or dès aujourd'hui.
+          <p className="text-muted-foreground mb-6 text-sm">
+            Rejoignez la communauté Collab'Or et connectez-vous aux opportunités qui comptent.
           </p>
-          <Link to="/auth">
-            <Button variant="gold" size="lg" className="w-full">
-              Commencer maintenant
-              <Sparkles className="w-5 h-5" />
-            </Button>
-          </Link>
+          <div className="flex flex-col gap-3">
+            <Link to="/auth?role=creator">
+              <Button variant="gold" size="lg" className="w-full">
+                Devenir Créateur
+                <Sparkles className="w-5 h-5" />
+              </Button>
+            </Link>
+            <Link to="/auth?role=brand">
+              <Button variant="glass-gold" size="lg" className="w-full">
+                Inscrire ma Marque
+              </Button>
+            </Link>
+          </div>
         </motion.div>
       </section>
 
@@ -229,7 +467,10 @@ const Landing = () => {
         <p className="text-gold-gradient font-display text-lg font-semibold mb-2">
           Collab'Or
         </p>
-        <p className="text-muted-foreground text-sm">
+        <p className="text-muted-foreground text-xs mb-4">
+          "Connectez votre marque aux voix qui comptent"
+        </p>
+        <p className="text-muted-foreground text-xs">
           © 2024 Collab'Or. Tous droits réservés.
         </p>
       </footer>
