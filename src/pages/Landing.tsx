@@ -9,6 +9,7 @@ import CreatorDetailSheet from "@/components/CreatorDetailSheet";
 import type { Creator } from "@/components/CreatorDetailSheet";
 import { allCreators } from "@/data/creators";
 import heroImage from "@/assets/hero-creator.jpg";
+import logoCollabCrea from "@/assets/logo-collabcrea.png";
 import logoKariteDor from "@/assets/logo-karite-dor.jpg";
 import logoTechAfrik from "@/assets/logo-techafrik.jpg";
 import logoNestleAfrique from "@/assets/logo-nestle-afrique.jpg";
@@ -158,9 +159,13 @@ const Landing = () => {
           className="relative z-10 safe-top px-6 py-4"
         >
           <div className="flex items-center justify-between">
-            <h1 className="font-display text-2xl font-bold text-gold-gradient">
-              Collab'Or
-            </h1>
+            <Link to="/" className="flex items-center">
+              <img 
+                src={logoCollabCrea} 
+                alt="CollabCréa" 
+                className="h-10 w-auto"
+              />
+            </Link>
             <Link to="/auth">
               <Button variant="glass-gold" size="sm">
                 Connexion
@@ -430,7 +435,7 @@ const Landing = () => {
             Prêt à <span className="text-gold-gradient">briller</span> ?
           </h3>
           <p className="text-muted-foreground text-sm mb-4">
-            Rejoignez la communauté Collab'Or
+            Rejoignez la communauté CollabCréa
           </p>
           <Link to="/auth">
             <Button variant="gold" size="default" className="w-full">
@@ -442,14 +447,16 @@ const Landing = () => {
 
       {/* Footer */}
       <footer className="px-6 py-6 pb-28 text-center border-t border-border">
-        <p className="text-gold-gradient font-display text-lg font-semibold mb-1">
-          Collab'Or
-        </p>
+        <img 
+          src={logoCollabCrea} 
+          alt="CollabCréa" 
+          className="h-8 w-auto mx-auto mb-2"
+        />
         <p className="text-muted-foreground text-[10px] mb-2">
           "Connectez votre marque aux voix qui comptent"
         </p>
         <p className="text-muted-foreground text-[10px]">
-          © 2024 Collab'Or. Tous droits réservés.
+          © 2026 CollabCréa. Tous droits réservés.
         </p>
       </footer>
 
