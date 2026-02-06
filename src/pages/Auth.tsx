@@ -1,23 +1,46 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { User, Building2, ArrowLeft, Mail, Lock, Eye, EyeOff, Sparkles } from "lucide-react";
+import { User, Building2, ArrowLeft, Mail, Lock, Eye, EyeOff, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
+import { z } from "zod";
 
 type UserRole = "creator" | "brand" | null;
 type AuthMode = "login" | "signup";
 
+// Validation schemas
+const emailSchema = z.string().email("Email invalide").max(255);
+const passwordSchema = z.string().min(6, "Le mot de passe doit contenir au moins 6 caractères").max(100);
+const nameSchema = z.string().min(2, "Le nom doit contenir au moins 2 caractères").max(100);
+
 const Auth = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { user, role: userRole, loading: authLoading, signUp, signIn } = useAuth();
+  
   const [role, setRole] = useState<UserRole>(null);
   const [mode, setMode] = useState<AuthMode>("signup");
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string }>({});
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!authLoading && user && userRole) {
+      if (userRole === "creator") {
+        navigate("/creator/dashboard");
+      } else {
+        navigate("/brand/dashboard");
+      }
+    }
+  }, [user, userRole, authLoading, navigate]);
 
   useEffect(() => {
     const roleParam = searchParams.get("role");
@@ -38,15 +61,93 @@ const Auth = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const validateForm = (): boolean => {
+    const newErrors: { email?: string; password?: string; name?: string } = {};
+
+    try {
+      emailSchema.parse(email);
+    } catch (e) {
+      if (e instanceof z.ZodError) {
+        newErrors.email = e.errors[0].message;
+      }
+    }
+
+    try {
+      passwordSchema.parse(password);
+    } catch (e) {
+      if (e instanceof z.ZodError) {
+        newErrors.password = e.errors[0].message;
+      }
+    }
+
+    if (mode === "signup") {
+      try {
+        nameSchema.parse(name);
+      } catch (e) {
+        if (e instanceof z.ZodError) {
+          newErrors.name = e.errors[0].message;
+        }
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // For now, navigate to the appropriate dashboard
-    if (role === "creator") {
-      navigate("/creator/dashboard");
-    } else {
-      navigate("/brand/dashboard");
+
+    if (!validateForm()) {
+      return;
+    }
+
+    if (!role) {
+      toast.error("Veuillez sélectionner un rôle");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      if (mode === "signup") {
+        const { error } = await signUp(email, password, name, role);
+        if (error) {
+          if (error.message.includes("already registered")) {
+            toast.error("Cet email est déjà utilisé");
+          } else {
+            toast.error(error.message);
+          }
+          return;
+        }
+        toast.success("Compte créé avec succès !", {
+          description: "Vérifiez votre email pour confirmer votre inscription.",
+        });
+      } else {
+        const { error } = await signIn(email, password);
+        if (error) {
+          if (error.message.includes("Invalid login credentials")) {
+            toast.error("Email ou mot de passe incorrect");
+          } else {
+            toast.error(error.message);
+          }
+          return;
+        }
+        toast.success("Connexion réussie !");
+      }
+    } catch (error) {
+      toast.error("Une erreur est survenue");
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-gold animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -185,8 +286,11 @@ const Auth = () => {
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder={role === "creator" ? "Votre nom" : "Nom de votre marque"}
-                      className="h-14 bg-muted/50 border-border focus:border-gold rounded-xl px-4"
+                      className={`h-14 bg-muted/50 border-border focus:border-gold rounded-xl px-4 ${errors.name ? "border-destructive" : ""}`}
                     />
+                    {errors.name && (
+                      <p className="text-destructive text-xs">{errors.name}</p>
+                    )}
                   </motion.div>
                 )}
 
@@ -202,9 +306,12 @@ const Auth = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="vous@exemple.com"
-                      className="h-14 bg-muted/50 border-border focus:border-gold rounded-xl pl-12"
+                      className={`h-14 bg-muted/50 border-border focus:border-gold rounded-xl pl-12 ${errors.email ? "border-destructive" : ""}`}
                     />
                   </div>
+                  {errors.email && (
+                    <p className="text-destructive text-xs">{errors.email}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -219,7 +326,7 @@ const Auth = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="h-14 bg-muted/50 border-border focus:border-gold rounded-xl pl-12 pr-12"
+                      className={`h-14 bg-muted/50 border-border focus:border-gold rounded-xl pl-12 pr-12 ${errors.password ? "border-destructive" : ""}`}
                     />
                     <button
                       type="button"
@@ -233,11 +340,29 @@ const Auth = () => {
                       )}
                     </button>
                   </div>
+                  {errors.password && (
+                    <p className="text-destructive text-xs">{errors.password}</p>
+                  )}
                 </div>
 
-                <Button type="submit" variant="gold" size="lg" className="w-full mt-6">
-                  {mode === "signup" ? "Créer mon compte" : "Se connecter"}
-                  <Sparkles className="w-5 h-5" />
+                <Button 
+                  type="submit" 
+                  variant="gold" 
+                  size="lg" 
+                  className="w-full mt-6"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Chargement...
+                    </>
+                  ) : (
+                    <>
+                      {mode === "signup" ? "Créer mon compte" : "Se connecter"}
+                      <Sparkles className="w-5 h-5" />
+                    </>
+                  )}
                 </Button>
               </form>
 
