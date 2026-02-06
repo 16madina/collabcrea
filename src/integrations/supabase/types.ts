@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      applications: {
+        Row: {
+          conversation_id: string | null
+          created_at: string
+          creator_id: string
+          id: string
+          message: string | null
+          offer_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          conversation_id?: string | null
+          created_at?: string
+          creator_id: string
+          id?: string
+          message?: string | null
+          offer_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          conversation_id?: string | null
+          created_at?: string
+          creator_id?: string
+          id?: string
+          message?: string | null
+          offer_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "applications_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "applications_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversation_participants: {
         Row: {
           conversation_id: string
@@ -45,6 +93,7 @@ export type Database = {
       }
       conversations: {
         Row: {
+          application_id: string | null
           created_at: string
           created_by: string
           id: string
@@ -53,6 +102,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          application_id?: string | null
           created_at?: string
           created_by: string
           id?: string
@@ -61,6 +111,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          application_id?: string | null
           created_at?: string
           created_by?: string
           id?: string
@@ -68,7 +119,15 @@ export type Database = {
           subject?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "conversations_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       messages: {
         Row: {
@@ -104,6 +163,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      offers: {
+        Row: {
+          brand_id: string
+          budget_max: number
+          budget_min: number
+          category: string
+          content_type: string
+          created_at: string
+          deadline: string | null
+          description: string
+          id: string
+          location: string | null
+          logo_url: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          brand_id: string
+          budget_max: number
+          budget_min: number
+          category: string
+          content_type: string
+          created_at?: string
+          deadline?: string | null
+          description: string
+          id?: string
+          location?: string | null
+          logo_url?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          brand_id?: string
+          budget_max?: number
+          budget_min?: number
+          category?: string
+          content_type?: string
+          created_at?: string
+          deadline?: string | null
+          description?: string
+          id?: string
+          location?: string | null
+          logo_url?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
