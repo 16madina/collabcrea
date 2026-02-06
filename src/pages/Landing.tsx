@@ -477,8 +477,8 @@ const Landing = () => {
                   </Link>
                 </div>
 
-                {/* Liste des offres */}
-                <div className="space-y-3">
+                {/* Grille des offres - 2 colonnes */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {allOffers.map((offer, index) => (
                     <motion.div
                       key={offer.id}
@@ -486,68 +486,72 @@ const Landing = () => {
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true }}
                       transition={{ delay: index * 0.05 }}
-                      className="glass-card p-4 border border-gold/20"
+                      className="relative rounded-2xl overflow-hidden"
+                      style={{
+                        background: 'linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--card)) 100%)',
+                      }}
                     >
-                      {/* Header: Logo + Brand + Location */}
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-gold/30 to-gold/10 flex items-center justify-center text-2xl shadow-lg">
-                          {offer.logo}
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-sm text-gold">
-                            {offer.brand}
-                          </h4>
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <MapPin className="w-3 h-3" />
-                            {offer.location}
+                      {/* Gold gradient border on left */}
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-gold via-gold/60 to-gold/20" />
+                      
+                      <div className="p-4 pl-5">
+                        {/* Header: Logo + Brand + Location */}
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-gold/40 to-gold/20 flex items-center justify-center text-xl shadow-lg overflow-hidden">
+                            {offer.logo}
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-sm text-gold">
+                              {offer.brand}
+                            </h4>
+                            <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                              <MapPin className="w-3 h-3" />
+                              {offer.location}
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      {/* Title */}
-                      <h3 className="font-display font-bold text-foreground mb-2">
-                        {offer.title}
-                      </h3>
+                        {/* Title in Gold */}
+                        <h3 className="font-display font-bold text-gold-gradient text-base mb-2">
+                          {offer.title}
+                        </h3>
 
-                      {/* Description */}
-                      <p className="text-xs text-muted-foreground mb-3 line-clamp-2">
-                        {offer.description}
-                      </p>
+                        {/* Description */}
+                        <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
+                          {offer.description}
+                        </p>
 
-                      {/* Category Badges */}
-                      <div className="flex gap-2 mb-3">
-                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border border-gold/40 text-gold">
-                          <span className="text-sm">👤</span>
-                          {offer.category}
-                        </span>
-                        <span className="px-3 py-1 rounded-full text-xs font-medium border border-border text-muted-foreground">
-                          {offer.contentType}
-                        </span>
-                      </div>
-
-                      {/* Budget & Deadline */}
-                      <div className="flex items-center gap-4 mb-4 text-sm">
-                        <div className="flex items-center gap-1">
-                          <DollarSign className="w-4 h-4 text-gold" />
-                          <span className="font-semibold text-gold">{offer.budget}</span>
+                        {/* Category Badges */}
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-gold/10 border border-gold/30 text-gold">
+                            <span>👤</span>
+                            {offer.category}
+                          </span>
+                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-muted/30 border border-border text-muted-foreground">
+                            {offer.contentType}
+                          </span>
                         </div>
-                        <div className="flex items-center gap-1 text-muted-foreground">
-                          <Calendar className="w-4 h-4" />
-                          <span>{offer.deadline}</span>
-                        </div>
-                      </div>
 
-                      {/* CTA Button */}
-                      <Link to="/auth?role=creator">
-                        <Button 
-                          variant="outline" 
-                          size="default" 
-                          className="w-full border-gold/50 text-foreground hover:bg-gold/10 hover:border-gold"
-                        >
-                          <Send className="w-4 h-4 mr-2" />
-                          Postuler
-                        </Button>
-                      </Link>
+                        {/* Budget & Deadline */}
+                        <div className="space-y-1.5 mb-4">
+                          <div className="flex items-center gap-2">
+                            <DollarSign className="w-4 h-4 text-gold" />
+                            <span className="font-semibold text-gold text-sm">{offer.budget}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Calendar className="w-4 h-4" />
+                            <span className="text-sm">{offer.deadline}</span>
+                          </div>
+                        </div>
+
+                        {/* CTA Button - Gold outlined */}
+                        <Link to="/auth?role=creator" className="block">
+                          <button className="w-full py-3 rounded-xl border-2 border-gold/60 text-foreground font-medium flex items-center justify-center gap-2 hover:bg-gold/10 hover:border-gold transition-all">
+                            <Send className="w-4 h-4" />
+                            Postuler
+                          </button>
+                        </Link>
+                      </div>
                     </motion.div>
                   ))}
                 </div>
