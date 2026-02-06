@@ -232,26 +232,47 @@ const Landing = () => {
             ))}
           </motion.div>
 
-          {/* Créateurs vedettes - Carousel horizontal */}
-          <motion.div variants={fadeInUp} className="mt-6">
-            <p className="text-xs text-muted-foreground mb-3">Créateurs populaires</p>
-            <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-6 px-6 pb-2">
+          {/* Créateurs populaires - Grandes cartes */}
+          <motion.div variants={fadeInUp} className="mt-8">
+            <h3 className="font-display text-lg font-bold mb-4">
+              Créateurs <span className="text-gold-gradient">populaires</span>
+            </h3>
+            <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-6 px-6 pb-4">
               {allCreators.slice(0, 4).map((creator, index) => (
                 <motion.div
                   key={creator.firstName}
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.3 + index * 0.1 }}
-                  className="flex-shrink-0 flex items-center gap-2 glass rounded-full pr-3 pl-1 py-1"
+                  className="flex-shrink-0 w-40 glass-card overflow-hidden"
                 >
-                  <img
-                    src={creator.image}
-                    alt={creator.firstName}
-                    className="w-8 h-8 rounded-full object-cover"
-                  />
-                  <div>
-                    <p className="text-xs font-medium text-foreground">{creator.firstName}</p>
-                    <p className="text-[9px] text-gold">{creator.category}</p>
+                  {/* Photo avec badge catégorie et note */}
+                  <div className="relative aspect-[4/5] overflow-hidden">
+                    <img
+                      src={creator.image}
+                      alt={`${creator.firstName} ${creator.lastName}`}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
+                    
+                    {/* Badge catégorie */}
+                    <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-medium bg-gold text-primary-foreground">
+                      {creator.category}
+                    </span>
+                    
+                    {/* Badge note */}
+                    <span className="absolute bottom-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium glass">
+                      <Star className="w-3 h-3 text-gold fill-gold" />
+                      <span className="text-foreground">{(4.5 + Math.random() * 0.5).toFixed(1)}</span>
+                    </span>
+                  </div>
+
+                  {/* Infos */}
+                  <div className="p-3">
+                    <h4 className="font-semibold text-sm text-foreground truncate">
+                      {creator.firstName} {creator.lastName}
+                    </h4>
+                    <p className="text-xs text-gold">{creator.followers}</p>
                   </div>
                 </motion.div>
               ))}
