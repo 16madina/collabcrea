@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Sparkles, Users, Star, HelpCircle, X, Briefcase, DollarSign, Calendar, MapPin, Send } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
+import ApplyModal from "@/components/ApplyModal";
+import { toast } from "sonner";
 import LandingNav from "@/components/LandingNav";
 import heroImage from "@/assets/hero-creator.jpg";
 import creatorTech from "@/assets/creator-tech.jpg";
@@ -128,10 +131,11 @@ const howItWorks = [
   },
 ];
 
-// Offres disponibles
+// Offres disponibles (mock data - en production, ces données viendraient de la base de données)
 const allOffers = [
   {
-    id: 1,
+    id: "mock-offer-1",
+    brandId: "mock-brand-1", // En production, ce serait l'UUID du brand
     brand: "Karité d'Or",
     logo: logoKariteDor,
     location: "Côte d'Ivoire",
@@ -143,7 +147,8 @@ const allOffers = [
     description: "Recherche créateurs beauté pour promouvoir notre nouvelle gamme de soins au karité.",
   },
   {
-    id: 2,
+    id: "mock-offer-2",
+    brandId: "mock-brand-2",
     brand: "TechAfrik",
     logo: logoTechAfrik,
     location: "Nigeria",
@@ -155,7 +160,8 @@ const allOffers = [
     description: "Besoin de YouTubers tech pour unboxing et review de notre nouveau smartphone.",
   },
   {
-    id: 3,
+    id: "mock-offer-3",
+    brandId: "mock-brand-3",
     brand: "Nestlé Afrique",
     logo: logoNestleAfrique,
     location: "Sénégal",
@@ -167,7 +173,8 @@ const allOffers = [
     description: "Partagez des recettes originales avec nos produits café.",
   },
   {
-    id: 4,
+    id: "mock-offer-4",
+    brandId: "mock-brand-4",
     brand: "Nike Afrique",
     logo: logoNikeAfrique,
     location: "Ghana",
@@ -179,7 +186,8 @@ const allOffers = [
     description: "Lancez un challenge fitness avec nos nouveaux équipements.",
   },
   {
-    id: 5,
+    id: "mock-offer-5",
+    brandId: "mock-brand-5",
     brand: "L'Oréal Afrique",
     logo: logoLorealAfrique,
     location: "Cameroun",
@@ -191,7 +199,8 @@ const allOffers = [
     description: "Créez des tutoriels avec notre nouvelle gamme de maquillage.",
   },
   {
-    id: 6,
+    id: "mock-offer-6",
+    brandId: "mock-brand-6",
     brand: "MTN",
     logo: logoMtn,
     location: "Côte d'Ivoire",
@@ -204,11 +213,36 @@ const allOffers = [
   },
 ];
 
+type OfferType = typeof allOffers[0];
+
 type TabType = "creators" | "offers";
 
 const Landing = () => {
+  const { user, role } = useAuth();
+  const navigate = useNavigate();
   const [showHowItWorks, setShowHowItWorks] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>("creators");
+  const [selectedOffer, setSelectedOffer] = useState<OfferType | null>(null);
+
+  const handleApplyClick = (offer: OfferType) => {
+    if (!user) {
+      toast.info("Connectez-vous pour postuler", {
+        description: "Créez un compte créateur pour postuler aux offres.",
+        action: {
+          label: "S'inscrire",
+          onClick: () => navigate("/auth?role=creator"),
+        },
+      });
+      return;
+    }
+
+    if (role !== "creator") {
+      toast.error("Seuls les créateurs peuvent postuler aux offres");
+      return;
+    }
+
+    setSelectedOffer(offer);
+  };
 
   return (
     <div className="min-h-screen bg-background overflow-hidden">
@@ -551,12 +585,13 @@ const Landing = () => {
                         </div>
 
                         {/* CTA Button - Gold outlined */}
-                        <Link to="/auth?role=creator" className="block">
-                          <button className="w-full py-3 rounded-xl border-2 border-gold/60 text-foreground font-medium flex items-center justify-center gap-2 hover:bg-gold/10 hover:border-gold transition-all">
-                            <Send className="w-4 h-4" />
-                            Postuler
-                          </button>
-                        </Link>
+                        <button 
+                          onClick={() => handleApplyClick(offer)}
+                          className="w-full py-3 rounded-xl border-2 border-gold/60 text-foreground font-medium flex items-center justify-center gap-2 hover:bg-gold/10 hover:border-gold transition-all"
+                        >
+                          <Send className="w-4 h-4" />
+                          Postuler
+                        </button>
                       </div>
                     </motion.div>
                   ))}
@@ -672,6 +707,22 @@ const Landing = () => {
               </div>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Apply Modal */}
+      <AnimatePresence>
+        {selectedOffer && (
+          <ApplyModal
+            offer={{
+              id: selectedOffer.id,
+              brand: selectedOffer.brand,
+              brandId: selectedOffer.brandId,
+              title: selectedOffer.title,
+              budget: selectedOffer.budget,
+            }}
+            onClose={() => setSelectedOffer(null)}
+          />
         )}
       </AnimatePresence>
     </div>
