@@ -163,7 +163,7 @@ const Landing = () => {
               <img 
                 src={logoCollabCrea} 
                 alt="CollabCréa" 
-                className="h-10 w-auto"
+                className="h-12 md:h-14 w-auto"
               />
             </Link>
             <Link to="/auth">
@@ -450,7 +450,7 @@ const Landing = () => {
         <img 
           src={logoCollabCrea} 
           alt="CollabCréa" 
-          className="h-8 w-auto mx-auto mb-2"
+          className="h-12 w-auto mx-auto mb-3"
         />
         <p className="text-muted-foreground text-[10px] mb-2">
           "Connectez votre marque aux voix qui comptent"
