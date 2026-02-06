@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Sparkles, Users, TrendingUp, Star, Instagram, Youtube, CheckCircle, Play } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import LandingNav from "@/components/LandingNav";
 import heroImage from "@/assets/hero-creator.jpg";
 import creatorTech from "@/assets/creator-tech.jpg";
 import creatorFashion from "@/assets/creator-fashion.jpg";
@@ -463,7 +464,7 @@ const Landing = () => {
       </section>
 
       {/* Footer */}
-      <footer className="px-6 py-8 text-center border-t border-border">
+      <footer className="px-6 py-8 pb-28 text-center border-t border-border">
         <p className="text-gold-gradient font-display text-lg font-semibold mb-2">
           Collab'Or
         </p>
@@ -474,6 +475,9 @@ const Landing = () => {
           © 2024 Collab'Or. Tous droits réservés.
         </p>
       </footer>
+
+      {/* Bottom Navigation */}
+      <LandingNav />
     </div>
   );
 };
