@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Sparkles, Users, MapPin, Star, HelpCircle, X, CheckCircle } from "lucide-react";
+import { ArrowRight, Sparkles, Users, Star, HelpCircle, X, Briefcase, DollarSign, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import LandingNav from "@/components/LandingNav";
@@ -122,8 +122,81 @@ const howItWorks = [
   },
 ];
 
+// Offres disponibles
+const allOffers = [
+  {
+    id: 1,
+    brand: "Orange Côte d'Ivoire",
+    logo: "🍊",
+    title: "Campagne réseaux sociaux",
+    category: "Tech",
+    budget: "500K - 1M FCFA",
+    duration: "2 semaines",
+    description: "Recherche créateur tech pour promouvoir notre nouvelle offre data.",
+    requirements: ["10K+ abonnés", "Contenu tech", "Basé en Afrique de l'Ouest"],
+  },
+  {
+    id: 2,
+    brand: "Jumia",
+    logo: "🛒",
+    title: "Unboxing produits mode",
+    category: "Mode",
+    budget: "300K - 600K FCFA",
+    duration: "1 semaine",
+    description: "Créez du contenu unboxing pour notre nouvelle collection mode.",
+    requirements: ["5K+ abonnés", "Style lifestyle/mode", "Vidéo créative"],
+  },
+  {
+    id: 3,
+    brand: "Nestlé Afrique",
+    logo: "☕",
+    title: "Recettes créatives Nescafé",
+    category: "Cuisine",
+    budget: "400K - 800K FCFA",
+    duration: "3 semaines",
+    description: "Partagez des recettes originales avec nos produits café.",
+    requirements: ["Contenu culinaire", "Bonne qualité vidéo", "Créativité"],
+  },
+  {
+    id: 4,
+    brand: "Nike Afrique",
+    logo: "✓",
+    title: "Challenge fitness viral",
+    category: "Fitness",
+    budget: "800K - 1.5M FCFA",
+    duration: "1 mois",
+    description: "Lancez un challenge fitness avec nos nouveaux équipements.",
+    requirements: ["20K+ abonnés", "Contenu sport/fitness", "Engagement élevé"],
+  },
+  {
+    id: 5,
+    brand: "L'Oréal Afrique",
+    logo: "💄",
+    title: "Tutoriel maquillage",
+    category: "Beauté",
+    budget: "350K - 700K FCFA",
+    duration: "2 semaines",
+    description: "Créez des tutoriels avec notre nouvelle gamme de maquillage.",
+    requirements: ["Contenu beauté", "8K+ abonnés", "Vidéo HD"],
+  },
+  {
+    id: 6,
+    brand: "MTN",
+    logo: "📱",
+    title: "Campagne Mobile Money",
+    category: "Tech",
+    budget: "600K - 1.2M FCFA",
+    duration: "3 semaines",
+    description: "Promouvoir notre service de paiement mobile auprès des jeunes.",
+    requirements: ["15K+ abonnés", "Public jeune", "Contenu créatif"],
+  },
+];
+
+type TabType = "creators" | "offers";
+
 const Landing = () => {
   const [showHowItWorks, setShowHowItWorks] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabType>("creators");
 
   return (
     <div className="min-h-screen bg-background overflow-hidden">
@@ -281,70 +354,194 @@ const Landing = () => {
         </motion.div>
       </section>
 
-      {/* Créateurs - Cartes détaillées */}
+      {/* Section avec onglets */}
       <section className="px-6 py-6">
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
         >
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-display text-lg font-bold">
-              Nos <span className="text-gold-gradient">Créateurs</span>
-            </h3>
-            <Link to="/auth?role=brand" className="text-gold text-xs flex items-center gap-1">
-              Voir tous <ArrowRight className="w-3 h-3" />
-            </Link>
+          {/* Onglets */}
+          <div className="flex gap-2 mb-4">
+            <button
+              onClick={() => setActiveTab("creators")}
+              className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold transition-all ${
+                activeTab === "creators"
+                  ? "bg-gold text-primary-foreground"
+                  : "glass text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Users className="w-4 h-4 inline-block mr-2" />
+              Nos Créateurs
+            </button>
+            <button
+              onClick={() => setActiveTab("offers")}
+              className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold transition-all ${
+                activeTab === "offers"
+                  ? "bg-gold text-primary-foreground"
+                  : "glass text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Briefcase className="w-4 h-4 inline-block mr-2" />
+              Offres
+            </button>
           </div>
 
-          {/* Grille de cartes créateurs */}
-          <div className="grid grid-cols-2 gap-3">
-            {allCreators.map((creator, index) => (
+          <AnimatePresence mode="wait">
+            {activeTab === "creators" ? (
               <motion.div
-                key={creator.firstName + creator.lastName}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.05 }}
-                className="glass-card overflow-hidden"
+                key="creators"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.3 }}
               >
-                {/* Photo */}
-                <div className="relative aspect-square overflow-hidden">
-                  <img
-                    src={creator.image}
-                    alt={`${creator.firstName} ${creator.lastName}`}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
-                  
-                  {/* Catégorie Badge */}
-                  <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-medium bg-gold text-primary-foreground">
-                    {creator.category}
-                  </span>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-display text-lg font-bold">
+                    Nos <span className="text-gold-gradient">Créateurs</span>
+                  </h3>
+                  <Link to="/auth?role=brand" className="text-gold text-xs flex items-center gap-1">
+                    Voir tous <ArrowRight className="w-3 h-3" />
+                  </Link>
                 </div>
 
-                {/* Infos */}
-                <div className="p-3">
-                  <h4 className="font-semibold text-sm text-foreground">
-                    {creator.firstName} {creator.lastName}
-                  </h4>
-                  
-                  {/* Pays */}
-                  <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-1">
-                    <span>{creator.flag}</span>
-                    <span>{creator.country}</span>
-                  </div>
+                {/* Grille de cartes créateurs */}
+                <div className="grid grid-cols-2 gap-3">
+                  {allCreators.map((creator, index) => (
+                    <motion.div
+                      key={creator.firstName + creator.lastName}
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: index * 0.05 }}
+                      className="glass-card overflow-hidden"
+                    >
+                      {/* Photo */}
+                      <div className="relative aspect-square overflow-hidden">
+                        <img
+                          src={creator.image}
+                          alt={`${creator.firstName} ${creator.lastName}`}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
+                        
+                        {/* Catégorie Badge */}
+                        <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-medium bg-gold text-primary-foreground">
+                          {creator.category}
+                        </span>
+                      </div>
 
-                  {/* Followers */}
-                  <div className="flex items-center gap-1 mt-2">
-                    <Users className="w-3 h-3 text-gold" />
-                    <span className="text-xs font-semibold text-gold">{creator.followers}</span>
-                    <span className="text-[10px] text-muted-foreground">abonnés</span>
-                  </div>
+                      {/* Infos */}
+                      <div className="p-3">
+                        <h4 className="font-semibold text-sm text-foreground">
+                          {creator.firstName} {creator.lastName}
+                        </h4>
+                        
+                        {/* Pays */}
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-1">
+                          <span>{creator.flag}</span>
+                          <span>{creator.country}</span>
+                        </div>
+
+                        {/* Followers */}
+                        <div className="flex items-center gap-1 mt-2">
+                          <Users className="w-3 h-3 text-gold" />
+                          <span className="text-xs font-semibold text-gold">{creator.followers}</span>
+                          <span className="text-[10px] text-muted-foreground">abonnés</span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
                 </div>
               </motion.div>
-            ))}
-          </div>
+            ) : (
+              <motion.div
+                key="offers"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-display text-lg font-bold">
+                    Opportunités <span className="text-gold-gradient">disponibles</span>
+                  </h3>
+                  <Link to="/auth?role=creator" className="text-gold text-xs flex items-center gap-1">
+                    Postuler <ArrowRight className="w-3 h-3" />
+                  </Link>
+                </div>
+
+                {/* Liste des offres */}
+                <div className="space-y-3">
+                  {allOffers.map((offer, index) => (
+                    <motion.div
+                      key={offer.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: index * 0.05 }}
+                      className="glass-card p-4"
+                    >
+                      {/* Header */}
+                      <div className="flex items-start gap-3 mb-3">
+                        <div className="w-12 h-12 rounded-xl bg-gold/20 flex items-center justify-center text-2xl">
+                          {offer.logo}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-sm text-foreground truncate">
+                            {offer.title}
+                          </h4>
+                          <p className="text-xs text-muted-foreground">{offer.brand}</p>
+                        </div>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-gold text-primary-foreground">
+                          {offer.category}
+                        </span>
+                      </div>
+
+                      {/* Description */}
+                      <p className="text-xs text-muted-foreground mb-3 line-clamp-2">
+                        {offer.description}
+                      </p>
+
+                      {/* Budget & Durée */}
+                      <div className="flex items-center gap-4 mb-3">
+                        <div className="flex items-center gap-1">
+                          <DollarSign className="w-3 h-3 text-gold" />
+                          <span className="text-xs font-semibold text-gold">{offer.budget}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">{offer.duration}</span>
+                        </div>
+                      </div>
+
+                      {/* Requirements */}
+                      <div className="flex flex-wrap gap-1 mb-3">
+                        {offer.requirements.slice(0, 2).map((req, i) => (
+                          <span key={i} className="px-2 py-0.5 rounded-full text-[9px] glass text-muted-foreground">
+                            {req}
+                          </span>
+                        ))}
+                        {offer.requirements.length > 2 && (
+                          <span className="px-2 py-0.5 rounded-full text-[9px] glass text-muted-foreground">
+                            +{offer.requirements.length - 2}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* CTA */}
+                      <Link to="/auth?role=creator">
+                        <Button variant="glass-gold" size="sm" className="w-full">
+                          Postuler maintenant
+                          <ArrowRight className="w-3 h-3 ml-1" />
+                        </Button>
+                      </Link>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
       </section>
 
