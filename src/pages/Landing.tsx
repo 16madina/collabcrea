@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Sparkles, Users, Star, HelpCircle, X, Briefcase, DollarSign, Clock } from "lucide-react";
+import { ArrowRight, Sparkles, Users, Star, HelpCircle, X, Briefcase, DollarSign, Calendar, MapPin, Send } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import LandingNav from "@/components/LandingNav";
@@ -126,69 +126,75 @@ const howItWorks = [
 const allOffers = [
   {
     id: 1,
-    brand: "Orange Côte d'Ivoire",
-    logo: "🍊",
-    title: "Campagne réseaux sociaux",
-    category: "Tech",
-    budget: "500K - 1M FCFA",
-    duration: "2 semaines",
-    description: "Recherche créateur tech pour promouvoir notre nouvelle offre data.",
-    requirements: ["10K+ abonnés", "Contenu tech", "Basé en Afrique de l'Ouest"],
+    brand: "Karité d'Or",
+    logo: "🏛️",
+    location: "Côte d'Ivoire",
+    title: "Campagne beauté naturelle",
+    category: "Beauté",
+    contentType: "Reel",
+    budget: "150K - 300K FCFA",
+    deadline: "Avant le 28 févr.",
+    description: "Recherche créateurs beauté pour promouvoir notre nouvelle gamme de soins au karité.",
   },
   {
     id: 2,
-    brand: "Jumia",
-    logo: "🛒",
-    title: "Unboxing produits mode",
-    category: "Mode",
-    budget: "300K - 600K FCFA",
-    duration: "1 semaine",
-    description: "Créez du contenu unboxing pour notre nouvelle collection mode.",
-    requirements: ["5K+ abonnés", "Style lifestyle/mode", "Vidéo créative"],
+    brand: "TechAfrik",
+    logo: "📱",
+    location: "Nigeria",
+    title: "Tech Review Smartphone",
+    category: "Tech",
+    contentType: "Vidéo YouTube",
+    budget: "200K - 500K FCFA",
+    deadline: "Avant le 27 févr.",
+    description: "Besoin de YouTubers tech pour unboxing et review de notre nouveau smartphone.",
   },
   {
     id: 3,
     brand: "Nestlé Afrique",
     logo: "☕",
+    location: "Sénégal",
     title: "Recettes créatives Nescafé",
     category: "Cuisine",
+    contentType: "Reel",
     budget: "400K - 800K FCFA",
-    duration: "3 semaines",
+    deadline: "Avant le 5 mars",
     description: "Partagez des recettes originales avec nos produits café.",
-    requirements: ["Contenu culinaire", "Bonne qualité vidéo", "Créativité"],
   },
   {
     id: 4,
     brand: "Nike Afrique",
     logo: "✓",
+    location: "Ghana",
     title: "Challenge fitness viral",
     category: "Fitness",
+    contentType: "TikTok",
     budget: "800K - 1.5M FCFA",
-    duration: "1 mois",
+    deadline: "Avant le 15 mars",
     description: "Lancez un challenge fitness avec nos nouveaux équipements.",
-    requirements: ["20K+ abonnés", "Contenu sport/fitness", "Engagement élevé"],
   },
   {
     id: 5,
     brand: "L'Oréal Afrique",
     logo: "💄",
+    location: "Cameroun",
     title: "Tutoriel maquillage",
     category: "Beauté",
+    contentType: "Vidéo YouTube",
     budget: "350K - 700K FCFA",
-    duration: "2 semaines",
+    deadline: "Avant le 10 mars",
     description: "Créez des tutoriels avec notre nouvelle gamme de maquillage.",
-    requirements: ["Contenu beauté", "8K+ abonnés", "Vidéo HD"],
   },
   {
     id: 6,
     brand: "MTN",
-    logo: "📱",
+    logo: "📶",
+    location: "Côte d'Ivoire",
     title: "Campagne Mobile Money",
     category: "Tech",
+    contentType: "Story",
     budget: "600K - 1.2M FCFA",
-    duration: "3 semaines",
+    deadline: "Avant le 20 mars",
     description: "Promouvoir notre service de paiement mobile auprès des jeunes.",
-    requirements: ["15K+ abonnés", "Public jeune", "Contenu créatif"],
   },
 ];
 
@@ -480,60 +486,66 @@ const Landing = () => {
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true }}
                       transition={{ delay: index * 0.05 }}
-                      className="glass-card p-4"
+                      className="glass-card p-4 border border-gold/20"
                     >
-                      {/* Header */}
-                      <div className="flex items-start gap-3 mb-3">
-                        <div className="w-12 h-12 rounded-xl bg-gold/20 flex items-center justify-center text-2xl">
+                      {/* Header: Logo + Brand + Location */}
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-gold/30 to-gold/10 flex items-center justify-center text-2xl shadow-lg">
                           {offer.logo}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-sm text-foreground truncate">
-                            {offer.title}
+                        <div>
+                          <h4 className="font-semibold text-sm text-gold">
+                            {offer.brand}
                           </h4>
-                          <p className="text-xs text-muted-foreground">{offer.brand}</p>
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <MapPin className="w-3 h-3" />
+                            {offer.location}
+                          </div>
                         </div>
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-gold text-primary-foreground">
-                          {offer.category}
-                        </span>
                       </div>
+
+                      {/* Title */}
+                      <h3 className="font-display font-bold text-foreground mb-2">
+                        {offer.title}
+                      </h3>
 
                       {/* Description */}
                       <p className="text-xs text-muted-foreground mb-3 line-clamp-2">
                         {offer.description}
                       </p>
 
-                      {/* Budget & Durée */}
-                      <div className="flex items-center gap-4 mb-3">
+                      {/* Category Badges */}
+                      <div className="flex gap-2 mb-3">
+                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border border-gold/40 text-gold">
+                          <span className="text-sm">👤</span>
+                          {offer.category}
+                        </span>
+                        <span className="px-3 py-1 rounded-full text-xs font-medium border border-border text-muted-foreground">
+                          {offer.contentType}
+                        </span>
+                      </div>
+
+                      {/* Budget & Deadline */}
+                      <div className="flex items-center gap-4 mb-4 text-sm">
                         <div className="flex items-center gap-1">
-                          <DollarSign className="w-3 h-3 text-gold" />
-                          <span className="text-xs font-semibold text-gold">{offer.budget}</span>
+                          <DollarSign className="w-4 h-4 text-gold" />
+                          <span className="font-semibold text-gold">{offer.budget}</span>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-3 h-3 text-muted-foreground" />
-                          <span className="text-xs text-muted-foreground">{offer.duration}</span>
+                        <div className="flex items-center gap-1 text-muted-foreground">
+                          <Calendar className="w-4 h-4" />
+                          <span>{offer.deadline}</span>
                         </div>
                       </div>
 
-                      {/* Requirements */}
-                      <div className="flex flex-wrap gap-1 mb-3">
-                        {offer.requirements.slice(0, 2).map((req, i) => (
-                          <span key={i} className="px-2 py-0.5 rounded-full text-[9px] glass text-muted-foreground">
-                            {req}
-                          </span>
-                        ))}
-                        {offer.requirements.length > 2 && (
-                          <span className="px-2 py-0.5 rounded-full text-[9px] glass text-muted-foreground">
-                            +{offer.requirements.length - 2}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* CTA */}
+                      {/* CTA Button */}
                       <Link to="/auth?role=creator">
-                        <Button variant="glass-gold" size="sm" className="w-full">
-                          Postuler maintenant
-                          <ArrowRight className="w-3 h-3 ml-1" />
+                        <Button 
+                          variant="outline" 
+                          size="default" 
+                          className="w-full border-gold/50 text-foreground hover:bg-gold/10 hover:border-gold"
+                        >
+                          <Send className="w-4 h-4 mr-2" />
+                          Postuler
                         </Button>
                       </Link>
                     </motion.div>
