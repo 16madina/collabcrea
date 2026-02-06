@@ -30,10 +30,11 @@ const getEmailContent = (
   }
 ) => {
   const baseUrl = data.redirectTo || "https://collabor.app";
+  const logoUrl = "https://fkfdjibqpmdaobjrryja.supabase.co/storage/v1/object/public/email-assets/logo-collabcrea.png?v=1";
   
   const templates: Record<string, { subject: string; html: string }> = {
     magic_link: {
-      subject: "🔑 Votre lien de connexion Collab'Or",
+      subject: "🔑 Votre lien de connexion CollabCréa",
       html: `
         <!DOCTYPE html>
         <html>
@@ -44,13 +45,13 @@ const getEmailContent = (
         <body style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background-color: #1a0a2e; margin: 0; padding: 40px 20px;">
           <div style="max-width: 500px; margin: 0 auto; background: linear-gradient(180deg, #2d1a47 0%, #1a0a2e 100%); border-radius: 24px; overflow: hidden; border: 1px solid rgba(212, 175, 55, 0.2);">
             <div style="padding: 40px; text-align: center;">
-              <h1 style="font-family: 'Playfair Display', Georgia, serif; color: #d4af37; font-size: 28px; margin: 0 0 8px 0;">Collab'Or</h1>
+              <img src="${logoUrl}" alt="CollabCréa" style="height: 60px; width: auto; margin-bottom: 8px;" />
               <p style="color: rgba(255,255,255,0.6); font-size: 14px; margin: 0;">La plateforme des créateurs africains</p>
             </div>
             <div style="padding: 0 40px 40px;">
               <h2 style="color: #ffffff; font-size: 22px; margin: 0 0 16px 0;">Connectez-vous en un clic</h2>
               <p style="color: rgba(255,255,255,0.7); font-size: 15px; line-height: 1.6; margin: 0 0 32px 0;">
-                Cliquez sur le bouton ci-dessous pour vous connecter à votre compte Collab'Or.
+                Cliquez sur le bouton ci-dessous pour vous connecter à votre compte CollabCréa.
               </p>
               <a href="${data.supabaseUrl}/auth/v1/verify?token=${data.tokenHash}&type=magiclink&redirect_to=${baseUrl}" 
                  style="display: inline-block; background: linear-gradient(135deg, #d4af37 0%, #f4d03f 50%, #d4af37 100%); color: #1a0a2e; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-weight: 600; font-size: 16px;">
@@ -66,7 +67,7 @@ const getEmailContent = (
       `,
     },
     signup: {
-      subject: "✨ Bienvenue sur Collab'Or !",
+      subject: "✨ Bienvenue sur CollabCréa !",
       html: `
         <!DOCTYPE html>
         <html>
@@ -77,13 +78,13 @@ const getEmailContent = (
         <body style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background-color: #1a0a2e; margin: 0; padding: 40px 20px;">
           <div style="max-width: 500px; margin: 0 auto; background: linear-gradient(180deg, #2d1a47 0%, #1a0a2e 100%); border-radius: 24px; overflow: hidden; border: 1px solid rgba(212, 175, 55, 0.2);">
             <div style="padding: 40px; text-align: center;">
-              <h1 style="font-family: 'Playfair Display', Georgia, serif; color: #d4af37; font-size: 28px; margin: 0 0 8px 0;">Collab'Or</h1>
+              <img src="${logoUrl}" alt="CollabCréa" style="height: 60px; width: auto; margin-bottom: 8px;" />
               <p style="color: rgba(255,255,255,0.6); font-size: 14px; margin: 0;">La plateforme des créateurs africains</p>
             </div>
             <div style="padding: 0 40px 40px;">
               <h2 style="color: #ffffff; font-size: 22px; margin: 0 0 16px 0;">Bienvenue${data.userName ? `, ${data.userName}` : ""} ! 🎉</h2>
               <p style="color: rgba(255,255,255,0.7); font-size: 15px; line-height: 1.6; margin: 0 0 24px 0;">
-                Merci de rejoindre Collab'Or, la plateforme qui connecte les créateurs africains aux plus grandes marques.
+                Merci de rejoindre CollabCréa, la plateforme qui connecte les créateurs africains aux plus grandes marques.
               </p>
               <p style="color: rgba(255,255,255,0.7); font-size: 15px; line-height: 1.6; margin: 0 0 32px 0;">
                 Confirmez votre email pour activer votre compte :
@@ -102,7 +103,7 @@ const getEmailContent = (
       `,
     },
     password_reset: {
-      subject: "🔒 Réinitialisez votre mot de passe Collab'Or",
+      subject: "🔒 Réinitialisez votre mot de passe CollabCréa",
       html: `
         <!DOCTYPE html>
         <html>
@@ -113,7 +114,7 @@ const getEmailContent = (
         <body style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background-color: #1a0a2e; margin: 0; padding: 40px 20px;">
           <div style="max-width: 500px; margin: 0 auto; background: linear-gradient(180deg, #2d1a47 0%, #1a0a2e 100%); border-radius: 24px; overflow: hidden; border: 1px solid rgba(212, 175, 55, 0.2);">
             <div style="padding: 40px; text-align: center;">
-              <h1 style="font-family: 'Playfair Display', Georgia, serif; color: #d4af37; font-size: 28px; margin: 0 0 8px 0;">Collab'Or</h1>
+              <img src="${logoUrl}" alt="CollabCréa" style="height: 60px; width: auto; margin-bottom: 8px;" />
               <p style="color: rgba(255,255,255,0.6); font-size: 14px; margin: 0;">La plateforme des créateurs africains</p>
             </div>
             <div style="padding: 0 40px 40px;">
@@ -146,7 +147,7 @@ const getEmailContent = (
         <body style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background-color: #1a0a2e; margin: 0; padding: 40px 20px;">
           <div style="max-width: 500px; margin: 0 auto; background: linear-gradient(180deg, #2d1a47 0%, #1a0a2e 100%); border-radius: 24px; overflow: hidden; border: 1px solid rgba(212, 175, 55, 0.2);">
             <div style="padding: 40px; text-align: center;">
-              <h1 style="font-family: 'Playfair Display', Georgia, serif; color: #d4af37; font-size: 28px; margin: 0 0 8px 0;">Collab'Or</h1>
+              <img src="${logoUrl}" alt="CollabCréa" style="height: 60px; width: auto; margin-bottom: 8px;" />
               <p style="color: rgba(255,255,255,0.6); font-size: 14px; margin: 0;">La plateforme des créateurs africains</p>
             </div>
             <div style="padding: 0 40px 40px;">
@@ -201,9 +202,8 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     // Send email via Resend
-    // IMPORTANT: Replace 'noreply@YOUR-VERIFIED-DOMAIN.com' with your actual verified domain
     const emailResponse = await resend.emails.send({
-      from: "Collab'Or <noreply@collabor.app>",
+      from: "CollabCréa <noreply@collabor.app>",
       to: [body.email],
       subject: emailContent.subject,
       html: emailContent.html,
