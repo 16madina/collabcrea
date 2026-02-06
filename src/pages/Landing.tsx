@@ -13,6 +13,12 @@ import creatorBeauty from "@/assets/creator-beauty.jpg";
 import creatorHumour from "@/assets/creator-humour.jpg";
 import creatorLifestyle from "@/assets/creator-lifestyle.jpg";
 import creatorMusic from "@/assets/creator-music.jpg";
+import logoKariteDor from "@/assets/logo-karite-dor.jpg";
+import logoTechAfrik from "@/assets/logo-techafrik.jpg";
+import logoNestleAfrique from "@/assets/logo-nestle-afrique.jpg";
+import logoNikeAfrique from "@/assets/logo-nike-afrique.jpg";
+import logoLorealAfrique from "@/assets/logo-loreal-afrique.jpg";
+import logoMtn from "@/assets/logo-mtn.jpg";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 30 },
@@ -127,7 +133,7 @@ const allOffers = [
   {
     id: 1,
     brand: "Karité d'Or",
-    logo: "🏛️",
+    logo: logoKariteDor,
     location: "Côte d'Ivoire",
     title: "Campagne beauté naturelle",
     category: "Beauté",
@@ -139,7 +145,7 @@ const allOffers = [
   {
     id: 2,
     brand: "TechAfrik",
-    logo: "📱",
+    logo: logoTechAfrik,
     location: "Nigeria",
     title: "Tech Review Smartphone",
     category: "Tech",
@@ -151,7 +157,7 @@ const allOffers = [
   {
     id: 3,
     brand: "Nestlé Afrique",
-    logo: "☕",
+    logo: logoNestleAfrique,
     location: "Sénégal",
     title: "Recettes créatives Nescafé",
     category: "Cuisine",
@@ -163,7 +169,7 @@ const allOffers = [
   {
     id: 4,
     brand: "Nike Afrique",
-    logo: "✓",
+    logo: logoNikeAfrique,
     location: "Ghana",
     title: "Challenge fitness viral",
     category: "Fitness",
@@ -175,7 +181,7 @@ const allOffers = [
   {
     id: 5,
     brand: "L'Oréal Afrique",
-    logo: "💄",
+    logo: logoLorealAfrique,
     location: "Cameroun",
     title: "Tutoriel maquillage",
     category: "Beauté",
@@ -187,7 +193,7 @@ const allOffers = [
   {
     id: 6,
     brand: "MTN",
-    logo: "📶",
+    logo: logoMtn,
     location: "Côte d'Ivoire",
     title: "Campagne Mobile Money",
     category: "Tech",
@@ -497,8 +503,8 @@ const Landing = () => {
                       <div className="p-4 pl-5">
                         {/* Header: Logo + Brand + Location */}
                         <div className="flex items-center gap-3 mb-3">
-                          <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-gold/40 to-gold/20 flex items-center justify-center text-xl shadow-lg overflow-hidden">
-                            {offer.logo}
+                          <div className="w-11 h-11 rounded-lg overflow-hidden shadow-lg flex-shrink-0">
+                            <img src={offer.logo} alt={offer.brand} className="w-full h-full object-cover" />
                           </div>
                           <div>
                             <h4 className="font-semibold text-sm text-gold">
