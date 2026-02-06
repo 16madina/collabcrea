@@ -451,49 +451,63 @@ const Landing = () => {
                   </Link>
                 </div>
 
-                {/* Grille de cartes créateurs */}
-                <div className="grid grid-cols-2 gap-3">
+                {/* Liste de cartes créateurs - Layout carte d'identité */}
+                <div className="space-y-3">
                   {allCreators.map((creator, index) => (
                     <motion.div
                       key={creator.firstName + creator.lastName}
-                      initial={{ opacity: 0, y: 20 }}
-                      whileInView={{ opacity: 1, y: 0 }}
+                      initial={{ opacity: 0, x: -20 }}
+                      whileInView={{ opacity: 1, x: 0 }}
                       viewport={{ once: true }}
                       transition={{ delay: index * 0.05 }}
-                      className="glass-card overflow-hidden"
+                      className="glass-card overflow-hidden flex"
                     >
-                      {/* Photo */}
-                      <div className="relative aspect-square overflow-hidden">
+                      {/* Photo - Left side */}
+                      <div className="relative w-28 h-32 flex-shrink-0 overflow-hidden">
                         <img
                           src={creator.image}
                           alt={`${creator.firstName} ${creator.lastName}`}
                           className="w-full h-full object-cover"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
-                        
-                        {/* Catégorie Badge */}
-                        <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-medium bg-gold text-primary-foreground">
-                          {creator.category}
-                        </span>
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent to-card/20" />
                       </div>
 
-                      {/* Infos */}
-                      <div className="p-3">
-                        <h4 className="font-semibold text-sm text-foreground">
-                          {creator.firstName} {creator.lastName}
-                        </h4>
-                        
-                        {/* Pays */}
-                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-1">
-                          <span>{creator.flag}</span>
-                          <span>{creator.country}</span>
+                      {/* Info - Right side */}
+                      <div className="flex-1 p-3 flex flex-col justify-between">
+                        {/* Header */}
+                        <div>
+                          <div className="flex items-start justify-between gap-2">
+                            <h4 className="font-display font-semibold text-sm text-foreground leading-tight">
+                              {creator.firstName} {creator.lastName}
+                            </h4>
+                            {/* Rating Badge */}
+                            <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-medium glass flex-shrink-0">
+                              <Star className="w-2.5 h-2.5 text-gold fill-gold" />
+                              <span className="text-foreground">{(4.5 + Math.random() * 0.5).toFixed(1)}</span>
+                            </span>
+                          </div>
+
+                          {/* Category Badge */}
+                          <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-[9px] font-medium bg-gold/20 text-gold border border-gold/30">
+                            {creator.category}
+                          </span>
                         </div>
 
-                        {/* Followers */}
-                        <div className="flex items-center gap-1 mt-2">
-                          <Users className="w-3 h-3 text-gold" />
-                          <span className="text-xs font-semibold text-gold">{creator.followers}</span>
-                          <span className="text-[10px] text-muted-foreground">abonnés</span>
+                        {/* Footer */}
+                        <div className="flex items-center justify-between mt-2">
+                          {/* Location */}
+                          <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                            <span>{creator.flag}</span>
+                            <span>{creator.country}</span>
+                          </div>
+
+                          {/* Followers */}
+                          <div className="flex items-center gap-1">
+                            <Users className="w-3 h-3 text-gold" />
+                            <span className="text-xs font-bold text-gold">
+                              {creator.followers}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </motion.div>
