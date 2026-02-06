@@ -11,13 +11,17 @@ import {
   LogOut,
   Bell,
   Shield,
-  HelpCircle
+  HelpCircle,
+  User,
+  FileCheck
 } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import ProfileEditForm from "@/components/creator/ProfileEditForm";
+import IdentityVerificationTab from "@/components/creator/IdentityVerificationTab";
+import VerificationBanner from "@/components/VerificationBanner";
 
 // TikTok icon component
 const TikTokIcon = ({ className }: { className?: string }) => (
@@ -49,6 +53,10 @@ interface ProfileData {
   tiktok_followers: string | null;
   snapchat_followers: string | null;
   pricing: PricingItem[] | null;
+  email_verified: boolean;
+  identity_verified: boolean;
+  identity_document_url: string | null;
+  identity_submitted_at: string | null;
 }
 
 const menuItems = [
@@ -58,12 +66,18 @@ const menuItems = [
   { icon: LogOut, label: "Déconnexion", action: "logout", destructive: true },
 ];
 
+type TabType = "profile" | "verification";
+
 const CreatorProfile = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, signOut } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<TabType>(
+    (searchParams.get("tab") as TabType) || "profile"
+  );
 
   const fetchProfile = async () => {
     if (!user) return;
@@ -87,6 +101,10 @@ const CreatorProfile = () => {
         tiktok_followers: data.tiktok_followers,
         snapchat_followers: data.snapchat_followers,
         pricing: data.pricing as unknown as PricingItem[] | null,
+        email_verified: data.email_verified ?? false,
+        identity_verified: data.identity_verified ?? false,
+        identity_document_url: data.identity_document_url,
+        identity_submitted_at: data.identity_submitted_at,
       });
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -98,6 +116,22 @@ const CreatorProfile = () => {
   useEffect(() => {
     fetchProfile();
   }, [user]);
+
+  useEffect(() => {
+    const tab = searchParams.get("tab") as TabType;
+    if (tab === "verification") {
+      setActiveTab("verification");
+    }
+  }, [searchParams]);
+
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    if (tab === "verification") {
+      setSearchParams({ tab: "verification" });
+    } else {
+      setSearchParams({});
+    }
+  };
 
   const handleMenuAction = async (action: string) => {
     if (action === "logout") {
@@ -169,6 +203,7 @@ const CreatorProfile = () => {
   };
 
   const socialAccounts = getSocialAccounts();
+  const isFullyVerified = profileData?.email_verified && profileData?.identity_verified;
 
   if (loading) {
     return (
@@ -206,200 +241,271 @@ const CreatorProfile = () => {
         </motion.div>
       </div>
 
-      {/* Profile Card */}
-      <div className="px-6 mt-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="glass-card p-6 text-center relative"
-        >
-          <button
-            onClick={() => setIsEditing(true)}
-            className="absolute top-4 right-4 touch-target"
-          >
-            <Edit3 className="w-5 h-5 text-gold" />
-          </button>
-
-          <div className="w-24 h-24 rounded-full bg-gold/20 flex items-center justify-center mx-auto mb-4 ring-4 ring-gold/30">
-            <span className="text-gold font-bold text-3xl">
-              {profileData?.full_name?.charAt(0) || "?"}
-            </span>
-          </div>
-
-          <h2 className="font-display text-2xl font-bold">
-            {profileData?.full_name || "Votre nom"}
-          </h2>
-          <p className="text-gold text-sm font-medium mt-1">
-            Créateur {profileData?.category || ""}
-          </p>
-          
-          {profileData?.country && (
-            <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm mt-2">
-              <MapPin className="w-4 h-4" />
-              <span>{profileData.country}</span>
-            </div>
-          )}
-
-          {profileData?.bio && (
-            <p className="text-muted-foreground text-sm mt-4 max-w-xs mx-auto">
-              {profileData.bio}
-            </p>
-          )}
-
-          <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-border">
-            <div>
-              <p className="text-2xl font-bold text-gold-gradient">{getTotalFollowers()}</p>
-              <p className="text-xs text-muted-foreground">Abonnés</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gold-gradient">-</p>
-              <div className="flex items-center justify-center gap-1">
-                <Star className="w-3 h-3 text-gold fill-gold" />
-                <p className="text-xs text-muted-foreground">Note</p>
-              </div>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gold-gradient">0</p>
-              <p className="text-xs text-muted-foreground">Collabs</p>
-            </div>
-          </div>
-        </motion.div>
-      </div>
-
-      {/* Social Accounts */}
-      {socialAccounts.length > 0 && (
-        <div className="px-6 mt-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-          >
-            <h3 className="font-display text-lg font-semibold mb-4">Réseaux sociaux</h3>
-            <div className="space-y-3">
-              {socialAccounts.map((account, index) => {
-                const Icon = account.icon;
-                return (
-                  <motion.div
-                    key={account.platform}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.15 + index * 0.05 }}
-                    className="glass-card p-4 flex items-center gap-4"
-                  >
-                    <div className="w-12 h-12 rounded-xl bg-gold/20 flex items-center justify-center">
-                      <Icon className="w-6 h-6 text-gold" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-semibold">{account.platform}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-gold font-semibold">{account.followers}</p>
-                      <p className="text-xs text-accent">Connecté</p>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </motion.div>
+      {/* Verification Banner - Show if not fully verified */}
+      {profileData && !isFullyVerified && (
+        <div className="px-6 mb-4">
+          <VerificationBanner
+            status={{
+              email_verified: profileData.email_verified,
+              identity_verified: profileData.identity_verified,
+              identity_submitted_at: profileData.identity_submitted_at,
+            }}
+          />
         </div>
       )}
 
-      {/* Pricing Grid */}
-      {profileData?.pricing && profileData.pricing.length > 0 && (
-        <div className="px-6 mt-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
+      {/* Tab Navigation */}
+      <div className="px-6 mb-4">
+        <div className="flex gap-2 p-1 bg-muted/50 rounded-xl">
+          <button
+            onClick={() => handleTabChange("profile")}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
+              activeTab === "profile"
+                ? "bg-gold text-background"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
           >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-display text-lg font-semibold">Grille tarifaire</h3>
-              <button onClick={() => setIsEditing(true)} className="text-gold text-sm">
-                Modifier
-              </button>
-            </div>
-            <div className="glass-card p-4 space-y-3">
-              {profileData.pricing.map((item, index) => (
-                <div
-                  key={item.type}
-                  className={`flex items-center justify-between py-2 ${
-                    index !== (profileData.pricing?.length || 0) - 1 ? "border-b border-border" : ""
-                  }`}
+            <User className="w-4 h-4" />
+            Mon profil
+          </button>
+          <button
+            onClick={() => handleTabChange("verification")}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all relative ${
+              activeTab === "verification"
+                ? "bg-gold text-background"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <FileCheck className="w-4 h-4" />
+            Vérification
+            {!isFullyVerified && (
+              <span className="absolute -top-1 -right-1 w-3 h-3 bg-destructive rounded-full" />
+            )}
+          </button>
+        </div>
+      </div>
+
+      <AnimatePresence mode="wait">
+        {activeTab === "profile" ? (
+          <motion.div
+            key="profile"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+          >
+            {/* Profile Card */}
+            <div className="px-6">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="glass-card p-6 text-center relative"
+              >
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="absolute top-4 right-4 touch-target"
                 >
-                  <div>
-                    <span className="text-foreground">{item.type}</span>
-                    {item.description && (
-                      <p className="text-xs text-muted-foreground">{item.description}</p>
-                    )}
-                  </div>
-                  <span className="text-gold font-semibold">
-                    {item.price.toLocaleString()} FCFA
+                  <Edit3 className="w-5 h-5 text-gold" />
+                </button>
+
+                <div className="w-24 h-24 rounded-full bg-gold/20 flex items-center justify-center mx-auto mb-4 ring-4 ring-gold/30">
+                  <span className="text-gold font-bold text-3xl">
+                    {profileData?.full_name?.charAt(0) || "?"}
                   </span>
                 </div>
-              ))}
+
+                <h2 className="font-display text-2xl font-bold">
+                  {profileData?.full_name || "Votre nom"}
+                </h2>
+                <p className="text-gold text-sm font-medium mt-1">
+                  Créateur {profileData?.category || ""}
+                </p>
+                
+                {profileData?.country && (
+                  <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm mt-2">
+                    <MapPin className="w-4 h-4" />
+                    <span>{profileData.country}</span>
+                  </div>
+                )}
+
+                {profileData?.bio && (
+                  <p className="text-muted-foreground text-sm mt-4 max-w-xs mx-auto">
+                    {profileData.bio}
+                  </p>
+                )}
+
+                <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-border">
+                  <div>
+                    <p className="text-2xl font-bold text-gold-gradient">{getTotalFollowers()}</p>
+                    <p className="text-xs text-muted-foreground">Abonnés</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-gold-gradient">-</p>
+                    <div className="flex items-center justify-center gap-1">
+                      <Star className="w-3 h-3 text-gold fill-gold" />
+                      <p className="text-xs text-muted-foreground">Note</p>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-gold-gradient">0</p>
+                    <p className="text-xs text-muted-foreground">Collabs</p>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+
+            {/* Social Accounts */}
+            {socialAccounts.length > 0 && (
+              <div className="px-6 mt-6">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  <h3 className="font-display text-lg font-semibold mb-4">Réseaux sociaux</h3>
+                  <div className="space-y-3">
+                    {socialAccounts.map((account, index) => {
+                      const Icon = account.icon;
+                      return (
+                        <motion.div
+                          key={account.platform}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.15 + index * 0.05 }}
+                          className="glass-card p-4 flex items-center gap-4"
+                        >
+                          <div className="w-12 h-12 rounded-xl bg-gold/20 flex items-center justify-center">
+                            <Icon className="w-6 h-6 text-gold" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-semibold">{account.platform}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-gold font-semibold">{account.followers}</p>
+                            <p className="text-xs text-accent">Connecté</p>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              </div>
+            )}
+
+            {/* Pricing Grid */}
+            {profileData?.pricing && profileData.pricing.length > 0 && (
+              <div className="px-6 mt-6">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-display text-lg font-semibold">Grille tarifaire</h3>
+                    <button onClick={() => setIsEditing(true)} className="text-gold text-sm">
+                      Modifier
+                    </button>
+                  </div>
+                  <div className="glass-card p-4 space-y-3">
+                    {profileData.pricing.map((item, index) => (
+                      <div
+                        key={item.type}
+                        className={`flex items-center justify-between py-2 ${
+                          index !== (profileData.pricing?.length || 0) - 1 ? "border-b border-border" : ""
+                        }`}
+                      >
+                        <div>
+                          <span className="text-foreground">{item.type}</span>
+                          {item.description && (
+                            <p className="text-xs text-muted-foreground">{item.description}</p>
+                          )}
+                        </div>
+                        <span className="text-gold font-semibold">
+                          {item.price.toLocaleString()} FCFA
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              </div>
+            )}
+
+            {/* Empty state for new users */}
+            {(!socialAccounts.length && (!profileData?.pricing || profileData.pricing.length === 0)) && (
+              <div className="px-6 mt-6">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="glass-card p-6 text-center"
+                >
+                  <p className="text-muted-foreground mb-4">
+                    Complétez votre profil pour attirer plus de marques !
+                  </p>
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="text-gold font-medium"
+                  >
+                    Modifier mon profil →
+                  </button>
+                </motion.div>
+              </div>
+            )}
+
+            {/* Menu */}
+            <div className="px-6 mt-6">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="space-y-2"
+              >
+                {menuItems.map((item, index) => {
+                  const Icon = item.icon;
+                  return (
+                    <motion.button
+                      key={item.action}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.35 + index * 0.05 }}
+                      onClick={() => handleMenuAction(item.action)}
+                      className={`w-full glass-card p-4 flex items-center gap-4 ${
+                        item.destructive ? "hover:border-destructive/30" : "hover:border-gold/30"
+                      } transition-all`}
+                    >
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                        item.destructive ? "bg-destructive/20" : "bg-muted"
+                      }`}>
+                        <Icon className={`w-5 h-5 ${item.destructive ? "text-destructive" : "text-muted-foreground"}`} />
+                      </div>
+                      <span className={`flex-1 text-left font-medium ${
+                        item.destructive ? "text-destructive" : "text-foreground"
+                      }`}>
+                        {item.label}
+                      </span>
+                      <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                    </motion.button>
+                  );
+                })}
+              </motion.div>
             </div>
           </motion.div>
-        </div>
-      )}
-
-      {/* Empty state for new users */}
-      {(!socialAccounts.length && (!profileData?.pricing || profileData.pricing.length === 0)) && (
-        <div className="px-6 mt-6">
+        ) : (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="glass-card p-6 text-center"
+            key="verification"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
           >
-            <p className="text-muted-foreground mb-4">
-              Complétez votre profil pour attirer plus de marques !
-            </p>
-            <button
-              onClick={() => setIsEditing(true)}
-              className="text-gold font-medium"
-            >
-              Modifier mon profil →
-            </button>
+            {profileData && (
+              <IdentityVerificationTab
+                identityVerified={profileData.identity_verified}
+                identitySubmittedAt={profileData.identity_submitted_at}
+                identityDocumentUrl={profileData.identity_document_url}
+                onUpdate={fetchProfile}
+              />
+            )}
           </motion.div>
-        </div>
-      )}
-
-      {/* Menu */}
-      <div className="px-6 mt-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="space-y-2"
-        >
-          {menuItems.map((item, index) => {
-            const Icon = item.icon;
-            return (
-              <motion.button
-                key={item.action}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.35 + index * 0.05 }}
-                onClick={() => handleMenuAction(item.action)}
-                className={`w-full glass-card p-4 flex items-center gap-4 ${
-                  item.destructive ? "hover:border-destructive/30" : "hover:border-gold/30"
-                } transition-all`}
-              >
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                  item.destructive ? "bg-destructive/20" : "bg-muted"
-                }`}>
-                  <Icon className={`w-5 h-5 ${item.destructive ? "text-destructive" : "text-muted-foreground"}`} />
-                </div>
-                <span className={`flex-1 text-left font-medium ${
-                  item.destructive ? "text-destructive" : "text-foreground"
-                }`}>
-                  {item.label}
-                </span>
-                <ChevronRight className="w-5 h-5 text-muted-foreground" />
-              </motion.button>
-            );
-          })}
-        </motion.div>
-      </div>
+        )}
+      </AnimatePresence>
 
       <BottomNav userRole="creator" />
     </div>
