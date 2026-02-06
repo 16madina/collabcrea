@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { User, Building2, ArrowLeft, Mail, Lock, Eye, EyeOff, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { z } from "zod";
+import logoCollabCrea from "@/assets/logo-collabcrea.png";
 
 type UserRole = "creator" | "brand" | null;
 type AuthMode = "login" | "signup";
@@ -155,7 +156,7 @@ const Auth = () => {
       <motion.header
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="safe-top px-6 py-4 flex items-center gap-4"
+        className="px-6 pt-2 pb-2 flex items-center gap-4"
       >
         <button
           onClick={handleBack}
@@ -163,9 +164,13 @@ const Auth = () => {
         >
           <ArrowLeft className="w-5 h-5 text-gold" />
         </button>
-        <h1 className="font-display text-xl font-bold text-gold-gradient">
-          Collab'Or
-        </h1>
+        <Link to="/" className="flex items-center">
+          <img 
+            src={logoCollabCrea} 
+            alt="CollabCréa" 
+            className="h-10 md:h-12 w-auto"
+          />
+        </Link>
       </motion.header>
 
       <div className="flex-1 flex flex-col px-6 pb-8 safe-bottom">
