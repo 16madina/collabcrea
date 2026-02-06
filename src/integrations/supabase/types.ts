@@ -225,8 +225,13 @@ export type Database = {
           followers: string | null
           full_name: string
           id: string
+          instagram_followers: string | null
+          pricing: Json | null
+          snapchat_followers: string | null
+          tiktok_followers: string | null
           updated_at: string
           user_id: string
+          youtube_followers: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -237,8 +242,13 @@ export type Database = {
           followers?: string | null
           full_name: string
           id?: string
+          instagram_followers?: string | null
+          pricing?: Json | null
+          snapchat_followers?: string | null
+          tiktok_followers?: string | null
           updated_at?: string
           user_id: string
+          youtube_followers?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -249,8 +259,13 @@ export type Database = {
           followers?: string | null
           full_name?: string
           id?: string
+          instagram_followers?: string | null
+          pricing?: Json | null
+          snapchat_followers?: string | null
+          tiktok_followers?: string | null
           updated_at?: string
           user_id?: string
+          youtube_followers?: string | null
         }
         Relationships: []
       }
