@@ -1,5 +1,6 @@
-import { motion } from "framer-motion";
-import { ArrowRight, Sparkles, Users, TrendingUp, Star, Instagram, Youtube, CheckCircle, Play } from "lucide-react";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowRight, Sparkles, Users, MapPin, Star, HelpCircle, X, CheckCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import LandingNav from "@/components/LandingNav";
@@ -8,6 +9,10 @@ import creatorTech from "@/assets/creator-tech.jpg";
 import creatorFashion from "@/assets/creator-fashion.jpg";
 import creatorFitness from "@/assets/creator-fitness.jpg";
 import creatorCuisine from "@/assets/creator-cuisine.jpg";
+import creatorBeauty from "@/assets/creator-beauty.jpg";
+import creatorHumour from "@/assets/creator-humour.jpg";
+import creatorLifestyle from "@/assets/creator-lifestyle.jpg";
+import creatorMusic from "@/assets/creator-music.jpg";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 30 },
@@ -23,38 +28,79 @@ const stagger = {
   }
 };
 
-const featuredCreators = [
+// Créateurs avec infos complètes
+const allCreators = [
   {
-    name: "Kofi Mensah",
+    firstName: "Kofi",
+    lastName: "Mensah",
     category: "Tech",
     followers: "320K",
-    rating: 4.9,
+    country: "Ghana",
+    flag: "🇬🇭",
     image: creatorTech,
-    platforms: ["YouTube", "Instagram"],
   },
   {
-    name: "Amara Diallo",
+    firstName: "Amara",
+    lastName: "Diallo",
     category: "Mode",
     followers: "450K",
-    rating: 5.0,
+    country: "Sénégal",
+    flag: "🇸🇳",
     image: creatorFashion,
-    platforms: ["Instagram", "TikTok"],
   },
   {
-    name: "Moussa Traoré",
+    firstName: "Moussa",
+    lastName: "Traoré",
     category: "Fitness",
     followers: "280K",
-    rating: 4.8,
+    country: "Mali",
+    flag: "🇲🇱",
     image: creatorFitness,
-    platforms: ["YouTube", "TikTok"],
   },
   {
-    name: "Fatou Ndiaye",
+    firstName: "Fatou",
+    lastName: "Ndiaye",
     category: "Cuisine",
     followers: "190K",
-    rating: 4.9,
+    country: "Sénégal",
+    flag: "🇸🇳",
     image: creatorCuisine,
-    platforms: ["YouTube", "Instagram"],
+  },
+  {
+    firstName: "Awa",
+    lastName: "Diop",
+    category: "Beauté",
+    followers: "520K",
+    country: "Côte d'Ivoire",
+    flag: "🇨🇮",
+    image: creatorBeauty,
+  },
+  {
+    firstName: "Kwame",
+    lastName: "Asante",
+    category: "Humour",
+    followers: "890K",
+    country: "Nigeria",
+    flag: "🇳🇬",
+    image: creatorHumour,
+  },
+  {
+    firstName: "Mariama",
+    lastName: "Bah",
+    category: "Lifestyle",
+    followers: "210K",
+    country: "Guinée",
+    flag: "🇬🇳",
+    image: creatorLifestyle,
+  },
+  {
+    firstName: "Youssef",
+    lastName: "Oumar",
+    category: "Musique",
+    followers: "670K",
+    country: "Cameroun",
+    flag: "🇨🇲",
+    image: creatorMusic,
   },
 ];
 
@@ -77,19 +123,20 @@ const howItWorks = [
 ];
 
 const Landing = () => {
+  const [showHowItWorks, setShowHowItWorks] = useState(false);
+
   return (
     <div className="min-h-screen bg-background overflow-hidden">
       {/* Hero Section */}
       <section className="relative flex flex-col">
         {/* Background Image with Overlay */}
-        <div className="absolute inset-0 h-[70vh]">
+        <div className="absolute inset-0 h-[50vh]">
           <img
             src={heroImage}
             alt="African content creator"
             className="w-full h-full object-cover object-top"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/30" />
-          <div className="absolute inset-0 bg-hero-gradient" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/40" />
         </div>
 
         {/* Header */}
@@ -116,19 +163,19 @@ const Landing = () => {
           variants={stagger}
           initial="initial"
           animate="animate"
-          className="relative z-10 px-6 pt-8"
+          className="relative z-10 px-6 pt-4"
         >
-          <motion.div variants={fadeInUp} className="mb-3">
+          <motion.div variants={fadeInUp} className="mb-2">
             <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass text-gold text-xs font-medium">
               <Sparkles className="w-3 h-3" />
               Marketplace Africain #1
             </span>
           </motion.div>
 
-          {/* Slogan Principal - Réduit et monté */}
+          {/* Slogan Principal - Compact */}
           <motion.h2
             variants={fadeInUp}
-            className="font-display text-2xl md:text-3xl font-bold text-foreground leading-tight mb-2"
+            className="font-display text-xl md:text-2xl font-bold text-foreground leading-tight mb-2"
           >
             Connectez votre marque aux{" "}
             <span className="text-gold-gradient">voix qui comptent</span>
@@ -136,13 +183,13 @@ const Landing = () => {
 
           <motion.p
             variants={fadeInUp}
-            className="text-muted-foreground text-sm mb-6 max-w-sm"
+            className="text-muted-foreground text-xs mb-4 max-w-sm"
           >
             La plateforme premium de mise en relation entre créateurs africains et marques mondiales.
           </motion.p>
 
-          {/* Boutons */}
-          <motion.div variants={fadeInUp} className="flex flex-col gap-2 mb-6">
+          {/* Boutons + Comment ça marche */}
+          <motion.div variants={fadeInUp} className="flex flex-col gap-2 mb-4">
             <Link to="/auth?role=creator">
               <Button variant="gold" size="default" className="w-full group">
                 Je suis Créateur
@@ -154,12 +201,21 @@ const Landing = () => {
                 Je suis une Marque
               </Button>
             </Link>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowHowItWorks(true)}
+              className="text-gold hover:text-gold/80"
+            >
+              <HelpCircle className="w-4 h-4 mr-2" />
+              Comment ça marche ?
+            </Button>
           </motion.div>
 
-          {/* Stats - Réduits et compacts */}
+          {/* Stats - Très compact */}
           <motion.div
             variants={fadeInUp}
-            className="flex justify-between gap-2 mb-6"
+            className="flex justify-between gap-2"
           >
             {[
               { value: "54+", label: "Pays" },
@@ -168,17 +224,17 @@ const Landing = () => {
             ].map((stat) => (
               <div
                 key={stat.label}
-                className="flex-1 glass rounded-xl p-3 text-center"
+                className="flex-1 glass rounded-lg p-2 text-center"
               >
-                <p className="text-lg font-bold text-gold-gradient">{stat.value}</p>
-                <p className="text-[10px] text-muted-foreground">{stat.label}</p>
+                <p className="text-sm font-bold text-gold-gradient">{stat.value}</p>
+                <p className="text-[9px] text-muted-foreground">{stat.label}</p>
               </div>
             ))}
           </motion.div>
         </motion.div>
       </section>
 
-      {/* Featured Creators - Juste après les boutons */}
+      {/* Créateurs - Cartes détaillées */}
       <section className="px-6 py-6">
         <motion.div
           initial={{ opacity: 0 }}
@@ -187,276 +243,171 @@ const Landing = () => {
         >
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-display text-lg font-bold">
-              Créateurs <span className="text-gold-gradient">vedettes</span>
+              Nos <span className="text-gold-gradient">Créateurs</span>
             </h3>
             <Link to="/auth?role=brand" className="text-gold text-xs flex items-center gap-1">
               Voir tous <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
 
-          <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 -mx-6 px-6">
-            {featuredCreators.map((creator, index) => (
+          {/* Grille de cartes créateurs */}
+          <div className="grid grid-cols-2 gap-3">
+            {allCreators.map((creator, index) => (
               <motion.div
-                key={creator.name}
-                initial={{ opacity: 0, x: 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                className="flex-shrink-0 w-[140px]"
-              >
-                <div className="glass-card overflow-hidden group">
-                  {/* Image */}
-                  <div className="relative aspect-square overflow-hidden">
-                    <img
-                      src={creator.image}
-                      alt={creator.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
-                    
-                    {/* Category Badge */}
-                    <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-medium bg-gold/90 text-primary-foreground">
-                      {creator.category}
-                    </span>
-
-                    {/* Rating */}
-                    <div className="absolute bottom-2 right-2 flex items-center gap-1 px-1.5 py-0.5 rounded-full glass text-[10px]">
-                      <Star className="w-2.5 h-2.5 text-gold fill-gold" />
-                      <span className="text-foreground">{creator.rating}</span>
-                    </div>
-                  </div>
-
-                  {/* Info */}
-                  <div className="p-2">
-                    <h4 className="font-semibold text-xs text-foreground truncate">{creator.name}</h4>
-                    <p className="text-gold text-[10px] font-medium">{creator.followers}</p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-      </section>
-
-      {/* How It Works */}
-      <section className="px-6 py-12 bg-violet-gradient">
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-        >
-          <h3 className="font-display text-2xl font-bold text-center mb-8">
-            Comment ça <span className="text-gold-gradient">marche</span> ?
-          </h3>
-
-          <div className="space-y-6">
-            {howItWorks.map((item, index) => (
-              <motion.div
-                key={item.step}
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.15 }}
-                className="flex gap-4"
-              >
-                <div className="flex-shrink-0 w-12 h-12 rounded-2xl bg-gold/20 flex items-center justify-center">
-                  <span className="text-gold font-bold">{item.step}</span>
-                </div>
-                <div>
-                  <h4 className="font-display text-lg font-semibold text-gold mb-1">
-                    {item.title}
-                  </h4>
-                  <p className="text-muted-foreground text-sm">
-                    {item.description}
-                  </p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-      </section>
-
-      {/* Features Section */}
-      <section className="px-6 py-12">
-        <motion.h3
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          className="font-display text-2xl font-bold text-center mb-8"
-        >
-          Pourquoi <span className="text-gold-gradient">Collab'Or</span> ?
-        </motion.h3>
-
-        <div className="space-y-4">
-          {[
-            {
-              title: "Pour les Créateurs",
-              features: [
-                "Exposez votre talent à 500+ marques",
-                "Fixez vos tarifs en FCFA",
-                "Messagerie intégrée sécurisée",
-                "Portfolio professionnel",
-              ],
-              gradient: "from-gold/20 to-transparent",
-            },
-            {
-              title: "Pour les Marques",
-              features: [
-                "Accès à 10K+ créateurs vérifiés",
-                "Filtres par catégorie et pays",
-                "Gestion des campagnes simplifiée",
-                "Analytics détaillés",
-              ],
-              gradient: "from-violet-light/20 to-transparent",
-            },
-          ].map((feature, index) => (
-            <motion.div
-              key={feature.title}
-              initial={{ opacity: 0, x: index % 2 === 0 ? -20 : 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.1 }}
-              className={`glass-card p-6 bg-gradient-to-r ${feature.gradient}`}
-            >
-              <h4 className="font-display text-lg font-semibold text-gold mb-4">
-                {feature.title}
-              </h4>
-              <ul className="space-y-3">
-                {feature.features.map((item) => (
-                  <li key={item} className="flex items-center gap-3 text-sm text-muted-foreground">
-                    <CheckCircle className="w-4 h-4 text-gold flex-shrink-0" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* Categories */}
-      <section className="px-6 py-12 bg-violet-gradient">
-        <motion.h3
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          className="font-display text-xl font-bold text-center mb-6"
-        >
-          Catégories populaires
-        </motion.h3>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          className="flex flex-wrap justify-center gap-2"
-        >
-          {["Beauté", "Mode", "Cuisine", "Humour", "Tech", "Lifestyle", "Fitness", "Musique", "Business", "Éducation"].map(
-            (category, index) => (
-              <motion.span
-                key={category}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
+                key={creator.firstName + creator.lastName}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.05 }}
-                className="px-4 py-2 rounded-full glass text-sm text-gold border-gold/20 hover:border-gold/40 transition-colors cursor-pointer"
+                className="glass-card overflow-hidden"
               >
-                {category}
-              </motion.span>
-            )
-          )}
-        </motion.div>
-      </section>
+                {/* Photo */}
+                <div className="relative aspect-square overflow-hidden">
+                  <img
+                    src={creator.image}
+                    alt={`${creator.firstName} ${creator.lastName}`}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
+                  
+                  {/* Catégorie Badge */}
+                  <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-medium bg-gold text-primary-foreground">
+                    {creator.category}
+                  </span>
+                </div>
 
-      {/* Pricing Types */}
-      <section className="px-6 py-12">
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-        >
-          <h3 className="font-display text-2xl font-bold text-center mb-2">
-            Types de <span className="text-gold-gradient">contenu</span>
-          </h3>
-          <p className="text-muted-foreground text-center text-sm mb-8">
-            Tarification flexible en FCFA
-          </p>
-
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              { type: "Story Instagram", icon: Instagram, range: "30K - 100K" },
-              { type: "Reel / TikTok", icon: Play, range: "50K - 200K" },
-              { type: "Vidéo YouTube", icon: Youtube, range: "150K - 500K" },
-              { type: "Live", icon: Play, range: "100K - 300K" },
-            ].map((item, index) => {
-              const Icon = item.icon;
-              return (
-                <motion.div
-                  key={item.type}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
-                  className="glass-card p-4 text-center"
-                >
-                  <div className="w-12 h-12 rounded-2xl bg-gold/20 flex items-center justify-center mx-auto mb-3">
-                    <Icon className="w-6 h-6 text-gold" />
+                {/* Infos */}
+                <div className="p-3">
+                  <h4 className="font-semibold text-sm text-foreground">
+                    {creator.firstName} {creator.lastName}
+                  </h4>
+                  
+                  {/* Pays */}
+                  <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-1">
+                    <span>{creator.flag}</span>
+                    <span>{creator.country}</span>
                   </div>
-                  <h4 className="font-semibold text-sm mb-1">{item.type}</h4>
-                  <p className="text-gold text-xs font-medium">{item.range} FCFA</p>
-                </motion.div>
-              );
-            })}
+
+                  {/* Followers */}
+                  <div className="flex items-center gap-1 mt-2">
+                    <Users className="w-3 h-3 text-gold" />
+                    <span className="text-xs font-semibold text-gold">{creator.followers}</span>
+                    <span className="text-[10px] text-muted-foreground">abonnés</span>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
           </div>
         </motion.div>
       </section>
 
       {/* CTA Section */}
-      <section className="px-6 py-16 text-center">
+      <section className="px-6 py-8 bg-violet-gradient">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
-          className="glass-card p-8 border-gold/30"
+          className="glass-card p-6 border-gold/30 text-center"
         >
-          <Sparkles className="w-12 h-12 text-gold mx-auto mb-4" />
-          <h3 className="font-display text-2xl font-bold mb-2">
+          <Sparkles className="w-10 h-10 text-gold mx-auto mb-3" />
+          <h3 className="font-display text-xl font-bold mb-2">
             Prêt à <span className="text-gold-gradient">briller</span> ?
           </h3>
-          <p className="text-muted-foreground mb-6 text-sm">
-            Rejoignez la communauté Collab'Or et connectez-vous aux opportunités qui comptent.
+          <p className="text-muted-foreground text-sm mb-4">
+            Rejoignez la communauté Collab'Or
           </p>
-          <div className="flex flex-col gap-3">
-            <Link to="/auth?role=creator">
-              <Button variant="gold" size="lg" className="w-full">
-                Devenir Créateur
-                <Sparkles className="w-5 h-5" />
-              </Button>
-            </Link>
-            <Link to="/auth?role=brand">
-              <Button variant="glass-gold" size="lg" className="w-full">
-                Inscrire ma Marque
-              </Button>
-            </Link>
-          </div>
+          <Link to="/auth">
+            <Button variant="gold" size="default" className="w-full">
+              Commencer maintenant
+            </Button>
+          </Link>
         </motion.div>
       </section>
 
       {/* Footer */}
-      <footer className="px-6 py-8 pb-28 text-center border-t border-border">
-        <p className="text-gold-gradient font-display text-lg font-semibold mb-2">
+      <footer className="px-6 py-6 pb-28 text-center border-t border-border">
+        <p className="text-gold-gradient font-display text-lg font-semibold mb-1">
           Collab'Or
         </p>
-        <p className="text-muted-foreground text-xs mb-4">
+        <p className="text-muted-foreground text-[10px] mb-2">
           "Connectez votre marque aux voix qui comptent"
         </p>
-        <p className="text-muted-foreground text-xs">
+        <p className="text-muted-foreground text-[10px]">
           © 2024 Collab'Or. Tous droits réservés.
         </p>
       </footer>
 
       {/* Bottom Navigation */}
       <LandingNav />
+
+      {/* Modal Comment ça marche */}
+      <AnimatePresence>
+        {showHowItWorks && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-end justify-center"
+            onClick={() => setShowHowItWorks(false)}
+          >
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full glass-card rounded-t-3xl p-6 safe-bottom max-h-[80vh] overflow-y-auto"
+            >
+              <div className="w-12 h-1 bg-muted rounded-full mx-auto mb-4" />
+              
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="font-display text-xl font-bold">
+                  Comment ça <span className="text-gold-gradient">marche</span> ?
+                </h2>
+                <button
+                  onClick={() => setShowHowItWorks(false)}
+                  className="touch-target"
+                >
+                  <X className="w-6 h-6 text-muted-foreground" />
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                {howItWorks.map((item, index) => (
+                  <motion.div
+                    key={item.step}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="flex gap-4"
+                  >
+                    <div className="flex-shrink-0 w-12 h-12 rounded-2xl bg-gold/20 flex items-center justify-center">
+                      <span className="text-gold font-bold">{item.step}</span>
+                    </div>
+                    <div>
+                      <h4 className="font-display text-lg font-semibold text-gold mb-1">
+                        {item.title}
+                      </h4>
+                      <p className="text-muted-foreground text-sm">
+                        {item.description}
+                      </p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              <div className="mt-8">
+                <Link to="/auth" onClick={() => setShowHowItWorks(false)}>
+                  <Button variant="gold" size="lg" className="w-full">
+                    Commencer maintenant
+                    <ArrowRight className="w-5 h-5" />
+                  </Button>
+                </Link>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
