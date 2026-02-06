@@ -451,25 +451,25 @@ const Landing = () => {
                   </Link>
                 </div>
 
-                {/* Grille de cartes créateurs */}
-                <div className="grid grid-cols-2 gap-3">
+                {/* Liste de cartes créateurs - Style ID Card */}
+                <div className="space-y-3">
                   {allCreators.map((creator, index) => (
                     <motion.div
                       key={creator.firstName + creator.lastName}
-                      initial={{ opacity: 0, y: 20 }}
-                      whileInView={{ opacity: 1, y: 0 }}
+                      initial={{ opacity: 0, x: -20 }}
+                      whileInView={{ opacity: 1, x: 0 }}
                       viewport={{ once: true }}
                       transition={{ delay: index * 0.05 }}
-                      className="glass-card overflow-hidden"
+                      className="glass-card overflow-hidden flex"
                     >
-                      {/* Photo */}
-                      <div className="relative aspect-square overflow-hidden">
+                      {/* Photo - Gauche */}
+                      <div className="relative w-28 h-32 flex-shrink-0 overflow-hidden">
                         <img
                           src={creator.image}
                           alt={`${creator.firstName} ${creator.lastName}`}
                           className="w-full h-full object-cover"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent to-card/30" />
                         
                         {/* Catégorie Badge */}
                         <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-medium bg-gold text-primary-foreground">
@@ -477,23 +477,29 @@ const Landing = () => {
                         </span>
                       </div>
 
-                      {/* Infos */}
-                      <div className="p-3">
-                        <h4 className="font-semibold text-sm text-foreground">
-                          {creator.firstName} {creator.lastName}
-                        </h4>
-                        
-                        {/* Pays */}
-                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-1">
-                          <span>{creator.flag}</span>
-                          <span>{creator.country}</span>
+                      {/* Infos - Droite */}
+                      <div className="flex-1 p-3 flex flex-col justify-between">
+                        <div>
+                          <h4 className="font-semibold text-sm text-foreground">
+                            {creator.firstName} {creator.lastName}
+                          </h4>
+                          
+                          {/* Pays */}
+                          <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-1">
+                            <span>{creator.flag}</span>
+                            <span>{creator.country}</span>
+                          </div>
                         </div>
 
                         {/* Followers */}
                         <div className="flex items-center gap-1 mt-2">
                           <Users className="w-3 h-3 text-gold" />
-                          <span className="text-xs font-semibold text-gold">{creator.followers}</span>
-                          <span className="text-[10px] text-muted-foreground">abonnés</span>
+                          <span className="text-gold font-bold text-sm">
+                            {creator.followers}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">
+                            abonnés
+                          </span>
                         </div>
                       </div>
                     </motion.div>
