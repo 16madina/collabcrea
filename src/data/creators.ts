@@ -1,0 +1,188 @@
+import creatorTech from "@/assets/creator-tech.jpg";
+import creatorFashion from "@/assets/creator-fashion.jpg";
+import creatorFitness from "@/assets/creator-fitness.jpg";
+import creatorCuisine from "@/assets/creator-cuisine.jpg";
+import creatorBeauty from "@/assets/creator-beauty.jpg";
+import creatorHumour from "@/assets/creator-humour.jpg";
+import creatorLifestyle from "@/assets/creator-lifestyle.jpg";
+import creatorMusic from "@/assets/creator-music.jpg";
+import type { Creator } from "@/components/CreatorDetailSheet";
+
+export const allCreators: Creator[] = [
+  {
+    firstName: "Kofi",
+    lastName: "Mensah",
+    category: "Tech",
+    country: "Ghana",
+    flag: "🇬🇭",
+    image: creatorTech,
+    rating: 4.9,
+    bio: "Passionné de tech et gadgets, je partage mes découvertes et reviews avec ma communauté. Spécialisé dans les smartphones et accessoires africains.",
+    socials: {
+      youtube: "320K",
+      instagram: "150K",
+      tiktok: "89K",
+    },
+    pricing: [
+      { type: "Story Instagram", price: "30 000 FCFA", description: "1 story avec mention et lien" },
+      { type: "Post Instagram", price: "60 000 FCFA", description: "1 post feed + caption détaillée" },
+      { type: "Reel Tech", price: "100 000 FCFA", description: "Unboxing ou review 30-60s" },
+      { type: "Vidéo YouTube", price: "200 000 FCFA", description: "Review complète 5-10min" },
+      { type: "Pack Tech Complet", price: "350 000 FCFA", description: "Story + Post + Vidéo YouTube" },
+    ],
+  },
+  {
+    firstName: "Amara",
+    lastName: "Diallo",
+    category: "Mode",
+    country: "Sénégal",
+    flag: "🇸🇳",
+    image: creatorFashion,
+    rating: 4.8,
+    bio: "Créatrice de mode sénégalaise, je mets en valeur la beauté africaine à travers mes looks et collaborations avec des marques locales et internationales.",
+    socials: {
+      youtube: "450K",
+      instagram: "380K",
+      snapchat: "120K",
+    },
+    pricing: [
+      { type: "Story Instagram", price: "40 000 FCFA", description: "1 story avec essayage" },
+      { type: "Post Instagram", price: "80 000 FCFA", description: "Shooting photo professionnel" },
+      { type: "Reel Mode", price: "120 000 FCFA", description: "Lookbook ou haul vidéo" },
+      { type: "Vidéo YouTube", price: "250 000 FCFA", description: "Haul complet ou collaboration" },
+      { type: "Pack Mode Premium", price: "450 000 FCFA", description: "Campagne complète multi-plateforme" },
+    ],
+  },
+  {
+    firstName: "Moussa",
+    lastName: "Traoré",
+    category: "Fitness",
+    country: "Mali",
+    flag: "🇲🇱",
+    image: creatorFitness,
+    rating: 4.7,
+    bio: "Coach sportif et créateur fitness, j'inspire ma communauté à adopter un mode de vie sain. Partenaire idéal pour les marques de sport et nutrition.",
+    socials: {
+      youtube: "280K",
+      instagram: "210K",
+      tiktok: "450K",
+    },
+    pricing: [
+      { type: "Story Instagram", price: "25 000 FCFA", description: "Story workout avec produit" },
+      { type: "Post Instagram", price: "50 000 FCFA", description: "Photo fitness avec mention" },
+      { type: "Reel Fitness", price: "80 000 FCFA", description: "Démonstration exercice" },
+      { type: "Vidéo YouTube", price: "180 000 FCFA", description: "Workout complet sponsorisé" },
+      { type: "Pack Fitness", price: "300 000 FCFA", description: "Programme 1 semaine + posts" },
+    ],
+  },
+  {
+    firstName: "Fatou",
+    lastName: "Ndiaye",
+    category: "Cuisine",
+    country: "Sénégal",
+    flag: "🇸🇳",
+    image: creatorCuisine,
+    rating: 4.6,
+    bio: "Cheffe et créatrice culinaire, je partage les saveurs de l'Afrique de l'Ouest avec le monde. Spécialiste des recettes traditionnelles revisitées.",
+    socials: {
+      instagram: "190K",
+      tiktok: "340K",
+    },
+    pricing: [
+      { type: "Story Instagram", price: "20 000 FCFA", description: "Story cuisine avec produit" },
+      { type: "Post Instagram", price: "45 000 FCFA", description: "Photo plat avec recette" },
+      { type: "Reel Recette", price: "75 000 FCFA", description: "Tutoriel recette rapide" },
+      { type: "Vidéo YouTube", price: "150 000 FCFA", description: "Recette complète détaillée" },
+      { type: "Pack Culinaire", price: "250 000 FCFA", description: "3 recettes + posts associés" },
+    ],
+  },
+  {
+    firstName: "Awa",
+    lastName: "Diop",
+    category: "Beauté",
+    country: "Côte d'Ivoire",
+    flag: "🇨🇮",
+    image: creatorBeauty,
+    rating: 4.9,
+    bio: "Experte beauté et maquillage, je célèbre la beauté noire sous toutes ses formes. Collaborations avec les plus grandes marques cosmétiques.",
+    socials: {
+      youtube: "520K",
+      instagram: "680K",
+      tiktok: "920K",
+      snapchat: "150K",
+    },
+    pricing: [
+      { type: "Story Instagram", price: "50 000 FCFA", description: "Story test produit" },
+      { type: "Post Instagram", price: "100 000 FCFA", description: "Photo beauté haute qualité" },
+      { type: "Reel Tutoriel", price: "150 000 FCFA", description: "Tutoriel maquillage 60s" },
+      { type: "Vidéo YouTube", price: "300 000 FCFA", description: "Review ou tutoriel complet" },
+      { type: "Pack Beauté VIP", price: "550 000 FCFA", description: "Campagne exclusive multi-plateforme" },
+    ],
+  },
+  {
+    firstName: "Kwame",
+    lastName: "Asante",
+    category: "Humour",
+    country: "Nigeria",
+    flag: "🇳🇬",
+    image: creatorHumour,
+    rating: 4.8,
+    bio: "Comédien et créateur de contenu viral, je fais rire des millions de personnes chaque jour. Parfait pour des campagnes fun et mémorables.",
+    socials: {
+      youtube: "890K",
+      tiktok: "1.2M",
+      snapchat: "340K",
+    },
+    pricing: [
+      { type: "Story Instagram", price: "45 000 FCFA", description: "Story humoristique" },
+      { type: "Post Instagram", price: "90 000 FCFA", description: "Post avec intégration créative" },
+      { type: "Sketch TikTok", price: "180 000 FCFA", description: "Sketch viral avec produit" },
+      { type: "Vidéo YouTube", price: "400 000 FCFA", description: "Sketch complet sponsorisé" },
+      { type: "Pack Humour Viral", price: "700 000 FCFA", description: "Campagne virale multi-plateforme" },
+    ],
+  },
+  {
+    firstName: "Mariama",
+    lastName: "Bah",
+    category: "Lifestyle",
+    country: "Guinée",
+    flag: "🇬🇳",
+    image: creatorLifestyle,
+    rating: 4.5,
+    bio: "Créatrice lifestyle guinéenne, je partage mon quotidien, mes voyages et mes découvertes. Authentique et proche de ma communauté.",
+    socials: {
+      instagram: "210K",
+      tiktok: "180K",
+    },
+    pricing: [
+      { type: "Story Instagram", price: "20 000 FCFA", description: "Story quotidien avec mention" },
+      { type: "Post Instagram", price: "40 000 FCFA", description: "Post lifestyle esthétique" },
+      { type: "Reel Lifestyle", price: "65 000 FCFA", description: "Vlog court ou routine" },
+      { type: "Vidéo YouTube", price: "130 000 FCFA", description: "Vlog journée ou voyage" },
+      { type: "Pack Lifestyle", price: "220 000 FCFA", description: "Couverture événement complète" },
+    ],
+  },
+  {
+    firstName: "Youssef",
+    lastName: "Oumar",
+    category: "Musique",
+    country: "Cameroun",
+    flag: "🇨🇲",
+    image: creatorMusic,
+    rating: 4.7,
+    bio: "Artiste et producteur camerounais, je fais vibrer l'Afrique avec mes sons. Idéal pour les marques qui veulent toucher la jeunesse africaine.",
+    socials: {
+      youtube: "670K",
+      instagram: "420K",
+      tiktok: "550K",
+      snapchat: "95K",
+    },
+    pricing: [
+      { type: "Story Instagram", price: "35 000 FCFA", description: "Story avec musique/mention" },
+      { type: "Post Instagram", price: "70 000 FCFA", description: "Post avec intégration musicale" },
+      { type: "Reel Musical", price: "120 000 FCFA", description: "Extrait ou cover avec produit" },
+      { type: "Vidéo YouTube", price: "280 000 FCFA", description: "Clip ou session sponsorisée" },
+      { type: "Pack Musical Premium", price: "500 000 FCFA", description: "Jingle + campagne complète" },
+    ],
+  },
+];
