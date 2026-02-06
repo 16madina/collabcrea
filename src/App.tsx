@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
+import Explore from "./pages/Explore";
+import Contact from "./pages/Contact";
 import CreatorDashboard from "./pages/creator/Dashboard";
 import CreatorOffers from "./pages/creator/Offers";
 import CreatorPortfolio from "./pages/creator/Portfolio";
@@ -24,6 +26,8 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/explore" element={<Explore />} />
+          <Route path="/contact" element={<Contact />} />
           
           {/* Creator Routes */}
           <Route path="/creator/dashboard" element={<CreatorDashboard />} />
