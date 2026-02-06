@@ -163,11 +163,11 @@ const Landing = () => {
               <img 
                 src={logoCollabCrea} 
                 alt="CollabCréa" 
-                className="h-20 md:h-24 w-auto"
+                className="h-10 md:h-12 w-auto"
               />
             </Link>
             <Link to="/auth">
-              <Button variant="glass-gold" size="sm">
+              <Button variant="glass-gold" size="sm" className="text-xs px-3 py-1.5 h-auto">
                 Connexion
               </Button>
             </Link>
