@@ -13,7 +13,7 @@ const navItems: NavItem[] = [
   { icon: Home, label: "Accueil", path: "/" },
   { icon: Search, label: "Explorer", path: "/explore" },
   { icon: Sparkles, label: "Rejoindre", path: "/auth", isCenter: true },
-  { icon: MessageCircle, label: "Contact", path: "/contact" },
+  { icon: MessageCircle, label: "Messages", path: "/messages" },
   { icon: User, label: "Connexion", path: "/auth" },
 ];
 
