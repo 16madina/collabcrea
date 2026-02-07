@@ -3,6 +3,9 @@ project_id = "fkfdjibqpmdaobjrryja"
 [functions.send-auth-email]
 verify_jwt = false
 
+[functions.send-welcome-email]
+verify_jwt = false
+
 [functions.youtube-oauth]
 verify_jwt = false
 
