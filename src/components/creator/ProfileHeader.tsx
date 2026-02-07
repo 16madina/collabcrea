@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Settings, Camera, Shield, CheckCircle2, AlertCircle } from "lucide-react";
+import { Settings, Camera, Shield, CheckCircle2, AlertCircle, Mail, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface ProfileHeaderProps {
   fullName: string;
@@ -32,9 +34,42 @@ const ProfileHeader = ({
   onEditAvatar,
   onEditBanner,
 }: ProfileHeaderProps) => {
+  const [sendingEmail, setSendingEmail] = useState(false);
+
   const getInitials = () => {
     if (!fullName) return "?";
     return fullName.charAt(0).toUpperCase();
+  };
+
+  const handleResendVerificationEmail = async () => {
+    setSendingEmail(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user?.email) {
+        toast.error("Email non trouvé");
+        return;
+      }
+
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: user.email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/creator/profile`,
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success("Email envoyé !", {
+        description: `Vérifiez ${user.email}`,
+      });
+    } catch (error: any) {
+      console.error("Error sending verification email:", error);
+      toast.error("Erreur lors de l'envoi");
+    } finally {
+      setSendingEmail(false);
+    }
   };
 
   const getVerificationStatus = () => {
@@ -188,6 +223,22 @@ const ProfileHeader = ({
                 <StatusIcon className="w-3.5 h-3.5" />
                 <span className="text-xs font-medium">{status.text}</span>
               </div>
+              
+              {/* Email verification button */}
+              {!isEmailVerified && (
+                <button
+                  onClick={handleResendVerificationEmail}
+                  disabled={sendingEmail}
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gold text-background text-xs font-medium hover:bg-gold/90 transition-colors disabled:opacity-50"
+                >
+                  {sendingEmail ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Mail className="w-3.5 h-3.5" />
+                  )}
+                  <span>{sendingEmail ? "Envoi..." : "Vérifier"}</span>
+                </button>
+              )}
             </div>
           </motion.div>
         </div>
