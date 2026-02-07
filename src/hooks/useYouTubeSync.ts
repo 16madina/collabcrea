@@ -11,12 +11,7 @@ export function useYouTubeSync() {
     try {
       const redirectUri = `${window.location.origin}/creator/profile`;
 
-      const { data, error } = await supabase.functions.invoke("youtube-oauth", {
-        body: {},
-        headers: {},
-      });
-
-      // We need to call with query params, so we use fetch directly
+      // Call with query params using fetch directly
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/youtube-oauth?action=authorize&redirect_uri=${encodeURIComponent(redirectUri)}&state=${userId}`,
         {
