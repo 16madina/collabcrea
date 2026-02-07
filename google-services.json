@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "933524735633",
+    "project_id": "collabcrea-a772a",
+    "storage_bucket": "collabcrea-a772a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:933524735633:android:3ebc3e0b3af5739c1ba130",
+        "android_client_info": {
+          "package_name": "com.collabcrea.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDR3V5PvglN0Rbl7_8ob2IyagysFZwaXNM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
