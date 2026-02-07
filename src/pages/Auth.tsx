@@ -32,14 +32,58 @@ import { worldCountries, africanCountries, getPhoneCodeByCountry } from "@/data/
 type UserRole = "creator" | "brand";
 type AuthMode = "login" | "signup";
 
-// Steps: 1=Photo+Names, 2=Countries+Phone, 3=Role+Socials, 4=Credentials
-type SignupStep = 1 | 2 | 3 | 4;
+// Steps: 1=Photo+Names, 2=Countries+Phone, 3=Role+Socials, 3.5=Brand Info (if brand), 4=Credentials
+type SignupStep = 1 | 2 | 3 | 3.5 | 4;
 
 // Validation schemas
 const emailSchema = z.string().email("Email invalide").max(255);
 const passwordSchema = z.string().min(6, "Le mot de passe doit contenir au moins 6 caractères").max(100);
 const nameSchema = z.string().min(2, "Minimum 2 caractères").max(50);
 const phoneSchema = z.string().min(6, "Numéro invalide").max(15);
+const companyNameSchema = z.string().min(2, "Minimum 2 caractères").max(100);
+const websiteSchema = z.string().url("URL invalide").max(255).optional().or(z.literal(""));
+const descriptionSchema = z.string().min(10, "Minimum 10 caractères").max(500);
+
+// Brand sectors
+const BRAND_SECTORS = [
+  "Beauté & Cosmétiques",
+  "Mode & Accessoires",
+  "Tech & Électronique",
+  "Food & Boissons",
+  "Sport & Fitness",
+  "Lifestyle & Maison",
+  "Finance & Assurance",
+  "Santé & Bien-être",
+  "Éducation & Formation",
+  "Tourisme & Voyage",
+  "Automobile",
+  "Divertissement & Média",
+  "Autre",
+];
+
+// Collaboration types
+const COLLABORATION_TYPES = [
+  { id: "sponsored_post", label: "Post sponsorisé" },
+  { id: "ambassador", label: "Ambassadeur" },
+  { id: "event", label: "Événement" },
+  { id: "product_review", label: "Test produit" },
+  { id: "giveaway", label: "Jeu concours" },
+  { id: "content_creation", label: "Création de contenu" },
+];
+
+// Creator categories brands are looking for
+const CREATOR_CATEGORIES = [
+  "Beauté",
+  "Mode",
+  "Cuisine",
+  "Humour",
+  "Tech",
+  "Lifestyle",
+  "Fitness",
+  "Musique",
+  "Business",
+  "Éducation",
+];
 
 interface SignupFormData {
   avatarFile: File | null;
@@ -51,6 +95,14 @@ interface SignupFormData {
   phone: string;
   role: UserRole | null;
   socialNetworks: string[];
+  // Brand-specific fields
+  companyName: string;
+  sector: string;
+  website: string;
+  collaborationTypes: string[];
+  targetCategories: string[];
+  companyDescription: string;
+  // Credentials
   email: string;
   password: string;
   confirmPassword: string;
@@ -67,6 +119,14 @@ const initialFormData: SignupFormData = {
   phone: "",
   role: null,
   socialNetworks: [],
+  // Brand-specific
+  companyName: "",
+  sector: "",
+  website: "",
+  collaborationTypes: [],
+  targetCategories: [],
+  companyDescription: "",
+  // Credentials
   email: "",
   password: "",
   confirmPassword: "",
@@ -151,6 +211,36 @@ const Auth = () => {
       }
     }
 
+    // Brand-specific validation (step 3.5)
+    if (currentStep === 3.5) {
+      try {
+        companyNameSchema.parse(formData.companyName);
+      } catch {
+        newErrors.companyName = "Nom de l'entreprise invalide";
+      }
+      if (!formData.sector) {
+        newErrors.sector = "Sélectionnez votre secteur d'activité";
+      }
+      if (formData.website && formData.website.trim() !== "") {
+        try {
+          websiteSchema.parse(formData.website);
+        } catch {
+          newErrors.website = "URL invalide (ex: https://exemple.com)";
+        }
+      }
+      if (formData.collaborationTypes.length === 0) {
+        newErrors.collaborationTypes = "Sélectionnez au moins un type de collaboration";
+      }
+      if (formData.targetCategories.length === 0) {
+        newErrors.targetCategories = "Sélectionnez au moins une catégorie";
+      }
+      try {
+        descriptionSchema.parse(formData.companyDescription);
+      } catch {
+        newErrors.companyDescription = "Description trop courte (min 10 caractères)";
+      }
+    }
+
     if (currentStep === 4) {
       try {
         emailSchema.parse(formData.email);
@@ -174,15 +264,38 @@ const Auth = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  const getNextStep = (currentStep: SignupStep): SignupStep => {
+    if (currentStep === 3 && formData.role === "brand") {
+      return 3.5;
+    }
+    if (currentStep === 3 && formData.role === "creator") {
+      return 4;
+    }
+    if (currentStep === 3.5) {
+      return 4;
+    }
+    return Math.min(currentStep + 1, 4) as SignupStep;
+  };
+
+  const getPrevStep = (currentStep: SignupStep): SignupStep => {
+    if (currentStep === 4 && formData.role === "brand") {
+      return 3.5;
+    }
+    if (currentStep === 3.5) {
+      return 3;
+    }
+    return Math.max(currentStep - 1, 1) as SignupStep;
+  };
+
   const handleNext = () => {
     if (validateStep(step)) {
-      setStep((prev) => Math.min(prev + 1, 4) as SignupStep);
+      setStep(getNextStep(step));
     }
   };
 
   const handleBack = () => {
     if (step > 1) {
-      setStep((prev) => (prev - 1) as SignupStep);
+      setStep(getPrevStep(step));
     } else if (mode === "login") {
       navigate("/");
     } else {
@@ -240,23 +353,37 @@ const Auth = () => {
         const residenceCountry = worldCountries.find(c => c.code === formData.residenceCountry);
         const originCountry = africanCountries.find(c => c.code === formData.originCountry);
 
-        // Create profile with all info
         // For creators, use origin country (African country) as main display country
         // For brands, use residence country
         const displayCountry = formData.role === "creator" 
           ? (originCountry?.name || formData.originCountry)
           : (residenceCountry?.name || formData.residenceCountry);
 
-        const { error: profileError } = await supabase.from("profiles").insert({
+        // Create profile with all info
+        const profileInsertData = {
           user_id: data.user.id,
           full_name: `${formData.firstName} ${formData.lastName}`,
           avatar_url: avatarUrl,
           country: displayCountry,
-          // For creators, store residence country for dual-flag display
+          // Creator-specific fields
           residence_country: formData.role === "creator" 
             ? (residenceCountry?.name || formData.residenceCountry)
             : null,
-        });
+          // Brand-specific fields
+          company_name: formData.role === "brand" ? formData.companyName : null,
+          sector: formData.role === "brand" ? formData.sector : null,
+          website: formData.role === "brand" && formData.website ? formData.website : null,
+          company_description: formData.role === "brand" ? formData.companyDescription : null,
+          // Store collaboration types and target categories as JSON in pricing field for brands
+          pricing: formData.role === "brand" 
+            ? {
+                collaboration_types: formData.collaborationTypes,
+                target_categories: formData.targetCategories,
+              }
+            : [],
+        };
+
+        const { error: profileError } = await supabase.from("profiles").insert(profileInsertData);
 
         if (profileError) {
           console.error("Error creating profile:", profileError);
@@ -561,16 +688,22 @@ const SignupForm = ({
     exit={{ opacity: 0, x: -20 }}
     className="flex-1 flex flex-col"
   >
-    {/* Progress indicator */}
+    {/* Progress indicator - Show 4 steps for creators, 5 for brands */}
     <div className="flex justify-center gap-2 mb-6">
-      {[1, 2, 3, 4].map((s) => (
-        <div
-          key={s}
-          className={`w-2.5 h-2.5 rounded-full transition-colors ${
-            s === step ? "bg-gold" : s < step ? "bg-gold/50" : "bg-muted"
-          }`}
-        />
-      ))}
+      {(formData.role === "brand" ? [1, 2, 3, 3.5, 4] : [1, 2, 3, 4]).map((s) => {
+        const isCurrentStep = s === step;
+        const isPastStep = formData.role === "brand" 
+          ? (s < step || (s === 3 && step === 3.5) || (s === 3.5 && step === 4) || (s === 3 && step === 4))
+          : s < step;
+        return (
+          <div
+            key={s}
+            className={`w-2.5 h-2.5 rounded-full transition-colors ${
+              isCurrentStep ? "bg-gold" : isPastStep ? "bg-gold/50" : "bg-muted"
+            }`}
+          />
+        );
+      })}
     </div>
 
     <div className="flex-1 flex flex-col justify-center">
@@ -600,6 +733,14 @@ const SignupForm = ({
             errors={errors}
           />
         )}
+        {step === 3.5 && (
+          <StepBrandInfo
+            key="step3.5"
+            formData={formData}
+            updateFormData={updateFormData}
+            errors={errors}
+          />
+        )}
         {step === 4 && (
           <StepFour
             key="step4"
@@ -616,7 +757,7 @@ const SignupForm = ({
     </div>
 
     <div className="mt-6 space-y-4">
-      {step < 4 ? (
+      {step !== 4 ? (
         <Button onClick={onNext} variant="gold" size="lg" className="w-full">
           Continuer
           <ArrowRight className="w-5 h-5" />
@@ -857,6 +998,154 @@ const StepThree = ({ formData, updateFormData, errors }: StepThreeProps) => (
     )}
   </motion.div>
 );
+
+// Step 3.5: Brand Information (only for brands)
+interface StepBrandInfoProps {
+  formData: SignupFormData;
+  updateFormData: <K extends keyof SignupFormData>(field: K, value: SignupFormData[K]) => void;
+  errors: Partial<Record<keyof SignupFormData, string>>;
+}
+
+const StepBrandInfo = ({ formData, updateFormData, errors }: StepBrandInfoProps) => {
+  const toggleCollaborationType = (typeId: string) => {
+    const current = formData.collaborationTypes;
+    if (current.includes(typeId)) {
+      updateFormData("collaborationTypes", current.filter(t => t !== typeId));
+    } else {
+      updateFormData("collaborationTypes", [...current, typeId]);
+    }
+  };
+
+  const toggleTargetCategory = (category: string) => {
+    const current = formData.targetCategories;
+    if (current.includes(category)) {
+      updateFormData("targetCategories", current.filter(c => c !== category));
+    } else {
+      updateFormData("targetCategories", [...current, category]);
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="space-y-5"
+    >
+      <div className="text-center mb-4">
+        <h2 className="font-display text-2xl font-bold mb-2">Votre entreprise</h2>
+        <p className="text-muted-foreground text-sm">Parlez-nous de votre marque</p>
+      </div>
+
+      {/* Company Name */}
+      <div className="space-y-2">
+        <Label>Nom de l'entreprise *</Label>
+        <div className="relative">
+          <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+          <Input
+            value={formData.companyName}
+            onChange={(e) => updateFormData("companyName", e.target.value)}
+            placeholder="Votre entreprise"
+            className={`h-14 bg-muted/50 border rounded-xl pl-12 ${errors.companyName ? "border-destructive" : "border-border focus:border-gold"}`}
+          />
+        </div>
+        {errors.companyName && <p className="text-destructive text-xs">{errors.companyName}</p>}
+      </div>
+
+      {/* Sector */}
+      <div className="space-y-2">
+        <Label>Secteur d'activité *</Label>
+        <select
+          value={formData.sector}
+          onChange={(e) => updateFormData("sector", e.target.value)}
+          className={`w-full h-14 bg-muted/50 border rounded-xl px-4 text-foreground ${errors.sector ? "border-destructive" : "border-border focus:border-gold"}`}
+        >
+          <option value="">Sélectionnez un secteur</option>
+          {BRAND_SECTORS.map((sector) => (
+            <option key={sector} value={sector}>{sector}</option>
+          ))}
+        </select>
+        {errors.sector && <p className="text-destructive text-xs">{errors.sector}</p>}
+      </div>
+
+      {/* Website */}
+      <div className="space-y-2">
+        <Label>Site web (optionnel)</Label>
+        <Input
+          value={formData.website}
+          onChange={(e) => updateFormData("website", e.target.value)}
+          placeholder="https://votresite.com"
+          className={`h-14 bg-muted/50 border rounded-xl px-4 ${errors.website ? "border-destructive" : "border-border focus:border-gold"}`}
+        />
+        {errors.website && <p className="text-destructive text-xs">{errors.website}</p>}
+      </div>
+
+      {/* Collaboration Types */}
+      <div className="space-y-2">
+        <Label>Types de collaboration recherchés *</Label>
+        <div className="flex flex-wrap gap-2">
+          {COLLABORATION_TYPES.map((type) => (
+            <button
+              key={type.id}
+              type="button"
+              onClick={() => toggleCollaborationType(type.id)}
+              className={`px-3 py-2 rounded-full text-sm font-medium transition-all ${
+                formData.collaborationTypes.includes(type.id)
+                  ? "bg-gold text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              }`}
+            >
+              {formData.collaborationTypes.includes(type.id) && (
+                <Check className="w-3 h-3 inline mr-1" />
+              )}
+              {type.label}
+            </button>
+          ))}
+        </div>
+        {errors.collaborationTypes && <p className="text-destructive text-xs">{errors.collaborationTypes}</p>}
+      </div>
+
+      {/* Target Categories */}
+      <div className="space-y-2">
+        <Label>Catégories de créateurs recherchées *</Label>
+        <div className="flex flex-wrap gap-2">
+          {CREATOR_CATEGORIES.map((category) => (
+            <button
+              key={category}
+              type="button"
+              onClick={() => toggleTargetCategory(category)}
+              className={`px-3 py-2 rounded-full text-sm font-medium transition-all ${
+                formData.targetCategories.includes(category)
+                  ? "bg-accent text-accent-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              }`}
+            >
+              {formData.targetCategories.includes(category) && (
+                <Check className="w-3 h-3 inline mr-1" />
+              )}
+              {category}
+            </button>
+          ))}
+        </div>
+        {errors.targetCategories && <p className="text-destructive text-xs">{errors.targetCategories}</p>}
+      </div>
+
+      {/* Company Description */}
+      <div className="space-y-2">
+        <Label>Description de votre entreprise *</Label>
+        <textarea
+          value={formData.companyDescription}
+          onChange={(e) => updateFormData("companyDescription", e.target.value)}
+          placeholder="Décrivez brièvement votre activité et vos valeurs (2-3 phrases)"
+          rows={3}
+          className={`w-full bg-muted/50 border rounded-xl p-4 text-foreground resize-none ${errors.companyDescription ? "border-destructive" : "border-border focus:border-gold"}`}
+        />
+        <p className="text-xs text-muted-foreground">{formData.companyDescription.length}/500 caractères</p>
+        {errors.companyDescription && <p className="text-destructive text-xs">{errors.companyDescription}</p>}
+      </div>
+    </motion.div>
+  );
+};
 
 // Step 4: Credentials
 interface StepFourProps {
