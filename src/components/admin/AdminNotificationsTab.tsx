@@ -29,7 +29,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Bell, Plus, Edit, Trash2, Send, Users, Megaphone } from "lucide-react";
+import { Bell, Plus, Edit, Trash2, Send, Users, Megaphone, Smartphone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -61,6 +61,12 @@ const AdminNotificationsTab = () => {
     type: "info",
     targetRole: "all",
   });
+  const [pushData, setPushData] = useState({
+    title: "",
+    body: "",
+    targetRole: "all",
+  });
+  const [showPushSheet, setShowPushSheet] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
   const { user: currentUser } = useAuth();
@@ -250,6 +256,78 @@ const AdminNotificationsTab = () => {
     }
   };
 
+  const handleSendPushNotification = async () => {
+    if (!currentUser || !pushData.title || !pushData.body) return;
+    setIsProcessing(true);
+
+    try {
+      // Get target user IDs based on role
+      let userIds: string[] = [];
+
+      if (pushData.targetRole === "all") {
+        const { data } = await supabase.from("profiles").select("user_id");
+        userIds = data?.map((p) => p.user_id) || [];
+      } else {
+        const targetRole = pushData.targetRole as "creator" | "brand";
+        const { data: roleData } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .eq("role", targetRole);
+        userIds = roleData?.map((r) => r.user_id) || [];
+      }
+
+      if (userIds.length === 0) {
+        toast({
+          title: "Aucun destinataire",
+          description: "Aucun utilisateur trouvé pour cette cible.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Call the edge function to send push notifications
+      const { data, error } = await supabase.functions.invoke("send-push-notification", {
+        body: {
+          user_ids: userIds,
+          title: pushData.title,
+          body: pushData.body,
+          data: { route: "/" },
+        },
+      });
+
+      if (error) throw error;
+
+      // Log the action
+      await supabase.from("admin_logs").insert({
+        admin_id: currentUser.id,
+        action_type: "push_notification",
+        details: {
+          title: pushData.title,
+          target: pushData.targetRole,
+          sent: data?.sent || 0,
+          failed: data?.failed || 0,
+        },
+      });
+
+      toast({
+        title: "Notifications push envoyées",
+        description: `${data?.sent || 0} notifications envoyées, ${data?.failed || 0} échecs.`,
+      });
+
+      setShowPushSheet(false);
+      setPushData({ title: "", body: "", targetRole: "all" });
+    } catch (error) {
+      console.error("Error sending push notifications:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible d'envoyer les notifications push",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const openEditSheet = (template: NotificationTemplate) => {
     setSelectedTemplate(template);
     setFormData({
@@ -263,6 +341,82 @@ const AdminNotificationsTab = () => {
 
   return (
     <div className="space-y-4">
+      {/* Push Notifications Section */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Smartphone className="w-5 h-5 text-blue-500" />
+            Notifications Push (Mobile)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Sheet open={showPushSheet} onOpenChange={setShowPushSheet}>
+            <SheetTrigger asChild>
+              <Button className="w-full bg-blue-500 hover:bg-blue-600">
+                <Smartphone className="w-4 h-4 mr-2" />
+                Envoyer une notification push
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="rounded-t-3xl h-[70vh]">
+              <SheetHeader>
+                <SheetTitle className="flex items-center gap-2">
+                  <Smartphone className="w-5 h-5 text-blue-500" />
+                  Notification Push Mobile
+                </SheetTitle>
+              </SheetHeader>
+              <div className="mt-4 space-y-4 overflow-y-auto pb-4">
+                <div className="space-y-2">
+                  <Label>Destinataires</Label>
+                  <Select
+                    value={pushData.targetRole}
+                    onValueChange={(v) => setPushData({ ...pushData, targetRole: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tous les utilisateurs</SelectItem>
+                      <SelectItem value="creator">Créateurs uniquement</SelectItem>
+                      <SelectItem value="brand">Marques uniquement</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Titre *</Label>
+                  <Input
+                    placeholder="Titre de la notification"
+                    value={pushData.title}
+                    onChange={(e) => setPushData({ ...pushData, title: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Message *</Label>
+                  <Textarea
+                    placeholder="Contenu de la notification..."
+                    value={pushData.body}
+                    onChange={(e) => setPushData({ ...pushData, body: e.target.value })}
+                    rows={4}
+                  />
+                </div>
+                <div className="p-3 bg-blue-500/10 rounded-lg">
+                  <p className="text-xs text-muted-foreground">
+                    💡 Les notifications push seront envoyées uniquement aux utilisateurs ayant installé l'application mobile et autorisé les notifications.
+                  </p>
+                </div>
+                <Button
+                  className="w-full bg-blue-500 hover:bg-blue-600"
+                  onClick={handleSendPushNotification}
+                  disabled={!pushData.title || !pushData.body || isProcessing}
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  {isProcessing ? "Envoi..." : "Envoyer les notifications push"}
+                </Button>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </CardContent>
+      </Card>
+
       {/* Broadcast Section */}
       <Card>
         <CardHeader className="pb-3">
