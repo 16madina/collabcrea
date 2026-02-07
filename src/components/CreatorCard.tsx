@@ -145,12 +145,27 @@ const CreatorCard = ({ creator, index = 0, variant = "grid", onClick }: CreatorC
 
       {/* Infos */}
       <div className="p-3">
-        {/* Pays avec double drapeau si disponible */}
-        <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-          <span>
-            {creator.residenceFlag ? `${creator.residenceFlag}-${creator.flag}` : creator.flag}
-          </span>
-          <span>{creator.country}</span>
+        {/* Pays + Bouton Voir profil sur la même ligne */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+            <span>
+              {creator.residenceFlag ? `${creator.residenceFlag}-${creator.flag}` : creator.flag}
+            </span>
+            <span>{creator.country}</span>
+          </div>
+          
+          <Button
+            variant="gold"
+            size="sm"
+            className="h-6 px-2 text-[10px]"
+            onClick={(e) => {
+              e.stopPropagation();
+              onClick?.();
+            }}
+          >
+            <Eye className="w-3 h-3 mr-1" />
+            Voir
+          </Button>
         </div>
 
         {/* Réseaux sociaux */}
@@ -188,20 +203,6 @@ const CreatorCard = ({ creator, index = 0, variant = "grid", onClick }: CreatorC
             </div>
           )}
         </div>
-        
-        {/* Bouton Voir profil */}
-        <Button
-          variant="gold"
-          size="sm"
-          className="w-full mt-3 h-8 text-xs"
-          onClick={(e) => {
-            e.stopPropagation();
-            onClick?.();
-          }}
-        >
-          <Eye className="w-3.5 h-3.5 mr-1" />
-          Voir profil
-        </Button>
       </div>
     </motion.div>
   );
