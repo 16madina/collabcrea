@@ -1,7 +1,9 @@
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Settings, Camera, Globe, Building2, CheckCircle2 } from "lucide-react";
+import { Settings, Camera, Globe, Building2, CheckCircle2, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import NotificationBell from "@/components/NotificationBell";
+import { useAdmin } from "@/hooks/useAdmin";
 
 interface BrandProfileHeaderProps {
   companyName: string;
@@ -26,6 +28,9 @@ const BrandProfileHeader = ({
   onEditLogo,
   onEditBanner,
 }: BrandProfileHeaderProps) => {
+  const { isAdmin } = useAdmin();
+  const navigate = useNavigate();
+
   const getInitials = () => {
     if (!companyName) return "?";
     const words = companyName.split(" ");
@@ -61,6 +66,17 @@ const BrandProfileHeader = ({
 
         {/* Banner overlay gradient */}
         <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
+
+        {/* Admin button */}
+        {isAdmin && (
+          <button
+            onClick={() => navigate("/admin")}
+            className="absolute top-4 right-40 p-2 rounded-full bg-accent/80 backdrop-blur-sm text-accent-foreground hover:bg-accent transition-colors"
+            title="Panneau Admin"
+          >
+            <ShieldCheck className="w-5 h-5" />
+          </button>
+        )}
 
         {/* Notification bell */}
         <div className="absolute top-4 right-28">

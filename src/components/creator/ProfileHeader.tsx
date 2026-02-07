@@ -1,11 +1,12 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Settings, Camera, Shield, CheckCircle2, AlertCircle, Mail, Loader2 } from "lucide-react";
+import { Settings, Camera, Shield, CheckCircle2, AlertCircle, Mail, Loader2, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import NotificationBell from "@/components/NotificationBell";
-
+import { useAdmin } from "@/hooks/useAdmin";
 interface ProfileHeaderProps {
   fullName: string;
   category: string | null;
@@ -36,6 +37,8 @@ const ProfileHeader = ({
   onEditBanner,
 }: ProfileHeaderProps) => {
   const [sendingEmail, setSendingEmail] = useState(false);
+  const { isAdmin } = useAdmin();
+  const navigate = useNavigate();
 
   const getInitials = () => {
     if (!fullName) return "?";
@@ -113,6 +116,17 @@ const ProfileHeader = ({
 
         {/* Banner overlay gradient */}
         <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
+
+        {/* Admin button */}
+        {isAdmin && (
+          <button
+            onClick={() => navigate("/admin")}
+            className="absolute top-4 right-40 p-2 rounded-full bg-accent/80 backdrop-blur-sm text-accent-foreground hover:bg-accent transition-colors"
+            title="Panneau Admin"
+          >
+            <ShieldCheck className="w-5 h-5" />
+          </button>
+        )}
 
         {/* Notification bell */}
         <div className="absolute top-4 right-28">
