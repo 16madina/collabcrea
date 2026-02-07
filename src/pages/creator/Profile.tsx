@@ -1,41 +1,19 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Settings, 
-  Edit3, 
-  Instagram, 
-  Youtube, 
-  MapPin, 
-  Star, 
-  ChevronRight,
-  LogOut,
-  Bell,
-  Shield,
-  HelpCircle,
-  User,
-  FileCheck
-} from "lucide-react";
-import BottomNav from "@/components/BottomNav";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import BottomNav from "@/components/BottomNav";
 import ProfileEditForm from "@/components/creator/ProfileEditForm";
+import ProfileHeader from "@/components/creator/ProfileHeader";
+import ProfileStats from "@/components/creator/ProfileStats";
+import ProfileTabs, { ProfileTabType } from "@/components/creator/ProfileTabs";
+import SettingsSheet from "@/components/creator/SettingsSheet";
+import InfoTab from "@/components/creator/tabs/InfoTab";
+import PricingTab from "@/components/creator/tabs/PricingTab";
+import OffersTab from "@/components/creator/tabs/OffersTab";
+import ReviewsTab from "@/components/creator/tabs/ReviewsTab";
 import IdentityVerificationTab from "@/components/creator/IdentityVerificationTab";
-import VerificationBanner from "@/components/VerificationBanner";
-
-// TikTok icon component
-const TikTokIcon = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
-  </svg>
-);
-
-// Snapchat icon component
-const SnapchatIcon = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-    <path d="M12.206.793c.99 0 4.347.276 5.93 3.821.529 1.193.403 3.219.299 4.847l-.003.06c-.012.18-.022.345-.03.51.075.045.203.09.401.09.3-.016.659-.12 1.033-.301a.42.42 0 0 1 .165-.036c.101 0 .21.035.3.096.135.09.21.21.21.36 0 .165-.09.315-.225.405a2.2 2.2 0 0 1-.405.195c-.12.045-.24.09-.359.12-.165.045-.329.09-.479.149-.21.075-.27.225-.3.449 0 .03-.015.06-.015.09v.061c.014.175.03.375.089.569a.32.32 0 0 0 .029.069c.021.044.04.085.061.12.165.256.314.404.614.599.27.18.614.315 1.019.45.104.033.21.063.3.105.209.09.405.24.495.45.045.12.06.255.045.39-.075.33-.375.54-.674.585a3.65 3.65 0 0 1-.569.045c-.225 0-.45-.03-.66-.045-.255-.03-.494-.045-.704-.045-.12 0-.24 0-.345.015-.21.015-.42.09-.6.195-.375.195-.705.615-1.095 1.11-.194.25-.404.5-.629.71-.344.33-.749.54-1.169.69-.479.18-.989.27-1.559.27h-.15c-.57 0-1.08-.09-1.559-.27a3.3 3.3 0 0 1-1.169-.69c-.225-.21-.435-.46-.629-.71-.39-.495-.72-.915-1.095-1.11a1.38 1.38 0 0 0-.6-.195c-.106-.015-.225-.015-.345-.015-.21 0-.449.015-.704.045-.21.015-.435.045-.66.045a3.65 3.65 0 0 1-.569-.045c-.3-.045-.599-.255-.674-.585a.71.71 0 0 1 .045-.39c.09-.21.285-.36.495-.45.09-.04.195-.072.3-.105.405-.135.749-.27 1.019-.45.3-.195.449-.343.614-.599l.061-.12c.01-.022.02-.045.029-.069.059-.194.075-.394.089-.569v-.061c0-.03-.015-.06-.015-.09-.03-.224-.09-.374-.3-.449a2.81 2.81 0 0 0-.479-.149c-.12-.03-.24-.075-.359-.12a2.2 2.2 0 0 1-.405-.195c-.135-.09-.225-.24-.225-.405 0-.15.075-.27.21-.36a.5.5 0 0 1 .3-.096.42.42 0 0 1 .165.036c.374.181.733.301 1.033.301.198 0 .326-.045.401-.09a22.1 22.1 0 0 1-.033-.57c-.104-1.628-.23-3.654.3-4.847C7.859 1.069 11.216.793 12.206.793z"/>
-  </svg>
-);
 
 interface PricingItem {
   type: string;
@@ -57,26 +35,20 @@ interface ProfileData {
   identity_verified: boolean;
   identity_document_url: string | null;
   identity_submitted_at: string | null;
+  avatar_url: string | null;
+  created_at: string;
 }
-
-const menuItems = [
-  { icon: Bell, label: "Notifications", action: "notifications" },
-  { icon: Shield, label: "Confidentialité", action: "privacy" },
-  { icon: HelpCircle, label: "Aide & Support", action: "help" },
-  { icon: LogOut, label: "Déconnexion", action: "logout", destructive: true },
-];
-
-type TabType = "profile" | "verification";
 
 const CreatorProfile = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user, signOut } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<TabType>(
-    (searchParams.get("tab") as TabType) || "profile"
+  const [activeTab, setActiveTab] = useState<ProfileTabType>(
+    (searchParams.get("tab") as ProfileTabType) || "info"
   );
 
   const fetchProfile = async () => {
@@ -105,6 +77,8 @@ const CreatorProfile = () => {
         identity_verified: data.identity_verified ?? false,
         identity_document_url: data.identity_document_url,
         identity_submitted_at: data.identity_submitted_at,
+        avatar_url: data.avatar_url,
+        created_at: data.created_at,
       });
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -118,26 +92,24 @@ const CreatorProfile = () => {
   }, [user]);
 
   useEffect(() => {
-    const tab = searchParams.get("tab") as TabType;
-    if (tab === "verification") {
-      setActiveTab("verification");
+    const tab = searchParams.get("tab") as ProfileTabType;
+    if (tab) {
+      setActiveTab(tab);
     }
   }, [searchParams]);
 
-  const handleTabChange = (tab: TabType) => {
+  const handleTabChange = (tab: ProfileTabType) => {
     setActiveTab(tab);
-    if (tab === "verification") {
-      setSearchParams({ tab: "verification" });
+    if (tab !== "info") {
+      setSearchParams({ tab });
     } else {
       setSearchParams({});
     }
   };
 
-  const handleMenuAction = async (action: string) => {
-    if (action === "logout") {
-      await signOut();
-      navigate("/");
-    }
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/");
   };
 
   const handleCloseEdit = () => {
@@ -172,34 +144,24 @@ const CreatorProfile = () => {
     const accounts = [];
     
     if (profileData.youtube_followers) {
-      accounts.push({
-        platform: "YouTube",
-        icon: Youtube,
-        followers: profileData.youtube_followers,
-      });
+      accounts.push({ platform: "YouTube", followers: profileData.youtube_followers });
     }
     if (profileData.instagram_followers) {
-      accounts.push({
-        platform: "Instagram",
-        icon: Instagram,
-        followers: profileData.instagram_followers,
-      });
+      accounts.push({ platform: "Instagram", followers: profileData.instagram_followers });
     }
     if (profileData.tiktok_followers) {
-      accounts.push({
-        platform: "TikTok",
-        icon: TikTokIcon,
-        followers: profileData.tiktok_followers,
-      });
+      accounts.push({ platform: "TikTok", followers: profileData.tiktok_followers });
     }
     if (profileData.snapchat_followers) {
-      accounts.push({
-        platform: "Snapchat",
-        icon: SnapchatIcon,
-        followers: profileData.snapchat_followers,
-      });
+      accounts.push({ platform: "Snapchat", followers: profileData.snapchat_followers });
     }
     return accounts;
+  };
+
+  const formatJoinedDate = () => {
+    if (!profileData?.created_at) return null;
+    const date = new Date(profileData.created_at);
+    return date.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
   };
 
   const socialAccounts = getSocialAccounts();
@@ -208,7 +170,14 @@ const CreatorProfile = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse text-gold">Chargement...</div>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center"
+        >
+          <div className="w-12 h-12 rounded-full border-2 border-gold border-t-transparent animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Chargement...</p>
+        </motion.div>
       </div>
     );
   }
@@ -225,286 +194,88 @@ const CreatorProfile = () => {
         )}
       </AnimatePresence>
 
-      {/* Header */}
-      <div className="safe-top px-6 py-4">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between"
-        >
-          <h1 className="font-display text-2xl font-bold text-gold-gradient">
-            Profil
-          </h1>
-          <button className="touch-target">
-            <Settings className="w-6 h-6 text-foreground" />
-          </button>
-        </motion.div>
-      </div>
+      {/* Settings Sheet */}
+      <SettingsSheet
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        onLogout={handleLogout}
+      />
 
-      {/* Verification Banner - Show if not fully verified */}
-      {profileData && !isFullyVerified && (
-        <div className="px-6 mb-4">
-          <VerificationBanner
-            status={{
-              email_verified: profileData.email_verified,
-              identity_verified: profileData.identity_verified,
-              identity_submitted_at: profileData.identity_submitted_at,
-            }}
-          />
-        </div>
-      )}
+      {/* Profile Header with Banner */}
+      <ProfileHeader
+        fullName={profileData?.full_name || ""}
+        category={profileData?.category || null}
+        country={profileData?.country || null}
+        avatarUrl={profileData?.avatar_url}
+        isVerified={isFullyVerified}
+        isEmailVerified={profileData?.email_verified || false}
+        isIdentityVerified={profileData?.identity_verified || false}
+        onSettingsClick={() => setShowSettings(true)}
+        onVerifyClick={() => handleTabChange("verification")}
+        onEditAvatar={() => setIsEditing(true)}
+        onEditBanner={() => setIsEditing(true)}
+      />
 
-      {/* Tab Navigation */}
-      <div className="px-6 mb-4">
-        <div className="flex gap-2 p-1 bg-muted/50 rounded-xl">
-          <button
-            onClick={() => handleTabChange("profile")}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
-              activeTab === "profile"
-                ? "bg-gold text-background"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <User className="w-4 h-4" />
-            Mon profil
-          </button>
-          <button
-            onClick={() => handleTabChange("verification")}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all relative ${
-              activeTab === "verification"
-                ? "bg-gold text-background"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <FileCheck className="w-4 h-4" />
-            Vérification
-            {!isFullyVerified && (
-              <span className="absolute -top-1 -right-1 w-3 h-3 bg-destructive rounded-full" />
-            )}
-          </button>
-        </div>
-      </div>
+      {/* Stats */}
+      <ProfileStats
+        totalFollowers={getTotalFollowers()}
+        rating={null}
+        collaborations={0}
+        engagementRate={null}
+      />
 
+      {/* Tabs */}
+      <ProfileTabs
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        showVerificationBadge={!isFullyVerified}
+        offersCount={0}
+        reviewsCount={0}
+      />
+
+      {/* Tab Content */}
       <AnimatePresence mode="wait">
-        {activeTab === "profile" ? (
-          <motion.div
-            key="profile"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-          >
-            {/* Profile Card */}
-            <div className="px-6">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="glass-card p-6 text-center relative"
-              >
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="absolute top-4 right-4 touch-target"
-                >
-                  <Edit3 className="w-5 h-5 text-gold" />
-                </button>
-
-                <div className="w-24 h-24 rounded-full bg-gold/20 flex items-center justify-center mx-auto mb-4 ring-4 ring-gold/30">
-                  <span className="text-gold font-bold text-3xl">
-                    {profileData?.full_name?.charAt(0) || "?"}
-                  </span>
-                </div>
-
-                <h2 className="font-display text-2xl font-bold">
-                  {profileData?.full_name || "Votre nom"}
-                </h2>
-                <p className="text-gold text-sm font-medium mt-1">
-                  Créateur {profileData?.category || ""}
-                </p>
-                
-                {profileData?.country && (
-                  <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm mt-2">
-                    <MapPin className="w-4 h-4" />
-                    <span>{profileData.country}</span>
-                  </div>
-                )}
-
-                {profileData?.bio && (
-                  <p className="text-muted-foreground text-sm mt-4 max-w-xs mx-auto">
-                    {profileData.bio}
-                  </p>
-                )}
-
-                <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-border">
-                  <div>
-                    <p className="text-2xl font-bold text-gold-gradient">{getTotalFollowers()}</p>
-                    <p className="text-xs text-muted-foreground">Abonnés</p>
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-gold-gradient">-</p>
-                    <div className="flex items-center justify-center gap-1">
-                      <Star className="w-3 h-3 text-gold fill-gold" />
-                      <p className="text-xs text-muted-foreground">Note</p>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-gold-gradient">0</p>
-                    <p className="text-xs text-muted-foreground">Collabs</p>
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-
-            {/* Social Accounts */}
-            {socialAccounts.length > 0 && (
-              <div className="px-6 mt-6">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                >
-                  <h3 className="font-display text-lg font-semibold mb-4">Réseaux sociaux</h3>
-                  <div className="space-y-3">
-                    {socialAccounts.map((account, index) => {
-                      const Icon = account.icon;
-                      return (
-                        <motion.div
-                          key={account.platform}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 0.15 + index * 0.05 }}
-                          className="glass-card p-4 flex items-center gap-4"
-                        >
-                          <div className="w-12 h-12 rounded-xl bg-gold/20 flex items-center justify-center">
-                            <Icon className="w-6 h-6 text-gold" />
-                          </div>
-                          <div className="flex-1">
-                            <p className="font-semibold">{account.platform}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-gold font-semibold">{account.followers}</p>
-                            <p className="text-xs text-accent">Connecté</p>
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                </motion.div>
-              </div>
-            )}
-
-            {/* Pricing Grid */}
-            {profileData?.pricing && profileData.pricing.length > 0 && (
-              <div className="px-6 mt-6">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-display text-lg font-semibold">Grille tarifaire</h3>
-                    <button onClick={() => setIsEditing(true)} className="text-gold text-sm">
-                      Modifier
-                    </button>
-                  </div>
-                  <div className="glass-card p-4 space-y-3">
-                    {profileData.pricing.map((item, index) => (
-                      <div
-                        key={item.type}
-                        className={`flex items-center justify-between py-2 ${
-                          index !== (profileData.pricing?.length || 0) - 1 ? "border-b border-border" : ""
-                        }`}
-                      >
-                        <div>
-                          <span className="text-foreground">{item.type}</span>
-                          {item.description && (
-                            <p className="text-xs text-muted-foreground">{item.description}</p>
-                          )}
-                        </div>
-                        <span className="text-gold font-semibold">
-                          {item.price.toLocaleString()} FCFA
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-              </div>
-            )}
-
-            {/* Empty state for new users */}
-            {(!socialAccounts.length && (!profileData?.pricing || profileData.pricing.length === 0)) && (
-              <div className="px-6 mt-6">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="glass-card p-6 text-center"
-                >
-                  <p className="text-muted-foreground mb-4">
-                    Complétez votre profil pour attirer plus de marques !
-                  </p>
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    className="text-gold font-medium"
-                  >
-                    Modifier mon profil →
-                  </button>
-                </motion.div>
-              </div>
-            )}
-
-            {/* Menu */}
-            <div className="px-6 mt-6">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="space-y-2"
-              >
-                {menuItems.map((item, index) => {
-                  const Icon = item.icon;
-                  return (
-                    <motion.button
-                      key={item.action}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.35 + index * 0.05 }}
-                      onClick={() => handleMenuAction(item.action)}
-                      className={`w-full glass-card p-4 flex items-center gap-4 ${
-                        item.destructive ? "hover:border-destructive/30" : "hover:border-gold/30"
-                      } transition-all`}
-                    >
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                        item.destructive ? "bg-destructive/20" : "bg-muted"
-                      }`}>
-                        <Icon className={`w-5 h-5 ${item.destructive ? "text-destructive" : "text-muted-foreground"}`} />
-                      </div>
-                      <span className={`flex-1 text-left font-medium ${
-                        item.destructive ? "text-destructive" : "text-foreground"
-                      }`}>
-                        {item.label}
-                      </span>
-                      <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                    </motion.button>
-                  );
-                })}
-              </motion.div>
-            </div>
-          </motion.div>
-        ) : (
-          <motion.div
-            key="verification"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-          >
-            {profileData && (
-              <IdentityVerificationTab
-                identityVerified={profileData.identity_verified}
-                identitySubmittedAt={profileData.identity_submitted_at}
-                identityDocumentUrl={profileData.identity_document_url}
-                onUpdate={fetchProfile}
-              />
-            )}
-          </motion.div>
-        )}
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.2 }}
+        >
+          {activeTab === "info" && (
+            <InfoTab
+              bio={profileData?.bio || null}
+              country={profileData?.country || null}
+              socialAccounts={socialAccounts}
+              joinedDate={formatJoinedDate()}
+              onEdit={() => setIsEditing(true)}
+            />
+          )}
+          
+          {activeTab === "pricing" && (
+            <PricingTab
+              pricing={profileData?.pricing || null}
+              onEdit={() => setIsEditing(true)}
+            />
+          )}
+          
+          {activeTab === "offers" && (
+            <OffersTab applications={[]} />
+          )}
+          
+          {activeTab === "reviews" && (
+            <ReviewsTab reviews={[]} averageRating={null} />
+          )}
+          
+          {activeTab === "verification" && profileData && (
+            <IdentityVerificationTab
+              identityVerified={profileData.identity_verified}
+              identityDocumentUrl={profileData.identity_document_url}
+              identitySubmittedAt={profileData.identity_submitted_at}
+              onUpdate={fetchProfile}
+            />
+          )}
+        </motion.div>
       </AnimatePresence>
 
       <BottomNav userRole="creator" />
