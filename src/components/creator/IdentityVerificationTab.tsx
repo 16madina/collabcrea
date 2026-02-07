@@ -7,7 +7,9 @@ import {
   Clock, 
   FileImage, 
   AlertCircle,
-  X
+  X,
+  Mail,
+  Loader2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -17,6 +19,7 @@ interface IdentityVerificationTabProps {
   identityVerified: boolean;
   identitySubmittedAt: string | null;
   identityDocumentUrl: string | null;
+  emailVerified?: boolean;
   onUpdate: () => void;
 }
 
@@ -24,13 +27,48 @@ const IdentityVerificationTab = ({
   identityVerified,
   identitySubmittedAt,
   identityDocumentUrl,
+  emailVerified = false,
   onUpdate,
 }: IdentityVerificationTabProps) => {
   const { user } = useAuth();
   const [uploading, setUploading] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleResendVerificationEmail = async () => {
+    setSendingEmail(true);
+    try {
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      
+      if (!currentUser?.email) {
+        toast.error("Email non trouvé");
+        return;
+      }
+
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: currentUser.email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/creator/profile`,
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success("Email de vérification envoyé !", {
+        description: `Vérifiez votre boîte de réception à ${currentUser.email}`,
+      });
+    } catch (error: any) {
+      console.error("Error sending verification email:", error);
+      toast.error("Erreur lors de l'envoi", {
+        description: error.message || "Veuillez réessayer plus tard",
+      });
+    } finally {
+      setSendingEmail(false);
+    }
+  };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -172,6 +210,43 @@ const IdentityVerificationTab = ({
       animate={{ opacity: 1, y: 0 }}
       className="p-6 space-y-6"
     >
+      {/* Email verification section */}
+      <div className="glass-card p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+              emailVerified ? "bg-accent/20" : "bg-gold/20"
+            }`}>
+              {emailVerified ? (
+                <CheckCircle className="w-5 h-5 text-accent" />
+              ) : (
+                <Mail className="w-5 h-5 text-gold" />
+              )}
+            </div>
+            <div>
+              <p className="font-semibold">Vérification email</p>
+              <p className="text-xs text-muted-foreground">
+                {emailVerified ? "Email vérifié" : "Email non vérifié"}
+              </p>
+            </div>
+          </div>
+          {!emailVerified && (
+            <button
+              onClick={handleResendVerificationEmail}
+              disabled={sendingEmail}
+              className="bg-gold text-background px-4 py-2 rounded-lg text-sm font-medium hover:bg-gold/90 transition-colors flex items-center gap-2 disabled:opacity-50"
+            >
+              {sendingEmail ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Mail className="w-4 h-4" />
+              )}
+              {sendingEmail ? "Envoi..." : "Envoyer"}
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Info card */}
       <div className="glass-card p-4 flex items-start gap-3">
         <Shield className="w-5 h-5 text-gold mt-0.5" />
