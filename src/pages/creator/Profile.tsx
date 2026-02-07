@@ -16,6 +16,8 @@ import ReviewsTab from "@/components/creator/tabs/ReviewsTab";
 import IdentityVerificationTab from "@/components/creator/IdentityVerificationTab";
 import PricingEditSheet from "@/components/creator/PricingEditSheet";
 import SocialEditSheet from "@/components/creator/SocialEditSheet";
+import AvatarEditSheet from "@/components/creator/AvatarEditSheet";
+import BannerEditSheet from "@/components/creator/BannerEditSheet";
 
 interface PricingItem {
   type: string;
@@ -38,6 +40,7 @@ interface ProfileData {
   identity_document_url: string | null;
   identity_submitted_at: string | null;
   avatar_url: string | null;
+  banner_url: string | null;
   created_at: string;
 }
 
@@ -49,6 +52,8 @@ const CreatorProfile = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [showPricingSheet, setShowPricingSheet] = useState(false);
   const [showSocialSheet, setShowSocialSheet] = useState(false);
+  const [showAvatarSheet, setShowAvatarSheet] = useState(false);
+  const [showBannerSheet, setShowBannerSheet] = useState(false);
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<ProfileTabType>(
@@ -82,6 +87,7 @@ const CreatorProfile = () => {
         identity_document_url: data.identity_document_url,
         identity_submitted_at: data.identity_submitted_at,
         avatar_url: data.avatar_url,
+        banner_url: data.banner_url,
         created_at: data.created_at,
       });
     } catch (error) {
@@ -211,13 +217,14 @@ const CreatorProfile = () => {
         category={profileData?.category || null}
         country={profileData?.country || null}
         avatarUrl={profileData?.avatar_url}
+        bannerUrl={profileData?.banner_url}
         isVerified={isFullyVerified}
         isEmailVerified={profileData?.email_verified || false}
         isIdentityVerified={profileData?.identity_verified || false}
         onSettingsClick={() => setShowSettings(true)}
         onVerifyClick={() => handleTabChange("verification")}
-        onEditAvatar={() => setIsEditing(true)}
-        onEditBanner={() => setIsEditing(true)}
+        onEditAvatar={() => setShowAvatarSheet(true)}
+        onEditBanner={() => setShowBannerSheet(true)}
       />
 
       {/* Stats */}
@@ -301,6 +308,22 @@ const CreatorProfile = () => {
           tiktok_followers: profileData?.tiktok_followers || null,
           snapchat_followers: profileData?.snapchat_followers || null,
         }}
+        onUpdate={fetchProfile}
+      />
+
+      {/* Avatar Edit Sheet */}
+      <AvatarEditSheet
+        isOpen={showAvatarSheet}
+        onClose={() => setShowAvatarSheet(false)}
+        currentAvatarUrl={profileData?.avatar_url || null}
+        onUpdate={fetchProfile}
+      />
+
+      {/* Banner Edit Sheet */}
+      <BannerEditSheet
+        isOpen={showBannerSheet}
+        onClose={() => setShowBannerSheet(false)}
+        currentBannerUrl={profileData?.banner_url || null}
         onUpdate={fetchProfile}
       />
 
