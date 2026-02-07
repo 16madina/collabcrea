@@ -305,6 +305,48 @@ export type Database = {
         }
         Relationships: []
       }
+      portfolio_items: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          media_type: string
+          media_url: string
+          platform: string | null
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+          user_id: string
+          views_count: number | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          media_type: string
+          media_url: string
+          platform?: string | null
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+          views_count?: number | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          media_type?: string
+          media_url?: string
+          platform?: string | null
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          views_count?: number | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

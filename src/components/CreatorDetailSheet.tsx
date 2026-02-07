@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Star, MapPin, MessageCircle, Flag } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Star, MapPin, MessageCircle, Flag, User, CreditCard, Image } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import ReportDialog from "@/components/ReportDialog";
+import PortfolioTab from "@/components/creator/tabs/PortfolioTab";
 
 // Social media icons
 const YoutubeIcon = ({ className }: { className?: string }) => (
@@ -128,71 +130,105 @@ const CreatorDetailSheet = ({ creator, creatorUserId, open, onOpenChange }: Crea
           </div>
         </div>
 
-        {/* Contenu */}
-        <div className="mt-4 space-y-6">
-          {/* Bio */}
-          <div>
-            <h3 className="font-semibold text-foreground mb-2">À propos</h3>
-            <p className="text-sm text-muted-foreground">
-              {creator.bio || `Créateur de contenu ${creator.category} basé en ${creator.country}. Passionné par la création de contenu authentique et engageant pour les marques africaines et internationales.`}
-            </p>
-          </div>
+        {/* Tabs Navigation */}
+        <div className="mt-4">
+          <Tabs defaultValue="info" className="w-full">
+            <TabsList className="w-full grid grid-cols-3 bg-muted/50 p-1 rounded-xl mb-4">
+              <TabsTrigger value="info" className="rounded-lg data-[state=active]:bg-gold data-[state=active]:text-primary-foreground">
+                <User className="w-4 h-4 mr-1.5" />
+                Infos
+              </TabsTrigger>
+              <TabsTrigger value="portfolio" className="rounded-lg data-[state=active]:bg-gold data-[state=active]:text-primary-foreground">
+                <Image className="w-4 h-4 mr-1.5" />
+                Portfolio
+              </TabsTrigger>
+              <TabsTrigger value="pricing" className="rounded-lg data-[state=active]:bg-gold data-[state=active]:text-primary-foreground">
+                <CreditCard className="w-4 h-4 mr-1.5" />
+                Tarifs
+              </TabsTrigger>
+            </TabsList>
 
-          {/* Réseaux sociaux */}
-          <div>
-            <h3 className="font-semibold text-foreground mb-3">Réseaux sociaux</h3>
-            <div className="grid grid-cols-2 gap-3">
-              {creator.socials.youtube && (
-                <div className="glass rounded-xl p-3 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
-                    <YoutubeIcon className="w-5 h-5 text-red-500" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">YouTube</p>
-                    <p className="font-semibold text-foreground">{creator.socials.youtube}</p>
-                  </div>
-                </div>
-              )}
-              {creator.socials.instagram && (
-                <div className="glass rounded-xl p-3 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-pink-500/20 flex items-center justify-center">
-                    <InstagramIcon className="w-5 h-5 text-pink-500" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Instagram</p>
-                    <p className="font-semibold text-foreground">{creator.socials.instagram}</p>
-                  </div>
-                </div>
-              )}
-              {creator.socials.tiktok && (
-                <div className="glass rounded-xl p-3 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-foreground/10 flex items-center justify-center">
-                    <TiktokIcon className="w-5 h-5 text-foreground" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">TikTok</p>
-                    <p className="font-semibold text-foreground">{creator.socials.tiktok}</p>
-                  </div>
-                </div>
-              )}
-              {creator.socials.snapchat && (
-                <div className="glass rounded-xl p-3 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-yellow-400/20 flex items-center justify-center">
-                    <SnapchatIcon className="w-5 h-5 text-yellow-400" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Snapchat</p>
-                    <p className="font-semibold text-foreground">{creator.socials.snapchat}</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+            {/* Info Tab */}
+            <TabsContent value="info" className="space-y-6">
+              {/* Bio */}
+              <div>
+                <h3 className="font-semibold text-foreground mb-2">À propos</h3>
+                <p className="text-sm text-muted-foreground">
+                  {creator.bio || `Créateur de contenu ${creator.category} basé en ${creator.country}. Passionné par la création de contenu authentique et engageant pour les marques africaines et internationales.`}
+                </p>
+              </div>
 
-          {/* Grille tarifaire */}
-          <div>
-            <h3 className="font-semibold text-foreground mb-3">Grille tarifaire</h3>
-            <div className="space-y-2">
+              {/* Réseaux sociaux */}
+              <div>
+                <h3 className="font-semibold text-foreground mb-3">Réseaux sociaux</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {creator.socials.youtube && (
+                    <div className="glass rounded-xl p-3 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-destructive/20 flex items-center justify-center">
+                        <YoutubeIcon className="w-5 h-5 text-destructive" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">YouTube</p>
+                        <p className="font-semibold text-foreground">{creator.socials.youtube}</p>
+                      </div>
+                    </div>
+                  )}
+                  {creator.socials.instagram && (
+                    <div className="glass rounded-xl p-3 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center">
+                        <InstagramIcon className="w-5 h-5 text-accent" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Instagram</p>
+                        <p className="font-semibold text-foreground">{creator.socials.instagram}</p>
+                      </div>
+                    </div>
+                  )}
+                  {creator.socials.tiktok && (
+                    <div className="glass rounded-xl p-3 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-foreground/10 flex items-center justify-center">
+                        <TiktokIcon className="w-5 h-5 text-foreground" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">TikTok</p>
+                        <p className="font-semibold text-foreground">{creator.socials.tiktok}</p>
+                      </div>
+                    </div>
+                  )}
+                  {creator.socials.snapchat && (
+                    <div className="glass rounded-xl p-3 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gold/20 flex items-center justify-center">
+                        <SnapchatIcon className="w-5 h-5 text-gold" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Snapchat</p>
+                        <p className="font-semibold text-foreground">{creator.socials.snapchat}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* Portfolio Tab */}
+            <TabsContent value="portfolio">
+              {creatorUserId && !creatorUserId.startsWith("static-") ? (
+                <PortfolioTab userId={creatorUserId} />
+              ) : (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
+                    <Image className="w-8 h-8 text-muted-foreground" />
+                  </div>
+                  <h3 className="font-semibold text-foreground mb-2">Portfolio non disponible</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Ce créateur n'a pas encore configuré son portfolio.
+                  </p>
+                </div>
+              )}
+            </TabsContent>
+
+            {/* Pricing Tab */}
+            <TabsContent value="pricing" className="space-y-2">
               {pricing.map((item, index) => (
                 <div
                   key={index}
@@ -207,8 +243,8 @@ const CreatorDetailSheet = ({ creator, creatorUserId, open, onOpenChange }: Crea
                   </div>
                 </div>
               ))}
-            </div>
-          </div>
+            </TabsContent>
+          </Tabs>
 
           {/* Actions */}
           <div className="pt-4 pb-8 space-y-3">

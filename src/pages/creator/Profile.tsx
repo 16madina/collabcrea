@@ -23,6 +23,7 @@ import AvatarEditSheet from "@/components/creator/AvatarEditSheet";
 import BannerEditSheet from "@/components/creator/BannerEditSheet";
 import BioEditSheet from "@/components/creator/BioEditSheet";
 import ResidenceEditSheet from "@/components/creator/ResidenceEditSheet";
+import PortfolioEditSheet from "@/components/creator/PortfolioEditSheet";
 
 interface PricingItem {
   type: string;
@@ -64,6 +65,7 @@ const CreatorProfile = () => {
   const [showBannerSheet, setShowBannerSheet] = useState(false);
   const [showBioSheet, setShowBioSheet] = useState(false);
   const [showResidenceSheet, setShowResidenceSheet] = useState(false);
+  const [showPortfolioSheet, setShowPortfolioSheet] = useState(false);
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<ProfileTabType>(
@@ -336,6 +338,34 @@ const CreatorProfile = () => {
         onEditBanner={() => setShowBannerSheet(true)}
       />
 
+      {/* Portfolio Button - Prominent CTA */}
+      <div className="px-4 py-3">
+        <motion.button
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          onClick={() => setShowPortfolioSheet(true)}
+          className="w-full flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-gold/20 via-gold/10 to-gold/20 border border-gold/30 hover:border-gold/50 transition-all group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gold/20 flex items-center justify-center">
+              <svg className="w-6 h-6 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div className="text-left">
+              <p className="font-semibold text-foreground">Mon Portfolio</p>
+              <p className="text-xs text-muted-foreground">Photos, vidéos et réalisations</p>
+            </div>
+          </div>
+          <div className="w-10 h-10 rounded-full bg-gold flex items-center justify-center group-hover:scale-110 transition-transform">
+            <svg className="w-5 h-5 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+          </div>
+        </motion.button>
+      </div>
+
       {/* Stats */}
       <ProfileStats
         totalFollowers={getTotalFollowers()}
@@ -453,6 +483,12 @@ const CreatorProfile = () => {
         onClose={() => setShowResidenceSheet(false)}
         currentResidence={profileData?.residence_country || null}
         onUpdate={fetchProfile}
+      />
+
+      {/* Portfolio Edit Sheet */}
+      <PortfolioEditSheet
+        isOpen={showPortfolioSheet}
+        onClose={() => setShowPortfolioSheet(false)}
       />
 
       <BottomNav userRole="creator" />
