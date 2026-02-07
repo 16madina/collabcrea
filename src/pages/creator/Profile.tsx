@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useYouTubeSync } from "@/hooks/useYouTubeSync";
 import { useTikTokSync } from "@/hooks/useTikTokSync";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import BottomNav from "@/components/BottomNav";
 import ProfileEditForm from "@/components/creator/ProfileEditForm";
 import ProfileHeader from "@/components/creator/ProfileHeader";
@@ -125,6 +126,39 @@ const CreatorProfile = () => {
   useEffect(() => {
     fetchProfile();
   }, [user]);
+
+  // Detect email verification callback (user lands after clicking email link)
+  useEffect(() => {
+    const checkEmailVerification = async () => {
+      if (!user) return;
+
+      // Refresh session to get latest email_confirmed_at
+      const { data: { session }, error } = await supabase.auth.refreshSession();
+      if (error) {
+        console.error("Error refreshing session:", error);
+        return;
+      }
+
+      const confirmedAt = session?.user?.email_confirmed_at || (session?.user as any)?.confirmed_at;
+      
+      if (confirmedAt && profileData && !profileData.email_verified) {
+        // Email was just confirmed! Update profile and show toast
+        await supabase
+          .from("profiles")
+          .update({ email_verified: true })
+          .eq("user_id", user.id);
+        
+        toast.success("Email vérifié avec succès ! ✅", {
+          description: "Vous pouvez maintenant accéder à toutes les fonctionnalités.",
+        });
+        
+        fetchProfile();
+      }
+    };
+
+    // Check on mount and when returning from email link
+    checkEmailVerification();
+  }, [user, profileData?.email_verified]);
 
   // Handle OAuth callbacks from YouTube and TikTok
   useEffect(() => {
