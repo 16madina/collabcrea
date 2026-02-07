@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Sparkles, Users, HelpCircle, X, Briefcase, DollarSign, Calendar, MapPin, Send, Shield } from "lucide-react";
+import { ArrowRight, Sparkles, Users, HelpCircle, X, Briefcase, DollarSign, Calendar, MapPin, Send, Shield, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import LandingNav from "@/components/LandingNav";
@@ -8,7 +8,7 @@ import CreatorCard from "@/components/CreatorCard";
 import CreatorDetailSheet from "@/components/CreatorDetailSheet";
 import NotificationBell from "@/components/NotificationBell";
 import type { Creator } from "@/components/CreatorDetailSheet";
-import { allCreators } from "@/data/creators";
+import { useCreators } from "@/hooks/useCreators";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useAuth } from "@/hooks/useAuth";
 import heroImage from "@/assets/hero-creator.jpg";
@@ -132,12 +132,13 @@ type TabType = "creators" | "offers";
 const Landing = () => {
   const [showHowItWorks, setShowHowItWorks] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>("creators");
-  const [selectedCreator, setSelectedCreator] = useState<Creator | null>(null);
+  const [selectedCreator, setSelectedCreator] = useState<(Creator & { userId: string }) | null>(null);
   const [showCreatorDetail, setShowCreatorDetail] = useState(false);
   const { isAdmin } = useAdmin();
   const { user } = useAuth();
+  const { allCreators, loading } = useCreators();
 
-  const handleCreatorClick = (creator: Creator) => {
+  const handleCreatorClick = (creator: Creator & { userId: string }) => {
     setSelectedCreator(creator);
     setShowCreatorDetail(true);
   };
@@ -265,17 +266,23 @@ const Landing = () => {
             <h3 className="font-display text-lg font-bold mb-4">
               Créateurs <span className="text-gold-gradient">populaires</span>
             </h3>
-            <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-6 px-6 pb-4">
-              {allCreators.slice(0, 4).map((creator, index) => (
-                <CreatorCard
-                  key={creator.firstName}
-                  creator={creator}
-                  index={index}
-                  variant="horizontal"
-                  onClick={() => handleCreatorClick(creator)}
-                />
-              ))}
-            </div>
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 text-gold animate-spin" />
+              </div>
+            ) : (
+              <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-6 px-6 pb-4">
+                {allCreators.slice(0, 4).map((creator, index) => (
+                  <CreatorCard
+                    key={creator.userId}
+                    creator={creator}
+                    index={index}
+                    variant="horizontal"
+                    onClick={() => handleCreatorClick(creator)}
+                  />
+                ))}
+              </div>
+            )}
           </motion.div>
         </motion.div>
       </section>
@@ -332,16 +339,22 @@ const Landing = () => {
                 </div>
 
                 {/* Grille de cartes créateurs */}
-                <div className="grid grid-cols-2 gap-3">
-                  {allCreators.map((creator, index) => (
-                    <CreatorCard
-                      key={creator.firstName + creator.lastName}
-                      creator={creator}
-                      index={index}
-                      onClick={() => handleCreatorClick(creator)}
-                    />
-                  ))}
-                </div>
+                {loading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="w-8 h-8 text-gold animate-spin" />
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3">
+                    {allCreators.map((creator, index) => (
+                      <CreatorCard
+                        key={creator.userId}
+                        creator={creator}
+                        index={index}
+                        onClick={() => handleCreatorClick(creator)}
+                      />
+                    ))}
+                  </div>
+                )}
               </motion.div>
             ) : (
               <motion.div
@@ -481,6 +494,7 @@ const Landing = () => {
       {/* Creator Detail Sheet */}
       <CreatorDetailSheet
         creator={selectedCreator}
+        creatorUserId={selectedCreator?.userId.startsWith("static-") ? null : selectedCreator?.userId}
         open={showCreatorDetail}
         onOpenChange={setShowCreatorDetail}
       />
