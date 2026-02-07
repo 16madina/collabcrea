@@ -10,10 +10,10 @@ interface PricingItem {
 
 interface PricingTabProps {
   pricing: PricingItem[] | null;
-  onEdit: () => void;
+  onEditPricing: () => void;
 }
 
-const PricingTab = ({ pricing, onEdit }: PricingTabProps) => {
+const PricingTab = ({ pricing, onEditPricing }: PricingTabProps) => {
   const hasPricing = pricing && pricing.length > 0;
 
   // Group pricing by platform
@@ -56,7 +56,7 @@ const PricingTab = ({ pricing, onEdit }: PricingTabProps) => {
           <CreditCard className="w-5 h-5 text-gold" />
           <h3 className="font-display font-semibold text-foreground">Ma grille tarifaire</h3>
         </div>
-        <Button variant="ghost" size="sm" onClick={onEdit} className="text-gold">
+        <Button variant="ghost" size="sm" onClick={onEditPricing} className="text-gold">
           <Edit3 className="w-4 h-4 mr-1" />
           Modifier
         </Button>
@@ -130,7 +130,7 @@ const PricingTab = ({ pricing, onEdit }: PricingTabProps) => {
           <p className="text-muted-foreground text-sm mb-6 max-w-sm mx-auto">
             Ajoutez vos tarifs pour chaque type de contenu et laissez les marques vous trouver facilement
           </p>
-          <Button onClick={onEdit} variant="gold" className="gap-2">
+          <Button onClick={onEditPricing} variant="gold" className="gap-2">
             <Plus className="w-4 h-4" />
             Ajouter mes tarifs
           </Button>
