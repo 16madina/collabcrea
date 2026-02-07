@@ -203,7 +203,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send email via Resend
     const emailResponse = await resend.emails.send({
-      from: "CollabCréa <noreply@collabor.app>",
+      from: "CollabCréa <noreply@collabcrea.com>",
       to: [body.email],
       subject: emailContent.subject,
       html: emailContent.html,
