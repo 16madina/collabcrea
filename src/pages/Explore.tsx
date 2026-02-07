@@ -122,6 +122,7 @@ const Explore = () => {
       {/* Creator Detail Sheet */}
       <CreatorDetailSheet
         creator={selectedCreator}
+        creatorUserId={null}
         open={showCreatorDetail}
         onOpenChange={setShowCreatorDetail}
       />
