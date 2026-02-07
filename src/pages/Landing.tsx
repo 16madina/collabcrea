@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import LandingNav from "@/components/LandingNav";
 import CreatorCard from "@/components/CreatorCard";
 import CreatorDetailSheet from "@/components/CreatorDetailSheet";
+import NotificationBell from "@/components/NotificationBell";
 import type { Creator } from "@/components/CreatorDetailSheet";
 import { allCreators } from "@/data/creators";
 import { useAdmin } from "@/hooks/useAdmin";
@@ -170,7 +171,8 @@ const Landing = () => {
                 className="h-10 md:h-12 w-auto"
               />
             </Link>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+              {user && <NotificationBell />}
               {isAdmin && (
                 <Link to="/admin">
                   <Button variant="ghost" size="sm" className="text-xs px-2 py-1.5 h-auto text-gold">

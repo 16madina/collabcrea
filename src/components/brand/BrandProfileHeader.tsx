@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Settings, Camera, Globe, Building2, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import NotificationBell from "@/components/NotificationBell";
 
 interface BrandProfileHeaderProps {
   companyName: string;
@@ -60,6 +61,11 @@ const BrandProfileHeader = ({
 
         {/* Banner overlay gradient */}
         <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
+
+        {/* Notification bell */}
+        <div className="absolute top-4 right-28">
+          <NotificationBell />
+        </div>
 
         {/* Edit banner button */}
         <button

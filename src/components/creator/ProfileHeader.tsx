@@ -4,6 +4,7 @@ import { Settings, Camera, Shield, CheckCircle2, AlertCircle, Mail, Loader2 } fr
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import NotificationBell from "@/components/NotificationBell";
 
 interface ProfileHeaderProps {
   fullName: string;
@@ -112,6 +113,11 @@ const ProfileHeader = ({
 
         {/* Banner overlay gradient */}
         <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
+
+        {/* Notification bell */}
+        <div className="absolute top-4 right-28">
+          <NotificationBell />
+        </div>
 
         {/* Edit banner button */}
         <button
