@@ -339,7 +339,7 @@ export type Database = {
       is_user_verified: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "creator" | "brand"
+      app_role: "creator" | "brand" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -467,7 +467,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["creator", "brand"],
+      app_role: ["creator", "brand", "admin"],
     },
   },
 } as const
