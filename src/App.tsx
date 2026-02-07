@@ -16,6 +16,8 @@ import CreatorProfile from "./pages/creator/Profile";
 import BrandProfile from "./pages/brand/Profile";
 import BrandDashboard from "./pages/brand/Dashboard";
 import NotFound from "./pages/NotFound";
+import TermsOfService from "./pages/TermsOfService";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +34,8 @@ const App = () => (
             <Route path="/explore" element={<Explore />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/messages" element={<Messages />} />
+            <Route path="/terms" element={<TermsOfService />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
             
             {/* Creator Routes */}
             <Route path="/creator/dashboard" element={<Navigate to="/creator/profile" replace />} />
