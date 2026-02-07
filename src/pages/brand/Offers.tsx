@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Clock, Users, Plus, ChevronRight, X, Loader2, Edit, Trash2, MapPin } from "lucide-react";
+import { Search, Plus, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
+import OfferCard from "@/components/brand/OfferCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import { mockOffers, MockOffer } from "@/data/offers";
+import { mockOffers } from "@/data/offers";
+import { toast } from "sonner";
 
 interface Offer {
   id: string;
@@ -43,7 +45,6 @@ const BrandOffers = () => {
   const [dbOffers, setDbOffers] = useState<Offer[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterStatus>("all");
-  const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -57,7 +58,6 @@ const BrandOffers = () => {
     
     const fetchOffers = async () => {
       try {
-        // Fetch all offers (brand's own + active from others)
         const { data: offersData, error } = await supabase
           .from("offers")
           .select("*")
@@ -65,7 +65,6 @@ const BrandOffers = () => {
 
         if (error) throw error;
 
-        // Get brand names from profiles
         const brandIds = [...new Set(offersData?.map(o => o.brand_id) || [])];
         const { data: profiles } = await supabase
           .from("profiles")
@@ -74,7 +73,6 @@ const BrandOffers = () => {
 
         const profileMap = new Map(profiles?.map(p => [p.user_id, p.company_name || p.full_name]) || []);
 
-        // Get application counts for each offer
         const offersWithCounts = await Promise.all(
           (offersData || []).map(async (offer) => {
             const { count } = await supabase
@@ -101,7 +99,6 @@ const BrandOffers = () => {
     fetchOffers();
   }, [user]);
 
-  // Convert mock offers to Offer format and use as fallback
   const convertedMockOffers: Offer[] = mockOffers.map(m => ({
     id: m.id,
     brand_id: m.brand_id,
@@ -120,7 +117,6 @@ const BrandOffers = () => {
     applications_count: 0,
   }));
 
-  // Use DB offers if available, otherwise fallback to mock offers
   const offers = dbOffers.length > 0 ? dbOffers : convertedMockOffers;
 
   const filteredOffers = offers.filter((offer) => {
@@ -135,46 +131,24 @@ const BrandOffers = () => {
     return matchesSearch && matchesFilter;
   });
 
-  const formatBudget = (min: number, max: number) => {
-    if (min === max) {
-      return `${min.toLocaleString("fr-FR")} FCFA`;
-    }
-    return `${min.toLocaleString("fr-FR")} - ${max.toLocaleString("fr-FR")} FCFA`;
+  const handleApply = (offerId: string) => {
+    navigate(`/auth?role=creator&offer=${offerId}`);
   };
 
-  const formatDeadline = (deadline: string | null) => {
-    if (!deadline) return null;
-    const date = new Date(deadline);
-    const now = new Date();
-    const diff = Math.ceil((date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    if (diff <= 0) return "Expiré";
-    if (diff === 1) return "1 jour";
-    return `${diff} jours`;
-  };
+  const handleDelete = async (offerId: string) => {
+    if (!user) return;
+    
+    const { error } = await supabase
+      .from("offers")
+      .delete()
+      .eq("id", offerId)
+      .eq("brand_id", user.id);
 
-  const getStatusStyle = (status: string) => {
-    switch (status) {
-      case "active":
-        return "bg-green-500/20 text-green-400";
-      case "closed":
-        return "bg-red-500/20 text-red-400";
-      case "draft":
-        return "bg-yellow-500/20 text-yellow-400";
-      default:
-        return "bg-muted text-muted-foreground";
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case "active":
-        return "Active";
-      case "closed":
-        return "Fermée";
-      case "draft":
-        return "Brouillon";
-      default:
-        return status;
+    if (error) {
+      toast.error("Erreur lors de la suppression");
+    } else {
+      toast.success("Offre supprimée");
+      setDbOffers(prev => prev.filter(o => o.id !== offerId));
     }
   };
 
@@ -246,8 +220,8 @@ const BrandOffers = () => {
         </motion.div>
       </div>
 
-      {/* Offers List */}
-      <div className="px-6 mt-6 space-y-3">
+      {/* Offers Grid */}
+      <div className="px-6 mt-6">
         <AnimatePresence>
           {filteredOffers.length === 0 && !loading ? (
             <motion.div
@@ -266,178 +240,22 @@ const BrandOffers = () => {
               </Button>
             </motion.div>
           ) : (
-            filteredOffers.map((offer, index) => {
-              const deadline = formatDeadline(offer.deadline);
-              const isOwner = offer.brand_id === user?.id;
-              
-              return (
-                <motion.div
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {filteredOffers.map((offer, index) => (
+                <OfferCard
                   key={offer.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ delay: index * 0.05 }}
-                  onClick={() => setSelectedOffer(offer)}
-                  className="glass-card p-4 cursor-pointer hover:border-gold/30 transition-all border-l-4 border-l-gold"
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-gold/20 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                      {offer.logo_url ? (
-                        <img src={offer.logo_url} alt={offer.brand_name || offer.title} className="w-full h-full object-cover" />
-                      ) : (
-                        <span className="text-gold font-bold text-lg">
-                          {(offer.brand_name || offer.title).charAt(0)}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <h3 className="font-semibold text-foreground">{offer.brand_name || offer.title}</h3>
-                          <p className="text-sm text-muted-foreground">{offer.content_type}</p>
-                        </div>
-                        <span className={`text-xs px-2 py-1 rounded-full ${getStatusStyle(offer.status)}`}>
-                          {getStatusLabel(offer.status)}
-                        </span>
-                      </div>
-                      <p className="text-xs text-foreground/80 mt-1 line-clamp-1">{offer.title}</p>
-                      <div className="flex items-center gap-3 mt-2 text-sm flex-wrap">
-                        <span className="text-gold font-semibold">
-                          {formatBudget(offer.budget_min, offer.budget_max)}
-                        </span>
-                        {offer.location && (
-                          <span className="flex items-center gap-1 text-muted-foreground">
-                            <MapPin className="w-3 h-3" />
-                            {offer.location}
-                          </span>
-                        )}
-                        {deadline && (
-                          <span className="flex items-center gap-1 text-muted-foreground">
-                            <Clock className="w-3 h-3" />
-                            {deadline}
-                          </span>
-                        )}
-                        {isOwner && (
-                          <span className="flex items-center gap-1 text-muted-foreground">
-                            <Users className="w-3 h-3" />
-                            {offer.applications_count}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-                  </div>
-                </motion.div>
-              );
-            })
+                  offer={offer}
+                  index={index}
+                  isOwner={offer.brand_id === user?.id}
+                  onApply={() => handleApply(offer.id)}
+                  onEdit={() => navigate(`/brand/edit-offer/${offer.id}`)}
+                  onDelete={() => handleDelete(offer.id)}
+                />
+              ))}
+            </div>
           )}
         </AnimatePresence>
       </div>
-
-      {/* Offer Detail Modal */}
-      <AnimatePresence>
-        {selectedOffer && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm"
-            onClick={() => setSelectedOffer(null)}
-          >
-            <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 25 }}
-              onClick={(e) => e.stopPropagation()}
-              className="absolute bottom-0 left-0 right-0 glass-card rounded-t-3xl p-6 safe-bottom max-h-[85vh] overflow-y-auto"
-            >
-              <div className="w-12 h-1 bg-muted rounded-full mx-auto mb-6" />
-              
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-2xl bg-gold/20 flex items-center justify-center overflow-hidden">
-                    {selectedOffer.logo_url ? (
-                      <img src={selectedOffer.logo_url} alt={selectedOffer.title} className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-gold font-bold text-2xl">
-                        {selectedOffer.title.charAt(0)}
-                      </span>
-                    )}
-                  </div>
-                  <div>
-                    <h2 className="font-display text-xl font-bold">{selectedOffer.title}</h2>
-                    <p className="text-muted-foreground">{selectedOffer.content_type}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setSelectedOffer(null)}
-                  className="touch-target"
-                >
-                  <X className="w-6 h-6 text-muted-foreground" />
-                </button>
-              </div>
-
-              <div className="flex items-center gap-2 mb-4">
-                <span className={`text-xs px-3 py-1 rounded-full ${getStatusStyle(selectedOffer.status)}`}>
-                  {getStatusLabel(selectedOffer.status)}
-                </span>
-                <span className="text-xs px-3 py-1 rounded-full bg-muted text-muted-foreground">
-                  {selectedOffer.category}
-                </span>
-              </div>
-
-              <div className="space-y-4 mb-6">
-                <div className="flex items-center gap-3">
-                  <span className="text-lg font-semibold text-gold">
-                    {formatBudget(selectedOffer.budget_min, selectedOffer.budget_max)}
-                  </span>
-                </div>
-                {selectedOffer.deadline && (
-                  <div className="flex items-center gap-3">
-                    <Clock className="w-5 h-5 text-muted-foreground" />
-                    <span className="text-muted-foreground">
-                      Deadline: {formatDeadline(selectedOffer.deadline)}
-                    </span>
-                  </div>
-                )}
-                {selectedOffer.brand_id === user?.id && (
-                  <div className="flex items-center gap-3">
-                    <Users className="w-5 h-5 text-muted-foreground" />
-                    <span className="text-muted-foreground">
-                      {selectedOffer.applications_count} candidatures
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <div className="mb-6">
-                <h4 className="font-semibold mb-2">Description</h4>
-                <p className="text-muted-foreground">{selectedOffer.description}</p>
-              </div>
-
-              {selectedOffer.brand_id === user?.id && (
-                <div className="flex gap-3">
-                  <Button 
-                    variant="outline" 
-                    className="flex-1 gap-2"
-                  >
-                    <Edit className="w-4 h-4" />
-                    Modifier
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-2"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Supprimer
-                  </Button>
-                </div>
-              )}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       <BottomNav userRole="brand" />
     </div>

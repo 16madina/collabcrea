@@ -22,6 +22,7 @@ import BrandProfile from "./pages/brand/Profile";
 import BrandDashboard from "./pages/brand/Dashboard";
 import BrandMarketplace from "./pages/brand/Marketplace";
 import BrandOffers from "./pages/brand/Offers";
+import CreateOffer from "./pages/brand/CreateOffer";
 import AdminDashboard from "./pages/admin/Dashboard";
 import NotFound from "./pages/NotFound";
 import TermsOfService from "./pages/TermsOfService";
@@ -83,7 +84,7 @@ const AppContent = () => {
           <Route path="/brand/dashboard" element={<Navigate to="/brand/profile" replace />} />
           <Route path="/brand/marketplace" element={<BrandMarketplace />} />
           <Route path="/brand/offers" element={<BrandOffers />} />
-          <Route path="/brand/create-offer" element={<BrandDashboard />} />
+          <Route path="/brand/create-offer" element={<CreateOffer />} />
           <Route path="/brand/messages" element={<CreatorMessages />} />
           <Route path="/brand/profile" element={<BrandProfile />} />
           
