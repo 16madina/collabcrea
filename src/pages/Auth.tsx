@@ -433,13 +433,16 @@ const Auth = () => {
         }
 
         toast.success("Compte créé avec succès !", {
-          description: "Vérifiez votre email pour confirmer votre inscription.",
+          description: "Bienvenue sur CollabCréa !",
         });
 
         // Reset form
         setFormData(initialFormData);
         setStep(1);
-        setMode("login");
+        
+        // Redirect user to their dashboard based on role
+        const redirectPath = formData.role === "brand" ? "/brand/profile" : "/creator/profile";
+        navigate(redirectPath);
       }
     } catch (error: any) {
       if (error.message?.includes("already registered")) {
