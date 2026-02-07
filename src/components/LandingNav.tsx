@@ -1,18 +1,17 @@
 import { motion } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Search, Sparkles, MessageCircle, User } from "lucide-react";
+import { Home, Search, Briefcase, MessageCircle, User } from "lucide-react";
 
 interface NavItem {
   icon: typeof Home;
   label: string;
   path: string;
-  isCenter?: boolean;
 }
 
 const navItems: NavItem[] = [
   { icon: Home, label: "Accueil", path: "/" },
   { icon: Search, label: "Explorer", path: "/explore" },
-  { icon: Sparkles, label: "Rejoindre", path: "/auth", isCenter: true },
+  { icon: Briefcase, label: "Offres", path: "/auth?tab=offers" },
   { icon: MessageCircle, label: "Messages", path: "/messages" },
   { icon: User, label: "Connexion", path: "/auth" },
 ];
@@ -32,24 +31,6 @@ const LandingNav = () => {
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             const Icon = item.icon;
-
-            if (item.isCenter) {
-              return (
-                <Link key={item.label} to={item.path} className="-mt-8">
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="relative"
-                  >
-                    {/* Glow effect */}
-                    <div className="absolute inset-0 bg-gold rounded-full blur-xl opacity-50 animate-pulse-gold" />
-                    <div className="relative w-16 h-16 rounded-full bg-gold flex items-center justify-center shadow-[0_4px_30px_hsl(43_72%_53%_/_0.5)]">
-                      <Icon className="w-7 h-7 text-primary-foreground" />
-                    </div>
-                  </motion.div>
-                </Link>
-              );
-            }
 
             return (
               <Link key={item.label} to={item.path}>
