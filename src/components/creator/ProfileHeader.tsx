@@ -51,11 +51,13 @@ const ProfileHeader = ({
         return;
       }
 
-      const { error } = await supabase.auth.resend({
-        type: "signup",
-        email: user.email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/creator/profile`,
+      // Call our custom edge function to send the email
+      const { data, error } = await supabase.functions.invoke("send-auth-email", {
+        body: {
+          type: "signup",
+          email: user.email,
+          tokenHash: "resend-verification",
+          redirectTo: `${window.location.origin}/creator/profile`,
         },
       });
 
