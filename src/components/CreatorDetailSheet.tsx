@@ -50,6 +50,7 @@ export interface Creator {
   category: string;
   country: string;
   flag: string;
+  residenceFlag?: string; // Flag for residence country (dual-flag display)
   image: string;
   rating?: number;
   bio?: string;
@@ -117,7 +118,9 @@ const CreatorDetailSheet = ({ creator, creatorUserId, open, onOpenChange }: Crea
               {creator.firstName} {creator.lastName}
             </h2>
             <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-              <span>{creator.flag}</span>
+              <span>
+                {creator.residenceFlag ? `${creator.residenceFlag}-${creator.flag}` : creator.flag}
+              </span>
               <MapPin className="w-3 h-3" />
               <span>{creator.country}</span>
             </div>
