@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Sparkles, Users, HelpCircle, X, Briefcase, DollarSign, Calendar, MapPin, Send } from "lucide-react";
+import { ArrowRight, Sparkles, Users, HelpCircle, X, Briefcase, DollarSign, Calendar, MapPin, Send, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import LandingNav from "@/components/LandingNav";
@@ -8,6 +8,8 @@ import CreatorCard from "@/components/CreatorCard";
 import CreatorDetailSheet from "@/components/CreatorDetailSheet";
 import type { Creator } from "@/components/CreatorDetailSheet";
 import { allCreators } from "@/data/creators";
+import { useAdmin } from "@/hooks/useAdmin";
+import { useAuth } from "@/hooks/useAuth";
 import heroImage from "@/assets/hero-creator.jpg";
 import logoCollabCrea from "@/assets/logo-collabcrea.png";
 import logoKariteDor from "@/assets/logo-karite-dor.jpg";
@@ -131,6 +133,8 @@ const Landing = () => {
   const [activeTab, setActiveTab] = useState<TabType>("creators");
   const [selectedCreator, setSelectedCreator] = useState<Creator | null>(null);
   const [showCreatorDetail, setShowCreatorDetail] = useState(false);
+  const { isAdmin } = useAdmin();
+  const { user } = useAuth();
 
   const handleCreatorClick = (creator: Creator) => {
     setSelectedCreator(creator);
@@ -166,11 +170,20 @@ const Landing = () => {
                 className="h-10 md:h-12 w-auto"
               />
             </Link>
-            <Link to="/auth">
-              <Button variant="glass-gold" size="sm" className="text-xs px-3 py-1.5 h-auto">
-                Connexion
-              </Button>
-            </Link>
+            <div className="flex items-center gap-2">
+              {isAdmin && (
+                <Link to="/admin">
+                  <Button variant="ghost" size="sm" className="text-xs px-2 py-1.5 h-auto text-gold">
+                    <Shield className="w-4 h-4" />
+                  </Button>
+                </Link>
+              )}
+              <Link to={user ? (isAdmin ? "/admin" : "/auth") : "/auth"}>
+                <Button variant="glass-gold" size="sm" className="text-xs px-3 py-1.5 h-auto">
+                  {user ? "Mon compte" : "Connexion"}
+                </Button>
+              </Link>
+            </div>
           </div>
         </motion.header>
 

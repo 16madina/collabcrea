@@ -17,6 +17,7 @@ import CreatorMessages from "./pages/creator/Messages";
 import CreatorProfile from "./pages/creator/Profile";
 import BrandProfile from "./pages/brand/Profile";
 import BrandDashboard from "./pages/brand/Dashboard";
+import AdminDashboard from "./pages/admin/Dashboard";
 import NotFound from "./pages/NotFound";
 import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -54,6 +55,9 @@ const App = () => (
             <Route path="/brand/create-offer" element={<BrandDashboard />} />
             <Route path="/brand/favorites" element={<BrandDashboard />} />
             <Route path="/brand/profile" element={<BrandProfile />} />
+            
+            {/* Admin Routes */}
+            <Route path="/admin" element={<AdminDashboard />} />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
