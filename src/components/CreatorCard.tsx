@@ -155,7 +155,7 @@ const CreatorCard = ({ creator, index = 0, variant = "grid", onClick }: CreatorC
           </div>
           
           <button
-            className="h-5 px-3 rounded-full bg-gradient-to-r from-yellow-500 via-yellow-400 to-yellow-500 text-[9px] font-bold uppercase tracking-wide text-black shadow-md hover:shadow-lg transition-shadow"
+            className="h-5 px-3 rounded-full bg-gradient-to-r from-gold via-[hsl(45,80%,55%)] to-gold text-[9px] font-bold uppercase tracking-wide text-primary-foreground shadow-md hover:shadow-lg transition-shadow"
             onClick={(e) => {
               e.stopPropagation();
               onClick?.();
