@@ -42,8 +42,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsFetching(true);
 
     try {
-      // Fetch profile and role in parallel
-      const [profileResult, roleResult] = await Promise.all([
+      // Fetch profile and roles in parallel
+      const [profileResult, rolesResult] = await Promise.all([
         supabase
           .from("profiles")
           .select("*")
@@ -52,16 +52,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         supabase
           .from("user_roles")
           .select("role")
-          .eq("user_id", userId)
-          .single(),
+          .eq("user_id", userId),
       ]);
 
       if (profileResult.data) {
         setProfile(profileResult.data);
       }
 
-      if (roleResult.data) {
-        setRole(roleResult.data.role as AppRole);
+      // Handle multiple roles - prioritize creator/brand over admin
+      if (rolesResult.data && rolesResult.data.length > 0) {
+        const roles = rolesResult.data.map(r => r.role);
+        // Find primary role (creator or brand), ignore admin for redirection
+        const primaryRole = roles.find(r => r === "creator" || r === "brand");
+        if (primaryRole) {
+          setRole(primaryRole as AppRole);
+        }
       }
     } catch (error) {
       console.error("Error fetching user data:", error);
