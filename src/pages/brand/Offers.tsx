@@ -1,16 +1,18 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Clock, Users, Plus, ChevronRight, X, Loader2, Edit, Trash2 } from "lucide-react";
+import { Search, Clock, Users, Plus, ChevronRight, X, Loader2, Edit, Trash2, MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import { mockOffers, MockOffer } from "@/data/offers";
 
 interface Offer {
   id: string;
   brand_id: string;
+  brand_name?: string;
   title: string;
   description: string;
   category: string;
@@ -38,7 +40,7 @@ const BrandOffers = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   
-  const [offers, setOffers] = useState<Offer[]>([]);
+  const [dbOffers, setDbOffers] = useState<Offer[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterStatus>("all");
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
@@ -63,6 +65,15 @@ const BrandOffers = () => {
 
         if (error) throw error;
 
+        // Get brand names from profiles
+        const brandIds = [...new Set(offersData?.map(o => o.brand_id) || [])];
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, company_name, full_name")
+          .in("user_id", brandIds);
+
+        const profileMap = new Map(profiles?.map(p => [p.user_id, p.company_name || p.full_name]) || []);
+
         // Get application counts for each offer
         const offersWithCounts = await Promise.all(
           (offersData || []).map(async (offer) => {
@@ -73,12 +84,13 @@ const BrandOffers = () => {
 
             return {
               ...offer,
+              brand_name: profileMap.get(offer.brand_id) || "Marque",
               applications_count: count || 0,
             };
           })
         );
 
-        setOffers(offersWithCounts);
+        setDbOffers(offersWithCounts);
       } catch (error) {
         console.error("Error fetching offers:", error);
       } finally {
@@ -88,6 +100,28 @@ const BrandOffers = () => {
 
     fetchOffers();
   }, [user]);
+
+  // Convert mock offers to Offer format and use as fallback
+  const convertedMockOffers: Offer[] = mockOffers.map(m => ({
+    id: m.id,
+    brand_id: m.brand_id,
+    brand_name: m.brand,
+    title: m.title,
+    description: m.description,
+    category: m.category,
+    content_type: m.content_type,
+    budget_min: m.budget_min,
+    budget_max: m.budget_max,
+    deadline: m.deadline,
+    location: m.location,
+    logo_url: m.logo_url,
+    status: m.status,
+    created_at: m.created_at,
+    applications_count: 0,
+  }));
+
+  // Use DB offers if available, otherwise fallback to mock offers
+  const offers = dbOffers.length > 0 ? dbOffers : convertedMockOffers;
 
   const filteredOffers = offers.filter((offer) => {
     const matchesSearch = 
@@ -249,27 +283,34 @@ const BrandOffers = () => {
                   <div className="flex items-start gap-4">
                     <div className="w-12 h-12 rounded-xl bg-gold/20 flex items-center justify-center flex-shrink-0 overflow-hidden">
                       {offer.logo_url ? (
-                        <img src={offer.logo_url} alt={offer.title} className="w-full h-full object-cover" />
+                        <img src={offer.logo_url} alt={offer.brand_name || offer.title} className="w-full h-full object-cover" />
                       ) : (
                         <span className="text-gold font-bold text-lg">
-                          {offer.title.charAt(0)}
+                          {(offer.brand_name || offer.title).charAt(0)}
                         </span>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <h3 className="font-semibold text-foreground">{offer.title}</h3>
+                          <h3 className="font-semibold text-foreground">{offer.brand_name || offer.title}</h3>
                           <p className="text-sm text-muted-foreground">{offer.content_type}</p>
                         </div>
                         <span className={`text-xs px-2 py-1 rounded-full ${getStatusStyle(offer.status)}`}>
                           {getStatusLabel(offer.status)}
                         </span>
                       </div>
-                      <div className="flex items-center gap-4 mt-2 text-sm">
+                      <p className="text-xs text-foreground/80 mt-1 line-clamp-1">{offer.title}</p>
+                      <div className="flex items-center gap-3 mt-2 text-sm flex-wrap">
                         <span className="text-gold font-semibold">
                           {formatBudget(offer.budget_min, offer.budget_max)}
                         </span>
+                        {offer.location && (
+                          <span className="flex items-center gap-1 text-muted-foreground">
+                            <MapPin className="w-3 h-3" />
+                            {offer.location}
+                          </span>
+                        )}
                         {deadline && (
                           <span className="flex items-center gap-1 text-muted-foreground">
                             <Clock className="w-3 h-3" />
@@ -279,7 +320,7 @@ const BrandOffers = () => {
                         {isOwner && (
                           <span className="flex items-center gap-1 text-muted-foreground">
                             <Users className="w-3 h-3" />
-                            {offer.applications_count} candidatures
+                            {offer.applications_count}
                           </span>
                         )}
                       </div>
