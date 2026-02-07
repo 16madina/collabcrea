@@ -14,9 +14,10 @@ interface VerificationStatus {
 interface VerificationBannerProps {
   status: VerificationStatus;
   showActions?: boolean;
+  userRole?: "creator" | "brand";
 }
 
-const VerificationBanner = ({ status, showActions = true }: VerificationBannerProps) => {
+const VerificationBanner = ({ status, showActions = true, userRole = "creator" }: VerificationBannerProps) => {
   const navigate = useNavigate();
   const [isSendingEmail, setIsSendingEmail] = useState(false);
 
@@ -156,7 +157,7 @@ const VerificationBanner = ({ status, showActions = true }: VerificationBannerPr
           )}
           {!status.identity_submitted_at && (
             <button 
-              onClick={() => navigate("/creator/profile?tab=verification")}
+              onClick={() => navigate(userRole === "brand" ? "/brand/profile?tab=verification" : "/creator/profile?tab=verification")}
               className="flex-1 bg-gold text-background py-2 px-4 rounded-lg text-sm font-medium hover:bg-gold/90 transition-colors flex items-center justify-center gap-2"
             >
               <Shield className="w-4 h-4" />

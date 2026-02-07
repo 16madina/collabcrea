@@ -14,6 +14,8 @@ import BrandOffersTab from "@/components/brand/tabs/BrandOffersTab";
 import BrandCollaborationsTab from "@/components/brand/tabs/BrandCollaborationsTab";
 import BrandReviewsTab from "@/components/brand/tabs/BrandReviewsTab";
 import BrandProfileEditForm from "@/components/brand/BrandProfileEditForm";
+import VerificationBanner from "@/components/VerificationBanner";
+import IdentityVerificationTab from "@/components/creator/IdentityVerificationTab";
 
 interface BrandProfileData {
   company_name: string;
@@ -22,7 +24,12 @@ interface BrandProfileData {
   website: string | null;
   country: string | null;
   logo_url: string | null;
+  avatar_url: string | null;
   created_at: string;
+  email_verified: boolean;
+  identity_verified: boolean;
+  identity_document_url: string | null;
+  identity_submitted_at: string | null;
 }
 
 interface Offer {
@@ -69,7 +76,12 @@ const BrandProfile = () => {
         website: data.website,
         country: data.country,
         logo_url: data.logo_url,
+        avatar_url: data.avatar_url,
         created_at: data.created_at,
+        email_verified: data.email_verified || false,
+        identity_verified: data.identity_verified || false,
+        identity_document_url: data.identity_document_url,
+        identity_submitted_at: data.identity_submitted_at,
       });
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -251,12 +263,27 @@ const BrandProfile = () => {
         companyName={profileData?.company_name || ""}
         sector={profileData?.sector || null}
         website={profileData?.website || null}
-        logoUrl={profileData?.logo_url}
-        isVerified={true} // Brands are verified by default for now
+        logoUrl={profileData?.logo_url || profileData?.avatar_url}
+        isVerified={profileData?.identity_verified || false}
         onSettingsClick={() => setShowSettings(true)}
         onEditLogo={() => setIsEditing(true)}
         onEditBanner={() => setIsEditing(true)}
       />
+
+      {/* Verification Banner */}
+      {profileData && (
+        <div className="px-4 py-3">
+          <VerificationBanner
+            status={{
+              email_verified: profileData.email_verified,
+              identity_verified: profileData.identity_verified,
+              identity_submitted_at: profileData.identity_submitted_at,
+            }}
+            showActions={true}
+            userRole="brand"
+          />
+        </div>
+      )}
 
       {/* Stats */}
       <BrandStats
@@ -273,6 +300,7 @@ const BrandProfile = () => {
         offersCount={offers.length}
         collaborationsCount={0}
         reviewsCount={0}
+        showVerificationTab={!profileData?.identity_verified}
       />
 
       {/* Tab Content */}
@@ -305,6 +333,16 @@ const BrandProfile = () => {
           
           {activeTab === "reviews" && (
             <BrandReviewsTab reviews={[]} averageRating={null} />
+          )}
+
+          {activeTab === "verification" && (
+            <IdentityVerificationTab 
+              identityDocumentUrl={profileData?.identity_document_url || null}
+              identitySubmittedAt={profileData?.identity_submitted_at || null}
+              identityVerified={profileData?.identity_verified || false}
+              emailVerified={profileData?.email_verified || false}
+              onUpdate={fetchProfile}
+            />
           )}
         </motion.div>
       </AnimatePresence>
