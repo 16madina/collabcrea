@@ -53,17 +53,17 @@ const CreatorCard = ({ creator, index = 0, variant = "grid", onClick }: CreatorC
           />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
           
-          {/* Badge nom + vérifié */}
-          <div className="absolute top-2 left-2 flex items-center gap-1">
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-gold text-primary-foreground">
-              {creator.firstName}
+          {/* Badge nom */}
+          <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-medium bg-gold text-primary-foreground">
+            {creator.firstName}
+          </span>
+          
+          {/* Badge vérifié - droite */}
+          {creator.isVerified && (
+            <span className="absolute top-2 right-2 w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center shadow-lg">
+              <BadgeCheck className="w-4 h-4 text-white" />
             </span>
-            {creator.isVerified && (
-              <span className="w-5 h-5 rounded-full bg-gold flex items-center justify-center">
-                <BadgeCheck className="w-3.5 h-3.5 text-primary-foreground" />
-              </span>
-            )}
-          </div>
+          )}
         </div>
 
         {/* Infos */}
@@ -121,17 +121,17 @@ const CreatorCard = ({ creator, index = 0, variant = "grid", onClick }: CreatorC
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
         
-        {/* Nom Badge + vérifié */}
-        <div className="absolute top-2 left-2 flex items-center gap-1">
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-gold text-primary-foreground">
-            {creator.firstName} {creator.lastName}
+        {/* Nom Badge */}
+        <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-medium bg-gold text-primary-foreground">
+          {creator.firstName} {creator.lastName}
+        </span>
+        
+        {/* Badge vérifié - droite */}
+        {creator.isVerified && (
+          <span className="absolute top-2 right-2 w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center shadow-lg">
+            <BadgeCheck className="w-4 h-4 text-white" />
           </span>
-          {creator.isVerified && (
-            <span className="w-5 h-5 rounded-full bg-gold flex items-center justify-center">
-              <BadgeCheck className="w-3.5 h-3.5 text-primary-foreground" />
-            </span>
-          )}
-        </div>
+        )}
 
         {/* Rating Badge */}
         {creator.rating && (
