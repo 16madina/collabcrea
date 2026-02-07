@@ -154,18 +154,15 @@ const CreatorCard = ({ creator, index = 0, variant = "grid", onClick }: CreatorC
             <span>{creator.country}</span>
           </div>
           
-          <Button
-            variant="gold"
-            size="sm"
-            className="h-6 px-2 text-[10px]"
+          <button
+            className="h-5 px-3 rounded-full bg-gradient-to-r from-yellow-500 via-yellow-400 to-yellow-500 text-[9px] font-bold uppercase tracking-wide text-black shadow-md hover:shadow-lg transition-shadow"
             onClick={(e) => {
               e.stopPropagation();
               onClick?.();
             }}
           >
-            <Eye className="w-3 h-3 mr-1" />
-            Voir
-          </Button>
+            Voir Profil
+          </button>
         </div>
 
         {/* Réseaux sociaux */}
