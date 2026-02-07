@@ -5,10 +5,11 @@ import {
   Users, 
   Star,
   Shield,
+  Heart,
   type LucideIcon 
 } from "lucide-react";
 
-export type BrandProfileTabType = "info" | "offers" | "collaborations" | "reviews" | "verification";
+export type BrandProfileTabType = "info" | "offers" | "collaborations" | "reviews" | "favorites" | "verification";
 
 interface Tab {
   id: BrandProfileTabType;
@@ -23,6 +24,7 @@ interface BrandProfileTabsProps {
   offersCount?: number;
   collaborationsCount?: number;
   reviewsCount?: number;
+  favoritesCount?: number;
   showVerificationTab?: boolean;
 }
 
@@ -32,11 +34,13 @@ const BrandProfileTabs = ({
   offersCount = 0,
   collaborationsCount = 0,
   reviewsCount = 0,
+  favoritesCount = 0,
   showVerificationTab = false,
 }: BrandProfileTabsProps) => {
   const baseTabs: Tab[] = [
     { id: "info", label: "Entreprise", icon: Building2 },
     { id: "offers", label: "Offres", icon: Megaphone, badge: offersCount },
+    { id: "favorites", label: "Favoris", icon: Heart, badge: favoritesCount },
     { id: "collaborations", label: "Collabs", icon: Users, badge: collaborationsCount },
     { id: "reviews", label: "Avis", icon: Star, badge: reviewsCount },
   ];

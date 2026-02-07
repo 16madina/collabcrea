@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Search, PlusCircle, Heart, User } from "lucide-react";
+import { Home, Search, PlusCircle, MessageCircle, User } from "lucide-react";
 
 interface NavItem {
   icon: typeof Home;
@@ -22,14 +22,14 @@ const BottomNav = ({ userRole }: BottomNavProps) => {
         { icon: Home, label: "Accueil", path: "/" },
         { icon: Search, label: "Offres", path: `${basePath}/offers` },
         { icon: PlusCircle, label: "Portfolio", path: `${basePath}/portfolio`, isCenter: true },
-        { icon: Heart, label: "Messages", path: `${basePath}/messages` },
+        { icon: MessageCircle, label: "Messages", path: `${basePath}/messages` },
         { icon: User, label: "Profil", path: `${basePath}/profile` },
       ]
     : [
         { icon: Home, label: "Accueil", path: "/" },
         { icon: Search, label: "Créateurs", path: `${basePath}/marketplace` },
         { icon: PlusCircle, label: "Offre", path: `${basePath}/create-offer`, isCenter: true },
-        { icon: Heart, label: "Favoris", path: `${basePath}/favorites` },
+        { icon: MessageCircle, label: "Messages", path: `${basePath}/messages` },
         { icon: User, label: "Profil", path: `${basePath}/profile` },
       ];
 

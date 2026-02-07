@@ -14,6 +14,7 @@ import BrandInfoTab from "@/components/brand/tabs/BrandInfoTab";
 import BrandOffersTab from "@/components/brand/tabs/BrandOffersTab";
 import BrandCollaborationsTab from "@/components/brand/tabs/BrandCollaborationsTab";
 import BrandReviewsTab from "@/components/brand/tabs/BrandReviewsTab";
+import BrandFavoritesTab from "@/components/brand/tabs/BrandFavoritesTab";
 import BrandProfileEditForm from "@/components/brand/BrandProfileEditForm";
 import BrandBannerEditSheet from "@/components/brand/BrandBannerEditSheet";
 import BrandLogoEditSheet from "@/components/brand/BrandLogoEditSheet";
@@ -426,6 +427,7 @@ const BrandProfile = () => {
         offersCount={offers.length}
         collaborationsCount={0}
         reviewsCount={0}
+        favoritesCount={0}
         showVerificationTab={!profileData?.identity_verified}
       />
 
@@ -455,6 +457,10 @@ const BrandProfile = () => {
           
           {activeTab === "collaborations" && (
             <BrandCollaborationsTab collaborations={[]} />
+          )}
+
+          {activeTab === "favorites" && (
+            <BrandFavoritesTab favorites={[]} />
           )}
           
           {activeTab === "reviews" && (
