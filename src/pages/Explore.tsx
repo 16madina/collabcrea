@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Search, Loader2 } from "lucide-react";
+import { Search, Loader2, BadgeCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import LandingNav from "@/components/LandingNav";
 import CreatorCard from "@/components/CreatorCard";
 import CreatorDetailSheet from "@/components/CreatorDetailSheet";
@@ -23,6 +25,7 @@ const categories = [
 const Explore = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("Tous");
+  const [onlyVerified, setOnlyVerified] = useState(false);
   const [selectedCreator, setSelectedCreator] = useState<(Creator & { userId: string }) | null>(null);
   const [showCreatorDetail, setShowCreatorDetail] = useState(false);
   
@@ -35,7 +38,8 @@ const Explore = () => {
       creator.category.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory =
       activeCategory === "Tous" || creator.category === activeCategory;
-    return matchesSearch && matchesCategory;
+    const matchesVerified = !onlyVerified || creator.isVerified === true;
+    return matchesSearch && matchesCategory && matchesVerified;
   });
 
   const handleCreatorClick = (creator: Creator & { userId: string }) => {
@@ -92,11 +96,24 @@ const Explore = () => {
         </motion.div>
       </div>
 
-      {/* Results Count */}
-      <div className="px-6 mt-4">
+      {/* Verified Filter + Results Count */}
+      <div className="px-6 mt-4 flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
           {filteredCreators.length} créateur{filteredCreators.length > 1 ? "s" : ""} trouvé{filteredCreators.length > 1 ? "s" : ""}
         </p>
+        
+        <div className="flex items-center gap-2">
+          <Switch
+            id="verified-filter"
+            checked={onlyVerified}
+            onCheckedChange={setOnlyVerified}
+            className="data-[state=checked]:bg-blue-500"
+          />
+          <Label htmlFor="verified-filter" className="text-xs flex items-center gap-1 cursor-pointer">
+            <BadgeCheck className="w-4 h-4 text-blue-500" />
+            Vérifiés
+          </Label>
+        </div>
       </div>
 
       {/* Creators Grid */}
