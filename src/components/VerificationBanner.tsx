@@ -1,6 +1,9 @@
-import { AlertTriangle, CheckCircle, Clock, Shield } from "lucide-react";
+import { AlertTriangle, CheckCircle, Clock, Shield, Loader2, Mail } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface VerificationStatus {
   email_verified: boolean;
@@ -15,6 +18,40 @@ interface VerificationBannerProps {
 
 const VerificationBanner = ({ status, showActions = true }: VerificationBannerProps) => {
   const navigate = useNavigate();
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+
+  const handleResendVerificationEmail = async () => {
+    setIsSendingEmail(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user?.email) {
+        toast.error("Email non trouvé");
+        return;
+      }
+
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: user.email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/creator/profile`,
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success("Email de vérification envoyé !", {
+        description: `Vérifiez votre boîte de réception à ${user.email}`,
+      });
+    } catch (error: any) {
+      console.error("Error sending verification email:", error);
+      toast.error("Erreur lors de l'envoi", {
+        description: error.message || "Veuillez réessayer plus tard",
+      });
+    } finally {
+      setIsSendingEmail(false);
+    }
+  };
   
   const isFullyVerified = status.email_verified && status.identity_verified;
   const isPendingReview = status.identity_submitted_at && !status.identity_verified;
@@ -101,11 +138,20 @@ const VerificationBanner = ({ status, showActions = true }: VerificationBannerPr
         </div>
       </div>
 
-      {showActions && (
+        {showActions && (
         <div className="mt-4 flex gap-2">
           {!status.email_verified && (
-            <button className="flex-1 bg-gold/20 text-gold py-2 px-4 rounded-lg text-sm font-medium hover:bg-gold/30 transition-colors">
-              Vérifier email
+            <button 
+              onClick={handleResendVerificationEmail}
+              disabled={isSendingEmail}
+              className="flex-1 bg-gold/20 text-gold py-2 px-4 rounded-lg text-sm font-medium hover:bg-gold/30 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {isSendingEmail ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Mail className="w-4 h-4" />
+              )}
+              {isSendingEmail ? "Envoi en cours..." : "Vérifier email"}
             </button>
           )}
           {!status.identity_submitted_at && (
