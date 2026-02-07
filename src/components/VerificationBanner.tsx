@@ -31,10 +31,12 @@ const VerificationBanner = ({ status, showActions = true, userRole = "creator" }
         return;
       }
 
-      // Use our custom edge function with Resend for better email deliverability
+      // Use the published URL for redirect, not the preview URL
+      // This ensures users can access the link from their email without needing Lovable access
+      const baseUrl = "https://collabcrea.lovable.app";
       const redirectTo = userRole === "brand" 
-        ? `${window.location.origin}/brand/profile`
-        : `${window.location.origin}/creator/profile`;
+        ? `${baseUrl}/brand/profile`
+        : `${baseUrl}/creator/profile`;
 
       const { data, error } = await supabase.functions.invoke("send-auth-email", {
         body: {
