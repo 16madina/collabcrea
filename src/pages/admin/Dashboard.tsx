@@ -3,12 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useAuth } from "@/hooks/useAuth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Shield, Bell, FileCheck, BarChart3, LogOut } from "lucide-react";
+import { Users, Shield, Bell, FileCheck, BarChart3, LogOut, Flag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import AdminUsersTab from "@/components/admin/AdminUsersTab";
 import AdminVerificationTab from "@/components/admin/AdminVerificationTab";
 import AdminNotificationsTab from "@/components/admin/AdminNotificationsTab";
 import AdminStatsTab from "@/components/admin/AdminStatsTab";
+import AdminModerationTab from "@/components/admin/AdminModerationTab";
 import logoCollabCrea from "@/assets/logo-collabcrea.png";
 
 const AdminDashboard = () => {
@@ -64,18 +65,22 @@ const AdminDashboard = () => {
       {/* Main Content */}
       <main className="p-4 pb-20">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full grid grid-cols-4 mb-6">
+          <TabsList className="w-full grid grid-cols-5 mb-6">
             <TabsTrigger value="users" className="flex items-center gap-1 text-xs">
               <Users className="w-4 h-4" />
               <span className="hidden sm:inline">Utilisateurs</span>
             </TabsTrigger>
             <TabsTrigger value="verification" className="flex items-center gap-1 text-xs">
               <FileCheck className="w-4 h-4" />
-              <span className="hidden sm:inline">Vérification</span>
+              <span className="hidden sm:inline">Identités</span>
+            </TabsTrigger>
+            <TabsTrigger value="moderation" className="flex items-center gap-1 text-xs">
+              <Flag className="w-4 h-4" />
+              <span className="hidden sm:inline">Modération</span>
             </TabsTrigger>
             <TabsTrigger value="notifications" className="flex items-center gap-1 text-xs">
               <Bell className="w-4 h-4" />
-              <span className="hidden sm:inline">Notifications</span>
+              <span className="hidden sm:inline">Notifs</span>
             </TabsTrigger>
             <TabsTrigger value="stats" className="flex items-center gap-1 text-xs">
               <BarChart3 className="w-4 h-4" />
@@ -89,6 +94,10 @@ const AdminDashboard = () => {
 
           <TabsContent value="verification">
             <AdminVerificationTab />
+          </TabsContent>
+
+          <TabsContent value="moderation">
+            <AdminModerationTab />
           </TabsContent>
 
           <TabsContent value="notifications">
