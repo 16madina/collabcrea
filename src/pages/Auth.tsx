@@ -199,7 +199,7 @@ const Auth = () => {
     const filePath = `${userId}/avatar.${fileExt}`;
 
     const { error: uploadError } = await supabase.storage
-      .from("identity-documents")
+      .from("avatars")
       .upload(filePath, formData.avatarFile, { upsert: true });
 
     if (uploadError) {
@@ -208,7 +208,7 @@ const Auth = () => {
     }
 
     const { data: { publicUrl } } = supabase.storage
-      .from("identity-documents")
+      .from("avatars")
       .getPublicUrl(filePath);
 
     return publicUrl;
