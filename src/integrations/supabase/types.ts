@@ -220,6 +220,8 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           category: string | null
+          company_description: string | null
+          company_name: string | null
           country: string | null
           created_at: string
           email_verified: boolean | null
@@ -230,17 +232,22 @@ export type Database = {
           identity_submitted_at: string | null
           identity_verified: boolean | null
           instagram_followers: string | null
+          logo_url: string | null
           pricing: Json | null
+          sector: string | null
           snapchat_followers: string | null
           tiktok_followers: string | null
           updated_at: string
           user_id: string
+          website: string | null
           youtube_followers: string | null
         }
         Insert: {
           avatar_url?: string | null
           bio?: string | null
           category?: string | null
+          company_description?: string | null
+          company_name?: string | null
           country?: string | null
           created_at?: string
           email_verified?: boolean | null
@@ -251,17 +258,22 @@ export type Database = {
           identity_submitted_at?: string | null
           identity_verified?: boolean | null
           instagram_followers?: string | null
+          logo_url?: string | null
           pricing?: Json | null
+          sector?: string | null
           snapchat_followers?: string | null
           tiktok_followers?: string | null
           updated_at?: string
           user_id: string
+          website?: string | null
           youtube_followers?: string | null
         }
         Update: {
           avatar_url?: string | null
           bio?: string | null
           category?: string | null
+          company_description?: string | null
+          company_name?: string | null
           country?: string | null
           created_at?: string
           email_verified?: boolean | null
@@ -272,11 +284,14 @@ export type Database = {
           identity_submitted_at?: string | null
           identity_verified?: boolean | null
           instagram_followers?: string | null
+          logo_url?: string | null
           pricing?: Json | null
+          sector?: string | null
           snapchat_followers?: string | null
           tiktok_followers?: string | null
           updated_at?: string
           user_id?: string
+          website?: string | null
           youtube_followers?: string | null
         }
         Relationships: []
