@@ -15,6 +15,88 @@ interface PushPayload {
   send_to_all?: boolean;
 }
 
+interface ServiceAccount {
+  type: string;
+  project_id: string;
+  private_key_id: string;
+  private_key: string;
+  client_email: string;
+  client_id: string;
+  auth_uri: string;
+  token_uri: string;
+}
+
+// Function to get OAuth2 access token using service account
+async function getAccessToken(serviceAccount: ServiceAccount): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+  const exp = now + 3600; // Token expires in 1 hour
+
+  // Create JWT header and payload
+  const header = {
+    alg: "RS256",
+    typ: "JWT",
+  };
+
+  const payload = {
+    iss: serviceAccount.client_email,
+    sub: serviceAccount.client_email,
+    aud: "https://oauth2.googleapis.com/token",
+    iat: now,
+    exp: exp,
+    scope: "https://www.googleapis.com/auth/firebase.messaging",
+  };
+
+  // Encode header and payload
+  const encodedHeader = btoa(JSON.stringify(header)).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+  const encodedPayload = btoa(JSON.stringify(payload)).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+
+  const signatureInput = `${encodedHeader}.${encodedPayload}`;
+
+  // Import the private key and sign
+  const privateKey = serviceAccount.private_key;
+  const pemHeader = "-----BEGIN PRIVATE KEY-----";
+  const pemFooter = "-----END PRIVATE KEY-----";
+  const pemContents = privateKey.replace(pemHeader, "").replace(pemFooter, "").replace(/\n/g, "");
+  const binaryDer = Uint8Array.from(atob(pemContents), (c) => c.charCodeAt(0));
+
+  const cryptoKey = await crypto.subtle.importKey(
+    "pkcs8",
+    binaryDer,
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+
+  const signature = await crypto.subtle.sign(
+    "RSASSA-PKCS1-v1_5",
+    cryptoKey,
+    new TextEncoder().encode(signatureInput)
+  );
+
+  const encodedSignature = btoa(String.fromCharCode(...new Uint8Array(signature)))
+    .replace(/=/g, "")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_");
+
+  const jwt = `${signatureInput}.${encodedSignature}`;
+
+  // Exchange JWT for access token
+  const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
+  });
+
+  const tokenData = await tokenResponse.json();
+  
+  if (!tokenResponse.ok) {
+    console.error("Token error:", tokenData);
+    throw new Error(`Failed to get access token: ${tokenData.error_description || tokenData.error}`);
+  }
+
+  return tokenData.access_token;
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -24,11 +106,8 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const firebaseServiceAccountJson = Deno.env.get("FIREBASE_SERVICE_ACCOUNT");
     const firebaseServerKey = Deno.env.get("FIREBASE_SERVER_KEY");
-
-    if (!firebaseServerKey) {
-      throw new Error("FIREBASE_SERVER_KEY is not configured");
-    }
 
     // Create Supabase admin client
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -79,7 +158,6 @@ Deno.serve(async (req) => {
     let tokensQuery = supabase.from("push_tokens").select("token, user_id");
 
     if (send_to_all) {
-      // Send to all users - no filter needed
       console.log("Sending to all users");
     } else if (user_ids && user_ids.length > 0) {
       tokensQuery = tokensQuery.in("user_id", user_ids);
@@ -111,9 +189,58 @@ Deno.serve(async (req) => {
 
     console.log(`Found ${tokens.length} tokens to send to`);
 
-    // Send notifications via FCM
-    const results = await Promise.allSettled(
-      tokens.map(async ({ token }) => {
+    // Determine which API to use
+    let sendNotification: (token: string) => Promise<any>;
+
+    if (firebaseServiceAccountJson) {
+      // Use FCM HTTP v1 API (recommended)
+      console.log("Using FCM HTTP v1 API with service account");
+      const serviceAccount: ServiceAccount = JSON.parse(firebaseServiceAccountJson);
+      const accessToken = await getAccessToken(serviceAccount);
+
+      sendNotification = async (token: string) => {
+        const fcmPayload = {
+          message: {
+            token: token,
+            notification: {
+              title,
+              body,
+            },
+            data: data || {},
+            android: {
+              notification: {
+                sound: "default",
+              },
+            },
+            apns: {
+              payload: {
+                aps: {
+                  sound: "default",
+                },
+              },
+            },
+          },
+        };
+
+        const response = await fetch(
+          `https://fcm.googleapis.com/v1/projects/${serviceAccount.project_id}/messages:send`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(fcmPayload),
+          }
+        );
+
+        return await response.json();
+      };
+    } else if (firebaseServerKey) {
+      // Fallback to legacy FCM API
+      console.log("Using legacy FCM API with server key");
+      
+      sendNotification = async (token: string) => {
         const fcmPayload = {
           to: token,
           notification: {
@@ -133,7 +260,16 @@ Deno.serve(async (req) => {
           body: JSON.stringify(fcmPayload),
         });
 
-        const result = await response.json();
+        return await response.json();
+      };
+    } else {
+      throw new Error("Neither FIREBASE_SERVICE_ACCOUNT nor FIREBASE_SERVER_KEY is configured");
+    }
+
+    // Send notifications
+    const results = await Promise.allSettled(
+      tokens.map(async ({ token }) => {
+        const result = await sendNotification(token);
         console.log("FCM response for token:", result);
         return result;
       })
