@@ -46,24 +46,6 @@ const BottomNav = ({ userRole }: BottomNavProps) => {
             const isActive = location.pathname === item.path;
             const Icon = item.icon;
 
-            if (item.isCenter) {
-              return (
-                <Link key={item.path} to={item.path} className="-mt-8">
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="relative"
-                  >
-                    {/* Glow effect */}
-                    <div className="absolute inset-0 bg-gold rounded-full blur-xl opacity-50 animate-pulse-gold" />
-                    <div className="relative w-16 h-16 rounded-full bg-gold flex items-center justify-center shadow-[0_4px_30px_hsl(43_72%_53%_/_0.5)]">
-                      <Icon className="w-7 h-7 text-primary-foreground" />
-                    </div>
-                  </motion.div>
-                </Link>
-              );
-            }
-
             return (
               <Link key={item.path} to={item.path}>
                 <motion.div
