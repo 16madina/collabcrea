@@ -327,6 +327,7 @@ const CreatorProfile = () => {
               identityVerified={profileData.identity_verified}
               identityDocumentUrl={profileData.identity_document_url}
               identitySubmittedAt={profileData.identity_submitted_at}
+              emailVerified={profileData.email_verified}
               onUpdate={fetchProfile}
             />
           )}
