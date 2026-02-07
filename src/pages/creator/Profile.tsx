@@ -133,47 +133,55 @@ const CreatorProfile = () => {
     fetchProfile();
   }, [user]);
 
-  // Detect email verification - use user object directly (no refreshSession to avoid rate limit)
+  // Listen for email verification event (when user clicks the verification link)
   useEffect(() => {
-    const checkEmailVerification = async () => {
-      if (!user || !profileData) return;
-
-      // Use user object from useAuth which is already up-to-date
-      const confirmedAt = (user as any)?.email_confirmed_at || (user as any)?.confirmed_at;
-      
-      if (confirmedAt && !profileData.email_verified) {
-        // Email was just confirmed! Update profile and show toast
-        await supabase
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // Only trigger on USER_UPDATED event (user clicked verification link)
+      if (event === 'USER_UPDATED' && session?.user) {
+        const userMeta = session.user.user_metadata;
+        const emailVerified = userMeta?.email_verified === true;
+        
+        // Check if database has different status
+        const { data: dbProfile } = await supabase
           .from("profiles")
-          .update({ email_verified: true })
-          .eq("user_id", user.id);
+          .select("email_verified, full_name")
+          .eq("user_id", session.user.id)
+          .single();
         
-        toast.success("Email vérifié avec succès ! ✅", {
-          description: "Vous pouvez maintenant accéder à toutes les fonctionnalités.",
-        });
-
-        // Send welcome email
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          await supabase.functions.invoke("send-welcome-email", {
-            body: {
-              email: user.email,
-              userName: profileData.full_name?.split(" ")[0],
-              userRole: "creator",
-            },
+        if (emailVerified && dbProfile && !dbProfile.email_verified) {
+          // Email was just verified via link! Update profile
+          await supabase
+            .from("profiles")
+            .update({ email_verified: true })
+            .eq("user_id", session.user.id);
+          
+          toast.success("Email vérifié avec succès ! ✅", {
+            description: "Vous pouvez maintenant accéder à toutes les fonctionnalités.",
           });
-          console.log("Welcome email sent successfully");
-        } catch (emailError) {
-          console.error("Failed to send welcome email:", emailError);
-          // Don't block the flow if email fails
-        }
-        
-        fetchProfile();
-      }
-    };
 
-    checkEmailVerification();
-  }, [user, profileData?.email_verified]);
+          // Send welcome email
+          if (dbProfile?.full_name) {
+            try {
+              await supabase.functions.invoke("send-welcome-email", {
+                body: {
+                  email: session.user.email,
+                  userName: dbProfile.full_name.split(" ")[0],
+                  userRole: "creator",
+                },
+              });
+              console.log("Welcome email sent successfully");
+            } catch (emailError) {
+              console.error("Failed to send welcome email:", emailError);
+            }
+          }
+          
+          fetchProfile();
+        }
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Handle OAuth callbacks from YouTube and TikTok
   useEffect(() => {
