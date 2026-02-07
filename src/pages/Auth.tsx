@@ -241,11 +241,17 @@ const Auth = () => {
         const originCountry = africanCountries.find(c => c.code === formData.originCountry);
 
         // Create profile with all info
+        // For creators, use origin country (African country) as main display country
+        // For brands, use residence country
+        const displayCountry = formData.role === "creator" 
+          ? (originCountry?.name || formData.originCountry)
+          : (residenceCountry?.name || formData.residenceCountry);
+
         const { error: profileError } = await supabase.from("profiles").insert({
           user_id: data.user.id,
           full_name: `${formData.firstName} ${formData.lastName}`,
           avatar_url: avatarUrl,
-          country: residenceCountry?.name || formData.residenceCountry,
+          country: displayCountry,
         });
 
         if (profileError) {
