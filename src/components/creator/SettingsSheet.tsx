@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   X, 
@@ -8,12 +9,16 @@ import {
   LogOut, 
   ChevronRight,
   Moon,
+  Sun,
   Globe,
-  CreditCard,
   FileText,
   Trash2,
   AlertTriangle,
-  Loader2
+  Loader2,
+  MessageCircle,
+  Mail,
+  Check,
+  Lock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -37,35 +42,53 @@ interface SettingsSheetProps {
   onLogout: () => void;
 }
 
+type Language = "fr" | "en";
+
 const SettingsSheet = ({ isOpen, onClose, onLogout }: SettingsSheetProps) => {
+  const navigate = useNavigate();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showLanguageSheet, setShowLanguageSheet] = useState(false);
+  const [showNotificationsSheet, setShowNotificationsSheet] = useState(false);
+  const [showPrivacySheet, setShowPrivacySheet] = useState(false);
+  const [showHelpSheet, setShowHelpSheet] = useState(false);
 
-  const settingsGroups = [
-    {
-      title: "Compte",
-      items: [
-        { icon: Bell, label: "Notifications", action: "notifications", hasToggle: true },
-        { icon: Shield, label: "Confidentialité", action: "privacy" },
-        { icon: CreditCard, label: "Paiements", action: "payments" },
-      ],
-    },
-    {
-      title: "Préférences",
-      items: [
-        { icon: Globe, label: "Langue", action: "language", value: "Français" },
-        { icon: Moon, label: "Mode sombre", action: "darkmode", hasToggle: true, defaultOn: true },
-      ],
-    },
-    {
-      title: "Support",
-      items: [
-        { icon: HelpCircle, label: "Aide & Support", action: "help" },
-        { icon: FileText, label: "Conditions d'utilisation", action: "terms" },
-      ],
-    },
-  ];
+  // Settings state
+  const [language, setLanguage] = useState<Language>(() => {
+    return (localStorage.getItem("app_language") as Language) || "fr";
+  });
+  const [darkMode, setDarkMode] = useState(() => {
+    return localStorage.getItem("theme") !== "light";
+  });
+  const [pushNotifications, setPushNotifications] = useState(() => {
+    return localStorage.getItem("push_notifications") !== "false";
+  });
+  const [emailNotifications, setEmailNotifications] = useState(() => {
+    return localStorage.getItem("email_notifications") !== "false";
+  });
+  const [profileVisible, setProfileVisible] = useState(() => {
+    return localStorage.getItem("profile_visible") !== "false";
+  });
+  const [showOnlineStatus, setShowOnlineStatus] = useState(() => {
+    return localStorage.getItem("show_online_status") !== "false";
+  });
+
+  // Apply dark mode
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  }, [darkMode]);
+
+  // Save language
+  useEffect(() => {
+    localStorage.setItem("app_language", language);
+  }, [language]);
 
   const handleDeleteAccount = async () => {
     if (deleteConfirmText !== "SUPPRIMER") {
@@ -133,6 +156,88 @@ const SettingsSheet = ({ isOpen, onClose, onLogout }: SettingsSheetProps) => {
     }
   };
 
+  const handleSaveNotifications = () => {
+    localStorage.setItem("push_notifications", String(pushNotifications));
+    localStorage.setItem("email_notifications", String(emailNotifications));
+    toast.success("Préférences de notifications enregistrées");
+    setShowNotificationsSheet(false);
+  };
+
+  const handleSavePrivacy = () => {
+    localStorage.setItem("profile_visible", String(profileVisible));
+    localStorage.setItem("show_online_status", String(showOnlineStatus));
+    toast.success("Paramètres de confidentialité enregistrés");
+    setShowPrivacySheet(false);
+  };
+
+  const languages = [
+    { code: "fr" as Language, label: "Français", flag: "🇫🇷" },
+    { code: "en" as Language, label: "English", flag: "🇬🇧" },
+  ];
+
+  const t = {
+    fr: {
+      settings: "Paramètres",
+      account: "Compte",
+      logout: "Déconnexion",
+      logoutDesc: "Se déconnecter de votre compte",
+      notifications: "Notifications",
+      privacy: "Confidentialité",
+      preferences: "Préférences",
+      language: "Langue",
+      darkMode: "Mode sombre",
+      support: "Support",
+      helpSupport: "Aide & Support",
+      terms: "Conditions d'utilisation",
+      dangerZone: "Zone de danger",
+      deleteAccount: "Supprimer mon compte",
+      deleteDesc: "Cette action est irréversible",
+      pushNotif: "Notifications push",
+      pushNotifDesc: "Recevoir des notifications sur votre appareil",
+      emailNotif: "Notifications email",
+      emailNotifDesc: "Recevoir des emails pour les mises à jour importantes",
+      save: "Enregistrer",
+      profileVisible: "Profil visible",
+      profileVisibleDesc: "Permettre aux marques de voir votre profil",
+      onlineStatus: "Statut en ligne",
+      onlineStatusDesc: "Montrer quand vous êtes en ligne",
+      faq: "Questions fréquentes",
+      contactUs: "Nous contacter",
+      reportBug: "Signaler un bug",
+    },
+    en: {
+      settings: "Settings",
+      account: "Account",
+      logout: "Log out",
+      logoutDesc: "Sign out of your account",
+      notifications: "Notifications",
+      privacy: "Privacy",
+      preferences: "Preferences",
+      language: "Language",
+      darkMode: "Dark mode",
+      support: "Support",
+      helpSupport: "Help & Support",
+      terms: "Terms of Service",
+      dangerZone: "Danger zone",
+      deleteAccount: "Delete my account",
+      deleteDesc: "This action is irreversible",
+      pushNotif: "Push notifications",
+      pushNotifDesc: "Receive notifications on your device",
+      emailNotif: "Email notifications",
+      emailNotifDesc: "Receive emails for important updates",
+      save: "Save",
+      profileVisible: "Profile visible",
+      profileVisibleDesc: "Allow brands to see your profile",
+      onlineStatus: "Online status",
+      onlineStatusDesc: "Show when you are online",
+      faq: "Frequently asked questions",
+      contactUs: "Contact us",
+      reportBug: "Report a bug",
+    },
+  };
+
+  const text = t[language];
+
   return (
     <>
       <AnimatePresence>
@@ -157,7 +262,7 @@ const SettingsSheet = ({ isOpen, onClose, onLogout }: SettingsSheetProps) => {
             >
               {/* Header */}
               <div className="flex items-center justify-between p-4 border-b border-border">
-                <h2 className="font-display text-xl font-bold">Paramètres</h2>
+                <h2 className="font-display text-xl font-bold">{text.settings}</h2>
                 <button
                   onClick={onClose}
                   className="p-2 rounded-full hover:bg-muted transition-colors"
@@ -168,46 +273,186 @@ const SettingsSheet = ({ isOpen, onClose, onLogout }: SettingsSheetProps) => {
 
               {/* Content */}
               <div className="flex-1 overflow-y-auto p-4 space-y-6">
-                {settingsGroups.map((group, groupIndex) => (
-                  <div key={group.title}>
-                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                      {group.title}
-                    </h3>
-                    <div className="space-y-1">
-                      {group.items.map((item, itemIndex) => {
-                        const Icon = item.icon;
-                        return (
-                          <motion.button
-                            key={item.action}
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: groupIndex * 0.1 + itemIndex * 0.05 }}
-                            className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-muted/50 transition-colors"
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                                <Icon className="w-5 h-5 text-foreground" />
-                              </div>
-                              <span className="font-medium">{item.label}</span>
-                            </div>
-                            {item.hasToggle ? (
-                              <Switch defaultChecked={item.defaultOn} />
-                            ) : item.value ? (
-                              <span className="text-sm text-muted-foreground">{item.value}</span>
-                            ) : (
-                              <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                            )}
-                          </motion.button>
-                        );
-                      })}
+                {/* Logout - First and prominent */}
+                <div>
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                    {text.account}
+                  </h3>
+                  <motion.button
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    onClick={onLogout}
+                    className="w-full flex items-center justify-between p-3 rounded-xl bg-gold/10 hover:bg-gold/20 transition-colors border border-gold/30"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gold/20 flex items-center justify-center">
+                        <LogOut className="w-5 h-5 text-gold" />
+                      </div>
+                      <div className="text-left">
+                        <span className="font-medium text-foreground">{text.logout}</span>
+                        <p className="text-xs text-muted-foreground">{text.logoutDesc}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                    <ChevronRight className="w-5 h-5 text-gold" />
+                  </motion.button>
+                </div>
+
+                {/* Notifications */}
+                <div>
+                  <motion.button
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.05 }}
+                    onClick={() => setShowNotificationsSheet(true)}
+                    className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                        <Bell className="w-5 h-5 text-foreground" />
+                      </div>
+                      <span className="font-medium">{text.notifications}</span>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                  </motion.button>
+
+                  {/* Privacy */}
+                  <motion.button
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.1 }}
+                    onClick={() => setShowPrivacySheet(true)}
+                    className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                        <Shield className="w-5 h-5 text-foreground" />
+                      </div>
+                      <span className="font-medium">{text.privacy}</span>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                  </motion.button>
+                </div>
+
+                {/* Preferences */}
+                <div>
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                    {text.preferences}
+                  </h3>
+                  
+                  {/* Language */}
+                  <motion.button
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.15 }}
+                    onClick={() => setShowLanguageSheet(true)}
+                    className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                        <Globe className="w-5 h-5 text-foreground" />
+                      </div>
+                      <span className="font-medium">{text.language}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">
+                        {languages.find(l => l.code === language)?.flag} {languages.find(l => l.code === language)?.label}
+                      </span>
+                      <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                    </div>
+                  </motion.button>
+
+                  {/* Dark Mode */}
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="w-full flex items-center justify-between p-3 rounded-xl"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                        {darkMode ? (
+                          <Moon className="w-5 h-5 text-foreground" />
+                        ) : (
+                          <Sun className="w-5 h-5 text-foreground" />
+                        )}
+                      </div>
+                      <span className="font-medium">{text.darkMode}</span>
+                    </div>
+                    <Switch 
+                      checked={darkMode} 
+                      onCheckedChange={setDarkMode}
+                    />
+                  </motion.div>
+                </div>
+
+                {/* Support */}
+                <div>
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                    {text.support}
+                  </h3>
+                  
+                  {/* Help & Support */}
+                  <motion.button
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.25 }}
+                    onClick={() => setShowHelpSheet(true)}
+                    className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                        <HelpCircle className="w-5 h-5 text-foreground" />
+                      </div>
+                      <span className="font-medium">{text.helpSupport}</span>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                  </motion.button>
+
+                  {/* Terms */}
+                  <motion.button
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3 }}
+                    onClick={() => {
+                      onClose();
+                      navigate("/terms");
+                    }}
+                    className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                        <FileText className="w-5 h-5 text-foreground" />
+                      </div>
+                      <span className="font-medium">{text.terms}</span>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                  </motion.button>
+
+                  {/* Privacy Policy */}
+                  <motion.button
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.35 }}
+                    onClick={() => {
+                      onClose();
+                      navigate("/privacy");
+                    }}
+                    className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                        <Lock className="w-5 h-5 text-foreground" />
+                      </div>
+                      <span className="font-medium">Politique de confidentialité</span>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                  </motion.button>
+                </div>
 
                 {/* Danger Zone */}
                 <div>
                   <h3 className="text-xs font-semibold text-destructive uppercase tracking-wider mb-3">
-                    Zone de danger
+                    {text.dangerZone}
                   </h3>
                   <motion.button
                     initial={{ opacity: 0, x: 20 }}
@@ -221,25 +466,241 @@ const SettingsSheet = ({ isOpen, onClose, onLogout }: SettingsSheetProps) => {
                         <Trash2 className="w-5 h-5 text-destructive" />
                       </div>
                       <div className="text-left">
-                        <span className="font-medium text-destructive">Supprimer mon compte</span>
-                        <p className="text-xs text-muted-foreground">Cette action est irréversible</p>
+                        <span className="font-medium text-destructive">{text.deleteAccount}</span>
+                        <p className="text-xs text-muted-foreground">{text.deleteDesc}</p>
                       </div>
                     </div>
                     <ChevronRight className="w-5 h-5 text-destructive" />
                   </motion.button>
                 </div>
               </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
-              {/* Logout Button */}
-              <div className="p-4 border-t border-border">
-                <Button
-                  variant="destructive"
-                  className="w-full"
-                  onClick={onLogout}
+      {/* Language Sheet */}
+      <AnimatePresence>
+        {showLanguageSheet && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowLanguageSheet(false)}
+              className="fixed inset-0 z-[60] bg-background/80 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="fixed bottom-0 left-0 right-0 z-[60] bg-background border-t border-border rounded-t-3xl p-6"
+            >
+              <div className="w-12 h-1 bg-muted rounded-full mx-auto mb-6" />
+              <h3 className="text-lg font-bold mb-4">{text.language}</h3>
+              <div className="space-y-2">
+                {languages.map((lang) => (
+                  <button
+                    key={lang.code}
+                    onClick={() => {
+                      setLanguage(lang.code);
+                      setShowLanguageSheet(false);
+                      toast.success(lang.code === "fr" ? "Langue changée en Français" : "Language changed to English");
+                    }}
+                    className={`w-full flex items-center justify-between p-4 rounded-xl transition-colors ${
+                      language === lang.code ? "bg-gold/20 border border-gold/30" : "hover:bg-muted/50"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{lang.flag}</span>
+                      <span className="font-medium">{lang.label}</span>
+                    </div>
+                    {language === lang.code && (
+                      <Check className="w-5 h-5 text-gold" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Notifications Sheet */}
+      <AnimatePresence>
+        {showNotificationsSheet && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowNotificationsSheet(false)}
+              className="fixed inset-0 z-[60] bg-background/80 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="fixed bottom-0 left-0 right-0 z-[60] bg-background border-t border-border rounded-t-3xl p-6"
+            >
+              <div className="w-12 h-1 bg-muted rounded-full mx-auto mb-6" />
+              <h3 className="text-lg font-bold mb-4">{text.notifications}</h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30">
+                  <div className="flex items-center gap-3">
+                    <Bell className="w-5 h-5 text-gold" />
+                    <div>
+                      <p className="font-medium">{text.pushNotif}</p>
+                      <p className="text-xs text-muted-foreground">{text.pushNotifDesc}</p>
+                    </div>
+                  </div>
+                  <Switch 
+                    checked={pushNotifications} 
+                    onCheckedChange={setPushNotifications}
+                  />
+                </div>
+                <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30">
+                  <div className="flex items-center gap-3">
+                    <Mail className="w-5 h-5 text-gold" />
+                    <div>
+                      <p className="font-medium">{text.emailNotif}</p>
+                      <p className="text-xs text-muted-foreground">{text.emailNotifDesc}</p>
+                    </div>
+                  </div>
+                  <Switch 
+                    checked={emailNotifications} 
+                    onCheckedChange={setEmailNotifications}
+                  />
+                </div>
+              </div>
+              <Button 
+                onClick={handleSaveNotifications}
+                className="w-full mt-6"
+                variant="gold"
+              >
+                {text.save}
+              </Button>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Privacy Sheet */}
+      <AnimatePresence>
+        {showPrivacySheet && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowPrivacySheet(false)}
+              className="fixed inset-0 z-[60] bg-background/80 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="fixed bottom-0 left-0 right-0 z-[60] bg-background border-t border-border rounded-t-3xl p-6"
+            >
+              <div className="w-12 h-1 bg-muted rounded-full mx-auto mb-6" />
+              <h3 className="text-lg font-bold mb-4">{text.privacy}</h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30">
+                  <div className="flex items-center gap-3">
+                    <Shield className="w-5 h-5 text-gold" />
+                    <div>
+                      <p className="font-medium">{text.profileVisible}</p>
+                      <p className="text-xs text-muted-foreground">{text.profileVisibleDesc}</p>
+                    </div>
+                  </div>
+                  <Switch 
+                    checked={profileVisible} 
+                    onCheckedChange={setProfileVisible}
+                  />
+                </div>
+                <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30">
+                  <div className="flex items-center gap-3">
+                    <Globe className="w-5 h-5 text-gold" />
+                    <div>
+                      <p className="font-medium">{text.onlineStatus}</p>
+                      <p className="text-xs text-muted-foreground">{text.onlineStatusDesc}</p>
+                    </div>
+                  </div>
+                  <Switch 
+                    checked={showOnlineStatus} 
+                    onCheckedChange={setShowOnlineStatus}
+                  />
+                </div>
+              </div>
+              <Button 
+                onClick={handleSavePrivacy}
+                className="w-full mt-6"
+                variant="gold"
+              >
+                {text.save}
+              </Button>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Help & Support Sheet */}
+      <AnimatePresence>
+        {showHelpSheet && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowHelpSheet(false)}
+              className="fixed inset-0 z-[60] bg-background/80 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="fixed bottom-0 left-0 right-0 z-[60] bg-background border-t border-border rounded-t-3xl p-6"
+            >
+              <div className="w-12 h-1 bg-muted rounded-full mx-auto mb-6" />
+              <h3 className="text-lg font-bold mb-4">{text.helpSupport}</h3>
+              <div className="space-y-2">
+                <button
+                  onClick={() => {
+                    setShowHelpSheet(false);
+                    onClose();
+                    navigate("/contact");
+                  }}
+                  className="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-muted/50 transition-colors"
                 >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Déconnexion
-                </Button>
+                  <MessageCircle className="w-5 h-5 text-gold" />
+                  <span className="font-medium">{text.faq}</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setShowHelpSheet(false);
+                    onClose();
+                    navigate("/contact");
+                  }}
+                  className="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-muted/50 transition-colors"
+                >
+                  <Mail className="w-5 h-5 text-gold" />
+                  <span className="font-medium">{text.contactUs}</span>
+                </button>
+                <button
+                  onClick={() => {
+                    toast.info("Fonctionnalité à venir", {
+                      description: "Le signalement de bugs sera bientôt disponible"
+                    });
+                  }}
+                  className="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-muted/50 transition-colors"
+                >
+                  <AlertTriangle className="w-5 h-5 text-gold" />
+                  <span className="font-medium">{text.reportBug}</span>
+                </button>
               </div>
             </motion.div>
           </>
