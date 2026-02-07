@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Clock, MapPin, DollarSign, ChevronRight, X, Loader2, Send, Flag } from "lucide-react";
+import { Search, Clock, MapPin, DollarSign, X, Loader2, Send, Flag } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import BottomNav from "@/components/BottomNav";
+import OfferCard from "@/components/OfferCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useApplyToOffer } from "@/hooks/useApplyToOffer";
@@ -237,7 +238,7 @@ const CreatorOffers = () => {
       </div>
 
       {/* Offers List */}
-      <div className="px-6 mt-6 space-y-3">
+      <div className="px-6 mt-6 space-y-4">
         <AnimatePresence>
           {filteredOffers.length === 0 && !loading ? (
             <motion.div
@@ -250,53 +251,21 @@ const CreatorOffers = () => {
           ) : (
             filteredOffers.map((offer, index) => {
               const application = getApplicationStatus(offer.id);
-              const deadline = formatDeadline(offer.deadline);
               
               return (
-                <motion.div
+                <OfferCard
                   key={offer.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ delay: index * 0.05 }}
+                  offer={offer}
+                  index={index}
+                  status={application ? {
+                    label: getStatusLabel(application),
+                    style: getStatusStyle(application),
+                  } : {
+                    label: "Nouveau",
+                    style: "bg-green-500/20 text-green-400",
+                  }}
                   onClick={() => setSelectedOffer(offer)}
-                  className="glass-card p-4 cursor-pointer hover:border-gold/30 transition-all"
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-gold/20 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                      {offer.logo_url ? (
-                        <img src={offer.logo_url} alt={offer.brand_name} className="w-full h-full object-cover" />
-                      ) : (
-                        <span className="text-gold font-bold text-lg">
-                          {offer.brand_name?.charAt(0) || "M"}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <h3 className="font-semibold text-foreground">{offer.brand_name}</h3>
-                          <p className="text-sm text-muted-foreground">{offer.content_type}</p>
-                        </div>
-                        <span className={`text-xs px-2 py-1 rounded-full ${getStatusStyle(application)}`}>
-                          {getStatusLabel(application)}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-4 mt-2 text-sm">
-                        <span className="text-gold font-semibold">
-                          {formatBudget(offer.budget_min, offer.budget_max)}
-                        </span>
-                        {deadline && (
-                          <span className="flex items-center gap-1 text-muted-foreground">
-                            <Clock className="w-3 h-3" />
-                            {deadline}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-                  </div>
-                </motion.div>
+                />
               );
             })
           )}
