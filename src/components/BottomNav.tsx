@@ -19,14 +19,14 @@ const BottomNav = ({ userRole }: BottomNavProps) => {
 
   const navItems: NavItem[] = userRole === "creator" 
     ? [
-        { icon: Home, label: "Accueil", path: `${basePath}/dashboard` },
+        { icon: Home, label: "Accueil", path: "/" },
         { icon: Search, label: "Offres", path: `${basePath}/offers` },
         { icon: PlusCircle, label: "Portfolio", path: `${basePath}/portfolio`, isCenter: true },
         { icon: Heart, label: "Messages", path: `${basePath}/messages` },
         { icon: User, label: "Profil", path: `${basePath}/profile` },
       ]
     : [
-        { icon: Home, label: "Accueil", path: `${basePath}/dashboard` },
+        { icon: Home, label: "Accueil", path: "/" },
         { icon: Search, label: "Créateurs", path: `${basePath}/marketplace` },
         { icon: PlusCircle, label: "Offre", path: `${basePath}/create-offer`, isCenter: true },
         { icon: Heart, label: "Favoris", path: `${basePath}/favorites` },
