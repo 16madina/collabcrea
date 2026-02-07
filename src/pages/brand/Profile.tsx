@@ -69,6 +69,10 @@ const BrandProfile = () => {
 
       if (error) throw error;
 
+      // Check if auth session shows email is verified
+      const authEmailVerified = Boolean((user as any)?.email_confirmed_at || (user as any)?.confirmed_at);
+      const combinedEmailVerified = (data.email_verified ?? false) || authEmailVerified;
+
       setProfileData({
         company_name: data.company_name || data.full_name,
         company_description: data.company_description,
@@ -78,11 +82,23 @@ const BrandProfile = () => {
         logo_url: data.logo_url,
         avatar_url: data.avatar_url,
         created_at: data.created_at,
-        email_verified: data.email_verified || false,
+        email_verified: combinedEmailVerified,
         identity_verified: data.identity_verified || false,
         identity_document_url: data.identity_document_url,
         identity_submitted_at: data.identity_submitted_at,
       });
+
+      // Keep DB flag in sync when the auth email is already verified
+      if (authEmailVerified && !data.email_verified) {
+        supabase
+          .from("profiles")
+          .update({ email_verified: true })
+          .eq("user_id", user.id)
+          .then(
+            () => undefined,
+            () => undefined,
+          );
+      }
     } catch (error) {
       console.error("Error fetching profile:", error);
     } finally {
@@ -141,19 +157,25 @@ const BrandProfile = () => {
   // Listen for email verification event (when user clicks the verification link)
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      // Only trigger on EMAIL_VERIFIED event (user clicked verification link)
-      if (event === 'USER_UPDATED' && session?.user) {
-        const userMeta = session.user.user_metadata;
-        const emailVerified = userMeta?.email_verified === true;
+      // Trigger on USER_UPDATED or SIGNED_IN events (user clicked verification link)
+      if ((event === 'USER_UPDATED' || event === 'SIGNED_IN') && session?.user) {
+        // Check multiple indicators of email verification
+        const authUser = session.user as any;
+        const emailVerified = 
+          authUser?.email_confirmed_at || 
+          authUser?.confirmed_at || 
+          authUser?.user_metadata?.email_verified === true;
+        
+        if (!emailVerified) return;
         
         // Check if database has different status
         const { data: dbProfile } = await supabase
           .from("profiles")
-          .select("email_verified")
+          .select("email_verified, company_name, full_name")
           .eq("user_id", session.user.id)
           .single();
         
-        if (emailVerified && dbProfile && !dbProfile.email_verified) {
+        if (dbProfile && !dbProfile.email_verified) {
           // Email was just verified via link! Update profile
           await supabase
             .from("profiles")
@@ -165,12 +187,13 @@ const BrandProfile = () => {
           });
 
           // Send welcome email for brands
-          if (profileData?.company_name) {
+          const brandName = dbProfile?.company_name || dbProfile?.full_name;
+          if (brandName) {
             try {
               await supabase.functions.invoke("send-welcome-email", {
                 body: {
                   email: session.user.email,
-                  userName: profileData.company_name,
+                  userName: brandName,
                   userRole: "brand",
                 },
               });
@@ -186,7 +209,7 @@ const BrandProfile = () => {
     });
 
     return () => subscription.unsubscribe();
-  }, [profileData?.company_name]);
+  }, []);
 
   useEffect(() => {
     const tab = searchParams.get("tab") as BrandProfileTabType;
