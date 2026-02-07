@@ -15,6 +15,8 @@ import BrandOffersTab from "@/components/brand/tabs/BrandOffersTab";
 import BrandCollaborationsTab from "@/components/brand/tabs/BrandCollaborationsTab";
 import BrandReviewsTab from "@/components/brand/tabs/BrandReviewsTab";
 import BrandProfileEditForm from "@/components/brand/BrandProfileEditForm";
+import BrandBannerEditSheet from "@/components/brand/BrandBannerEditSheet";
+import BrandLogoEditSheet from "@/components/brand/BrandLogoEditSheet";
 import VerificationBanner from "@/components/VerificationBanner";
 import IdentityVerificationTab from "@/components/creator/IdentityVerificationTab";
 
@@ -26,6 +28,7 @@ interface BrandProfileData {
   country: string | null;
   logo_url: string | null;
   avatar_url: string | null;
+  banner_url: string | null;
   created_at: string;
   email_verified: boolean;
   identity_verified: boolean;
@@ -51,6 +54,8 @@ const BrandProfile = () => {
   const { user, signOut } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showBannerEdit, setShowBannerEdit] = useState(false);
+  const [showLogoEdit, setShowLogoEdit] = useState(false);
   const [profileData, setProfileData] = useState<BrandProfileData | null>(null);
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -84,6 +89,7 @@ const BrandProfile = () => {
         country: data.country,
         logo_url: data.logo_url,
         avatar_url: data.avatar_url,
+        banner_url: data.banner_url,
         created_at: data.created_at,
         email_verified: combinedEmailVerified,
         identity_verified: data.identity_verified || false,
@@ -361,16 +367,33 @@ const BrandProfile = () => {
         onLogout={handleLogout}
       />
 
+      {/* Banner Edit Sheet */}
+      <BrandBannerEditSheet
+        isOpen={showBannerEdit}
+        onClose={() => setShowBannerEdit(false)}
+        currentBannerUrl={profileData?.banner_url || null}
+        onUpdate={fetchProfile}
+      />
+
+      {/* Logo Edit Sheet */}
+      <BrandLogoEditSheet
+        isOpen={showLogoEdit}
+        onClose={() => setShowLogoEdit(false)}
+        currentLogoUrl={profileData?.logo_url || profileData?.avatar_url}
+        onUpdate={fetchProfile}
+      />
+
       {/* Profile Header with Banner */}
       <BrandProfileHeader
         companyName={profileData?.company_name || ""}
         sector={profileData?.sector || null}
         website={profileData?.website || null}
         logoUrl={profileData?.logo_url || profileData?.avatar_url}
+        bannerUrl={profileData?.banner_url || null}
         isVerified={profileData?.identity_verified || false}
         onSettingsClick={() => setShowSettings(true)}
-        onEditLogo={() => setIsEditing(true)}
-        onEditBanner={() => setIsEditing(true)}
+        onEditLogo={() => setShowLogoEdit(true)}
+        onEditBanner={() => setShowBannerEdit(true)}
       />
 
       {/* Verification Banner */}
