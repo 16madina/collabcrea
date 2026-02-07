@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -6,6 +6,7 @@ import { useYouTubeSync } from "@/hooks/useYouTubeSync";
 import { useTikTokSync } from "@/hooks/useTikTokSync";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { CheckCircle, X } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import ProfileEditForm from "@/components/creator/ProfileEditForm";
 import ProfileHeader from "@/components/creator/ProfileHeader";
@@ -68,6 +69,8 @@ const CreatorProfile = () => {
   const [showPortfolioSheet, setShowPortfolioSheet] = useState(false);
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
+  const emailConfirmationShown = useRef(false);
   const [activeTab, setActiveTab] = useState<ProfileTabType>(
     (searchParams.get("tab") as ProfileTabType) || "info"
   );
@@ -136,10 +139,16 @@ const CreatorProfile = () => {
   // Listen for email verification event (when user clicks the verification link)
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      // Only trigger on USER_UPDATED event (user clicked verification link)
-      if (event === 'USER_UPDATED' && session?.user) {
-        const userMeta = session.user.user_metadata;
-        const emailVerified = userMeta?.email_verified === true;
+      // Trigger on USER_UPDATED or SIGNED_IN events (user clicked verification link)
+      if ((event === 'USER_UPDATED' || event === 'SIGNED_IN') && session?.user) {
+        // Check multiple indicators of email verification
+        const authUser = session.user as any;
+        const emailVerified = 
+          authUser?.email_confirmed_at || 
+          authUser?.confirmed_at || 
+          authUser?.user_metadata?.email_verified === true;
+        
+        if (!emailVerified) return;
         
         // Check if database has different status
         const { data: dbProfile } = await supabase
@@ -148,16 +157,18 @@ const CreatorProfile = () => {
           .eq("user_id", session.user.id)
           .single();
         
-        if (emailVerified && dbProfile && !dbProfile.email_verified) {
+        if (dbProfile && !dbProfile.email_verified) {
           // Email was just verified via link! Update profile
           await supabase
             .from("profiles")
             .update({ email_verified: true })
             .eq("user_id", session.user.id);
           
-          toast.success("Email vérifié avec succès ! ✅", {
-            description: "Vous pouvez maintenant accéder à toutes les fonctionnalités.",
-          });
+          // Show confirmation banner
+          if (!emailConfirmationShown.current) {
+            emailConfirmationShown.current = true;
+            setShowEmailConfirmation(true);
+          }
 
           // Send welcome email
           if (dbProfile?.full_name) {
@@ -183,7 +194,46 @@ const CreatorProfile = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Handle OAuth callbacks from YouTube and TikTok
+  // Check on initial load if email was just verified (user coming from verification link)
+  useEffect(() => {
+    const checkEmailVerification = async () => {
+      if (!user || emailConfirmationShown.current) return;
+      
+      const authUser = user as any;
+      const authEmailVerified = authUser?.email_confirmed_at || authUser?.confirmed_at;
+      
+      if (authEmailVerified) {
+        // Check if the verification happened recently (within last 2 minutes)
+        const verifiedAt = new Date(authEmailVerified);
+        const now = new Date();
+        const timeDiff = now.getTime() - verifiedAt.getTime();
+        const twoMinutes = 2 * 60 * 1000;
+        
+        if (timeDiff < twoMinutes) {
+          // Check if DB wasn't updated yet
+          const { data: dbProfile } = await supabase
+            .from("profiles")
+            .select("email_verified")
+            .eq("user_id", user.id)
+            .single();
+          
+          if (dbProfile && !dbProfile.email_verified) {
+            // Update DB and show confirmation
+            await supabase
+              .from("profiles")
+              .update({ email_verified: true })
+              .eq("user_id", user.id);
+            
+            emailConfirmationShown.current = true;
+            setShowEmailConfirmation(true);
+            fetchProfile();
+          }
+        }
+      }
+    };
+    
+    checkEmailVerification();
+  }, [user]);
   useEffect(() => {
     const code = searchParams.get("code");
     const state = searchParams.get("state");
@@ -313,6 +363,36 @@ const CreatorProfile = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24">
+      {/* Email Verification Confirmation Banner */}
+      <AnimatePresence>
+        {showEmailConfirmation && (
+          <motion.div
+            initial={{ opacity: 0, y: -100 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -100 }}
+            className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-accent via-accent/90 to-accent p-4 shadow-lg"
+          >
+            <div className="max-w-md mx-auto flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                  <CheckCircle className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <p className="font-bold text-white">Email vérifié avec succès ! 🎉</p>
+                  <p className="text-sm text-white/80">Bienvenue sur CollabCréa</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowEmailConfirmation(false)}
+                className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors"
+              >
+                <X className="w-4 h-4 text-white" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Edit Form Modal */}
       <AnimatePresence>
         {isEditing && profileData && (
