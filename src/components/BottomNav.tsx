@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Search, Megaphone, MessageCircle, User, PlusCircle } from "lucide-react";
+import { Home, Search, Megaphone, MessageCircle, User, Briefcase } from "lucide-react";
 
 interface NavItem {
   icon: typeof Home;
@@ -20,8 +20,8 @@ const BottomNav = ({ userRole }: BottomNavProps) => {
   const navItems: NavItem[] = userRole === "creator" 
     ? [
         { icon: Home, label: "Accueil", path: "/" },
-        { icon: Search, label: "Offres", path: `${basePath}/offers` },
-        { icon: PlusCircle, label: "Portfolio", path: `${basePath}/portfolio`, isCenter: true },
+        { icon: Search, label: "Explorer", path: "/explore" },
+        { icon: Briefcase, label: "Offres", path: `${basePath}/offers`, isCenter: true },
         { icon: MessageCircle, label: "Messages", path: `${basePath}/messages` },
         { icon: User, label: "Profil", path: `${basePath}/profile` },
       ]
