@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Loader2, X, Check, ImagePlus, Trash2 } from "lucide-react";
+import { ArrowLeft, Loader2, X, Check, ImagePlus, Trash2, Eye, Calendar, MapPin, Tag, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,6 +13,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -57,6 +64,7 @@ const CreateOffer = () => {
   const [productImages, setProductImages] = useState<File[]>([]);
   const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -167,6 +175,18 @@ const CreateOffer = () => {
         ? prev.countries.filter((c) => c !== countryName)
         : [...prev.countries, countryName],
     }));
+  };
+
+  const formatBudget = () => {
+    if (formData.budget_type === "negotiable") return "Négociable";
+    if (formData.budget_type === "fixed") {
+      const amount = parseInt(formData.budget_fixed);
+      return isNaN(amount) ? "Non défini" : `${amount.toLocaleString()} FCFA`;
+    }
+    const min = parseInt(formData.budget_min);
+    const max = parseInt(formData.budget_max);
+    if (isNaN(min) || isNaN(max)) return "Non défini";
+    return `${min.toLocaleString()} - ${max.toLocaleString()} FCFA`;
   };
 
   const handleSubmit = async (e: React.FormEvent, status: "active" | "draft" = "active") => {
@@ -567,6 +587,17 @@ const CreateOffer = () => {
             type="button"
             variant="outline"
             className="flex-1"
+            onClick={() => setShowPreview(true)}
+          >
+            <Eye className="w-4 h-4 mr-2" />
+            Prévisualiser
+          </Button>
+        </div>
+        <div className="flex gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            className="flex-1"
             onClick={(e) => handleSubmit(e, "draft")}
             disabled={isSubmitting || uploadingImages}
           >
@@ -651,6 +682,149 @@ const CreateOffer = () => {
           </motion.div>
         </motion.div>
       )}
+      {/* Preview Sheet */}
+      <Sheet open={showPreview} onOpenChange={setShowPreview}>
+        <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl overflow-y-auto">
+          <SheetHeader className="mb-6">
+            <SheetTitle className="font-display text-xl font-bold text-gold-gradient">
+              Prévisualisation de l'offre
+            </SheetTitle>
+          </SheetHeader>
+
+          <div className="space-y-6">
+            {/* Images */}
+            {imagePreviewUrls.length > 0 && (
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                {imagePreviewUrls.map((url, index) => (
+                  <img
+                    key={index}
+                    src={url}
+                    alt={`Produit ${index + 1}`}
+                    className="w-32 h-32 object-cover rounded-xl flex-shrink-0"
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Title & Category */}
+            <div>
+              <h2 className="text-xl font-bold text-foreground mb-2">
+                {formData.title || "Titre de l'offre"}
+              </h2>
+              {formData.category && (
+                <Badge variant="secondary" className="bg-gold/20 text-gold">
+                  {formData.category}
+                </Badge>
+              )}
+            </div>
+
+            {/* Description */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <FileText className="w-4 h-4" />
+                <span className="text-sm font-medium">Description</span>
+              </div>
+              <p className="text-foreground whitespace-pre-wrap">
+                {formData.description || "Aucune description"}
+              </p>
+            </div>
+
+            {/* Content Types */}
+            {formData.content_types.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Tag className="w-4 h-4" />
+                  <span className="text-sm font-medium">Types de contenu</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {formData.content_types.map((type) => (
+                    <Badge key={type} variant="outline">
+                      {type}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Budget */}
+            <div className="glass-card p-4 rounded-xl">
+              <p className="text-sm text-muted-foreground mb-1">Budget</p>
+              <p className="text-lg font-bold text-gold">{formatBudget()}</p>
+            </div>
+
+            {/* Location */}
+            {formData.countries.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <MapPin className="w-4 h-4" />
+                  <span className="text-sm font-medium">Pays cibles</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {formData.countries.map((country) => {
+                    const countryData = africanCountries.find((c) => c.name === country);
+                    return (
+                      <Badge key={country} variant="outline">
+                        {countryData?.flag} {country}
+                      </Badge>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Deadline */}
+            {formData.deadline && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Calendar className="w-4 h-4" />
+                  <span className="text-sm font-medium">Date limite</span>
+                </div>
+                <p className="text-foreground">
+                  {new Date(formData.deadline).toLocaleDateString("fr-FR", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  })}
+                </p>
+              </div>
+            )}
+
+            {/* Expectations */}
+            {formData.expectations && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-muted-foreground">
+                  Ce que vous attendez du créateur
+                </p>
+                <p className="text-foreground whitespace-pre-wrap">
+                  {formData.expectations}
+                </p>
+              </div>
+            )}
+
+            {/* Restrictions */}
+            {formData.restrictions && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-muted-foreground">Restrictions</p>
+                <p className="text-foreground whitespace-pre-wrap">
+                  {formData.restrictions}
+                </p>
+              </div>
+            )}
+
+            {/* Close button */}
+            <div className="sticky bottom-0 pt-4 bg-background">
+              <Button
+                type="button"
+                variant="gold"
+                className="w-full"
+                onClick={() => setShowPreview(false)}
+              >
+                Fermer la prévisualisation
+              </Button>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };
