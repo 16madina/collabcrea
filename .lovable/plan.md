@@ -1,68 +1,31 @@
 
-# Plan de correction : Probleme de connexion
 
-## Diagnostic
+# Plan : Corriger la redirection des emails de vérification vers collabcrea.com
 
-Lors de la connexion, une erreur 406 (PGRST116) se produit car le compte possede deux roles dans la base de donnees (creator et admin). Le code utilise `.single()` pour recuperer le role, ce qui echoue quand plusieurs lignes sont retournees.
+## Problème identifié
+
+Le lien de vérification dans l'email est généré par Supabase avec le format :
+```
+https://[projet-supabase].supabase.co/auth/v1/verify?token=xxx&redirect_to=https://collabcrea.com/...
+```
+
+Supabase utilise une **URL de site configurée** dans ses paramètres pour déterminer vers où rediriger l'utilisateur après la vérification. Cette URL doit être `https://collabcrea.com`.
 
 ## Solution
 
-Modifier la logique de recuperation du role pour gerer le cas ou un utilisateur a plusieurs roles, en priorisant le role principal (creator ou brand) tout en conservant le role admin separement.
+### Étape 1 : Configurer l'URL du site dans Lovable Cloud
 
-## Modifications a apporter
+Je dois mettre à jour les paramètres d'authentification pour définir `collabcrea.com` comme URL de site principale.
 
-### Fichier 1 : src/hooks/useAuth.tsx
+### Étape 2 : Ajouter collabcrea.com aux URLs de redirection autorisées
 
-**Changement** : Remplacer `.single()` par `.limit(1)` et ajouter une logique de priorite pour les roles multiples.
+Pour que Supabase accepte la redirection vers ton domaine, il doit être dans la liste des URLs autorisées.
 
-```typescript
-// Avant (ligne 52-56)
-supabase
-  .from("user_roles")
-  .select("role")
-  .eq("user_id", userId)
-  .single()
+## Détails techniques
 
-// Apres
-supabase
-  .from("user_roles")
-  .select("role")
-  .eq("user_id", userId)
-```
+La configuration se fait via l'outil `configure-auth` avec :
+- **Site URL** : `https://collabcrea.com` (URL principale de redirection après vérification)
+- **Redirect URLs** : Ajouter `https://collabcrea.com/**` pour autoriser toutes les pages du site
 
-Ensuite, adapter le traitement du resultat pour :
-1. Recuperer tous les roles de l'utilisateur
-2. Prioriser "creator" ou "brand" comme role principal (pour la redirection)
-3. Ignorer "admin" pour la redirection (admin est un role supplementaire)
+Cette configuration est nécessaire car Supabase valide que l'URL de redirection fait partie des domaines autorisés avant d'y rediriger l'utilisateur.
 
-### Details techniques
-
-```text
-Flux de recuperation du role
-+----------------------------------+
-| 1. Fetch tous les roles         |
-| 2. Filtrer roles principaux     |
-|    (creator ou brand)           |
-| 3. Si trouve -> setRole()       |
-| 4. Redirection vers profil      |
-+----------------------------------+
-
-Logique de priorite :
-- Si l'utilisateur a "creator" -> rediriger vers /creator/profile
-- Si l'utilisateur a "brand" -> rediriger vers /brand/profile
-- "admin" ne compte pas pour la redirection
-```
-
-### Impact
-
-| Avant | Apres |
-|-------|-------|
-| Echec si plusieurs roles | Fonctionne avec plusieurs roles |
-| Pas de redirection | Redirection vers le bon profil |
-| Role reste null | Role principal correctement detecte |
-
-## Benefices
-
-- Les utilisateurs avec un role admin supplementaire pourront se connecter
-- La redirection apres connexion fonctionnera correctement
-- Le systeme reste compatible avec les utilisateurs ayant un seul role
