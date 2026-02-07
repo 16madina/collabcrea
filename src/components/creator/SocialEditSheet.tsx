@@ -23,6 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import YouTubeConnectButton from "./YouTubeConnectButton";
+import TikTokConnectButton from "./TikTokConnectButton";
 
 // TikTok icon component
 const TikTokIcon = ({ className }: { className?: string }) => (
@@ -182,9 +183,15 @@ const SocialEditSheet = ({ isOpen, onClose, initialData, onUpdate }: SocialEditS
                     </div>
                     <div className="flex-1">
                       <FormLabel>TikTok</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ex: 500K" {...field} />
-                      </FormControl>
+                      <div className="flex items-center gap-2">
+                        <FormControl>
+                          <Input placeholder="Ex: 500K" {...field} className="flex-1" />
+                        </FormControl>
+                        <TikTokConnectButton 
+                          currentFollowers={initialData.tiktok_followers}
+                          onSyncComplete={onUpdate}
+                        />
+                      </div>
                     </div>
                   </div>
                   <FormMessage />
