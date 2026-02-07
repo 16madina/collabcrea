@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Search } from "lucide-react";
+import { Search, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import LandingNav from "@/components/LandingNav";
 import CreatorCard from "@/components/CreatorCard";
 import CreatorDetailSheet from "@/components/CreatorDetailSheet";
 import type { Creator } from "@/components/CreatorDetailSheet";
-import { allCreators } from "@/data/creators";
+import { useCreators } from "@/hooks/useCreators";
 
 const categories = [
   "Tous",
@@ -23,8 +23,10 @@ const categories = [
 const Explore = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("Tous");
-  const [selectedCreator, setSelectedCreator] = useState<Creator | null>(null);
+  const [selectedCreator, setSelectedCreator] = useState<(Creator & { userId: string }) | null>(null);
   const [showCreatorDetail, setShowCreatorDetail] = useState(false);
+  
+  const { allCreators, loading } = useCreators();
 
   const filteredCreators = allCreators.filter((creator) => {
     const matchesSearch =
@@ -36,7 +38,7 @@ const Explore = () => {
     return matchesSearch && matchesCategory;
   });
 
-  const handleCreatorClick = (creator: Creator) => {
+  const handleCreatorClick = (creator: Creator & { userId: string }) => {
     setSelectedCreator(creator);
     setShowCreatorDetail(true);
   };
@@ -98,18 +100,24 @@ const Explore = () => {
       </div>
 
       {/* Creators Grid */}
-      <div className="px-6 mt-4 grid grid-cols-2 gap-3">
-        {filteredCreators.map((creator, index) => (
-          <CreatorCard
-            key={creator.firstName + creator.lastName}
-            creator={creator}
-            index={index}
-            onClick={() => handleCreatorClick(creator)}
-          />
-        ))}
-      </div>
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 text-gold animate-spin" />
+        </div>
+      ) : (
+        <div className="px-6 mt-4 grid grid-cols-2 gap-3">
+          {filteredCreators.map((creator, index) => (
+            <CreatorCard
+              key={creator.userId}
+              creator={creator}
+              index={index}
+              onClick={() => handleCreatorClick(creator)}
+            />
+          ))}
+        </div>
+      )}
 
-      {filteredCreators.length === 0 && (
+      {!loading && filteredCreators.length === 0 && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -122,7 +130,7 @@ const Explore = () => {
       {/* Creator Detail Sheet */}
       <CreatorDetailSheet
         creator={selectedCreator}
-        creatorUserId={null}
+        creatorUserId={selectedCreator?.userId.startsWith("static-") ? null : selectedCreator?.userId}
         open={showCreatorDetail}
         onOpenChange={setShowCreatorDetail}
       />
