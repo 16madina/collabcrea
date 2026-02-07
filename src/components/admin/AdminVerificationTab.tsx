@@ -48,6 +48,74 @@ interface PendingVerification {
   bio: string | null;
 }
 
+// Component to preview identity document with loading state
+const IdentityDocumentPreview = ({ 
+  documentPath, 
+  onOpenDocument 
+}: { 
+  documentPath: string | null; 
+  onOpenDocument: () => void 
+}) => {
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadImage = async () => {
+      if (!documentPath) {
+        setLoading(false);
+        return;
+      }
+      
+      try {
+        const { data } = await supabase.storage
+          .from("identity-documents")
+          .createSignedUrl(documentPath, 3600);
+        setImageUrl(data?.signedUrl || null);
+      } catch (error) {
+        console.error("Error loading document:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadImage();
+  }, [documentPath]);
+
+  if (loading) {
+    return (
+      <div className="aspect-square rounded-xl bg-muted flex items-center justify-center border-2 border-border">
+        <div className="text-center text-muted-foreground">
+          <div className="animate-pulse">Chargement...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!imageUrl) {
+    return (
+      <div className="aspect-square rounded-xl bg-muted flex items-center justify-center border-2 border-border">
+        <div className="text-center text-muted-foreground p-4">
+          <FileCheck className="w-12 h-12 mx-auto mb-2 opacity-50" />
+          <p className="text-xs">Document non disponible</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div 
+      className="aspect-square rounded-xl overflow-hidden bg-muted border-2 border-border cursor-pointer hover:border-gold transition-colors"
+      onClick={onOpenDocument}
+    >
+      <img
+        src={imageUrl}
+        alt="Document d'identité"
+        className="w-full h-full object-cover"
+      />
+    </div>
+  );
+};
+
 const AdminVerificationTab = () => {
   const [pendingUsers, setPendingUsers] = useState<PendingVerification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -332,18 +400,52 @@ const AdminVerificationTab = () => {
                   </div>
                 )}
 
-                {/* Document */}
+                {/* Photo Comparison - Side by side */}
                 <div className="space-y-2">
-                  <h4 className="font-semibold text-sm">Document d'identité</h4>
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => selectedUser.identity_document_url && openDocument(selectedUser.identity_document_url)}
-                  >
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    Voir le document
-                  </Button>
+                  <h4 className="font-semibold text-sm flex items-center gap-2">
+                    <Eye className="w-4 h-4" />
+                    Comparaison photo de profil / Document
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Profile Photo */}
+                    <div className="space-y-2">
+                      <p className="text-xs text-muted-foreground text-center">Photo de profil</p>
+                      <div className="aspect-square rounded-xl overflow-hidden bg-muted flex items-center justify-center border-2 border-border">
+                        {selectedUser.avatar_url ? (
+                          <img
+                            src={selectedUser.avatar_url}
+                            alt="Photo de profil"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="text-center text-muted-foreground p-4">
+                            <User className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                            <p className="text-xs">Pas de photo</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Identity Document */}
+                    <div className="space-y-2">
+                      <p className="text-xs text-muted-foreground text-center">Document d'identité</p>
+                      <IdentityDocumentPreview 
+                        documentPath={selectedUser.identity_document_url}
+                        onOpenDocument={() => selectedUser.identity_document_url && openDocument(selectedUser.identity_document_url)}
+                      />
+                    </div>
+                  </div>
                 </div>
+
+                {/* Open document full size */}
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => selectedUser.identity_document_url && openDocument(selectedUser.identity_document_url)}
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Ouvrir le document en grand
+                </Button>
 
                 {/* Actions */}
                 <div className="grid grid-cols-2 gap-3 pt-4">
@@ -357,7 +459,7 @@ const AdminVerificationTab = () => {
                   </Button>
                   <Button
                     variant="default"
-                    className="bg-green-600 hover:bg-green-700"
+                    className="bg-accent hover:bg-accent/90"
                     onClick={() => handleApprove(selectedUser)}
                     disabled={isProcessing}
                   >
