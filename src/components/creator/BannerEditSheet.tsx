@@ -66,11 +66,9 @@ const BannerEditSheet = ({
         .from("avatars")
         .getPublicUrl(filePath);
 
-      // Note: We need to add banner_url to profiles table
-      // For now, we'll store it but the field might need to be added
       const { error: updateError } = await supabase
         .from("profiles")
-        .update({ avatar_url: publicUrl } as any) // Temporarily using avatar_url
+        .update({ banner_url: publicUrl })
         .eq("user_id", user.id);
 
       if (updateError) throw updateError;
