@@ -127,21 +127,15 @@ const CreatorProfile = () => {
     fetchProfile();
   }, [user]);
 
-  // Detect email verification callback (user lands after clicking email link)
+  // Detect email verification - use user object directly (no refreshSession to avoid rate limit)
   useEffect(() => {
     const checkEmailVerification = async () => {
-      if (!user) return;
+      if (!user || !profileData) return;
 
-      // Refresh session to get latest email_confirmed_at
-      const { data: { session }, error } = await supabase.auth.refreshSession();
-      if (error) {
-        console.error("Error refreshing session:", error);
-        return;
-      }
-
-      const confirmedAt = session?.user?.email_confirmed_at || (session?.user as any)?.confirmed_at;
+      // Use user object from useAuth which is already up-to-date
+      const confirmedAt = (user as any)?.email_confirmed_at || (user as any)?.confirmed_at;
       
-      if (confirmedAt && profileData && !profileData.email_verified) {
+      if (confirmedAt && !profileData.email_verified) {
         // Email was just confirmed! Update profile and show toast
         await supabase
           .from("profiles")
@@ -156,7 +150,6 @@ const CreatorProfile = () => {
       }
     };
 
-    // Check on mount and when returning from email link
     checkEmailVerification();
   }, [user, profileData?.email_verified]);
 

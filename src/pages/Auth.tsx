@@ -95,7 +95,7 @@ const Auth = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (!authLoading && user && userRole) {
-      navigate(userRole === "creator" ? "/creator/dashboard" : "/brand/dashboard");
+      navigate(userRole === "creator" ? "/creator/profile" : "/brand/profile");
     }
   }, [user, userRole, authLoading, navigate]);
 
