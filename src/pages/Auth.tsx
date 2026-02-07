@@ -85,6 +85,29 @@ const CREATOR_CATEGORIES = [
   "Éducation",
 ];
 
+// Brand social networks
+const BRAND_SOCIAL_NETWORKS = [
+  { id: "instagram", name: "Instagram", placeholder: "@votrecompte" },
+  { id: "facebook", name: "Facebook", placeholder: "votrepagefacebook" },
+  { id: "tiktok", name: "TikTok", placeholder: "@votrecompte" },
+];
+
+// Helper function to normalize website URLs
+const normalizeWebsiteUrl = (url: string): string => {
+  if (!url || url.trim() === "") return "";
+  const trimmed = url.trim();
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    return trimmed;
+  }
+  return `https://${trimmed}`;
+};
+
+interface BrandSocialNetworks {
+  instagram: string;
+  facebook: string;
+  tiktok: string;
+}
+
 interface SignupFormData {
   avatarFile: File | null;
   avatarPreview: string | null;
@@ -102,6 +125,8 @@ interface SignupFormData {
   collaborationTypes: string[];
   targetCategories: string[];
   companyDescription: string;
+  brandSocialNetworks: BrandSocialNetworks;
+  selectedBrandSocials: string[];
   // Credentials
   email: string;
   password: string;
@@ -126,6 +151,8 @@ const initialFormData: SignupFormData = {
   collaborationTypes: [],
   targetCategories: [],
   companyDescription: "",
+  brandSocialNetworks: { instagram: "", facebook: "", tiktok: "" },
+  selectedBrandSocials: [],
   // Credentials
   email: "",
   password: "",
@@ -221,13 +248,7 @@ const Auth = () => {
       if (!formData.sector) {
         newErrors.sector = "Sélectionnez votre secteur d'activité";
       }
-      if (formData.website && formData.website.trim() !== "") {
-        try {
-          websiteSchema.parse(formData.website);
-        } catch {
-          newErrors.website = "URL invalide (ex: https://exemple.com)";
-        }
-      }
+      // Website validation removed - we accept any format and normalize it
       if (formData.collaborationTypes.length === 0) {
         newErrors.collaborationTypes = "Sélectionnez au moins un type de collaboration";
       }
@@ -360,7 +381,18 @@ const Auth = () => {
           : (residenceCountry?.name || formData.residenceCountry);
 
         // Create profile with all info
-        const profileInsertData = {
+        const profileInsertData: {
+          user_id: string;
+          full_name: string;
+          avatar_url: string | null;
+          country: string;
+          residence_country: string | null;
+          company_name: string | null;
+          sector: string | null;
+          website: string | null;
+          company_description: string | null;
+          pricing: unknown;
+        } = {
           user_id: data.user.id,
           full_name: `${formData.firstName} ${formData.lastName}`,
           avatar_url: avatarUrl,
@@ -372,18 +404,19 @@ const Auth = () => {
           // Brand-specific fields
           company_name: formData.role === "brand" ? formData.companyName : null,
           sector: formData.role === "brand" ? formData.sector : null,
-          website: formData.role === "brand" && formData.website ? formData.website : null,
+          website: formData.role === "brand" && formData.website ? normalizeWebsiteUrl(formData.website) : null,
           company_description: formData.role === "brand" ? formData.companyDescription : null,
-          // Store collaboration types and target categories as JSON in pricing field for brands
+          // Store collaboration types, target categories and brand socials as JSON in pricing field for brands
           pricing: formData.role === "brand" 
             ? {
                 collaboration_types: formData.collaborationTypes,
                 target_categories: formData.targetCategories,
+                brand_socials: formData.brandSocialNetworks,
               }
             : [],
         };
 
-        const { error: profileError } = await supabase.from("profiles").insert(profileInsertData);
+        const { error: profileError } = await supabase.from("profiles").insert(profileInsertData as any);
 
         if (profileError) {
           console.error("Error creating profile:", profileError);
@@ -1074,10 +1107,72 @@ const StepBrandInfo = ({ formData, updateFormData, errors }: StepBrandInfoProps)
         <Input
           value={formData.website}
           onChange={(e) => updateFormData("website", e.target.value)}
-          placeholder="https://votresite.com"
-          className={`h-14 bg-muted/50 border rounded-xl px-4 ${errors.website ? "border-destructive" : "border-border focus:border-gold"}`}
+          placeholder="votresite.com"
+          className="h-14 bg-muted/50 border rounded-xl px-4 border-border focus:border-gold"
         />
-        {errors.website && <p className="text-destructive text-xs">{errors.website}</p>}
+        <p className="text-xs text-muted-foreground">
+          Vous pouvez entrer votre URL avec ou sans https://
+        </p>
+      </div>
+
+      {/* Brand Social Networks */}
+      <div className="space-y-3">
+        <Label>Vos réseaux sociaux (optionnel)</Label>
+        <p className="text-xs text-muted-foreground">Cochez les réseaux sur lesquels vous êtes présent</p>
+        <div className="space-y-3">
+          {BRAND_SOCIAL_NETWORKS.map((network) => {
+            const isSelected = (formData.selectedBrandSocials || []).includes(network.id);
+            const socialValue = formData.brandSocialNetworks?.[network.id as keyof BrandSocialNetworks] || "";
+            
+            return (
+              <div key={network.id} className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <Checkbox
+                    id={`brand-social-${network.id}`}
+                    checked={isSelected}
+                    onCheckedChange={(checked) => {
+                      const current = formData.selectedBrandSocials || [];
+                      if (checked) {
+                        updateFormData("selectedBrandSocials", [...current, network.id]);
+                      } else {
+                        updateFormData("selectedBrandSocials", current.filter(id => id !== network.id));
+                        // Clear the value when unchecked
+                        updateFormData("brandSocialNetworks", {
+                          ...formData.brandSocialNetworks,
+                          [network.id]: "",
+                        });
+                      }
+                    }}
+                    className="border-gold data-[state=checked]:bg-gold data-[state=checked]:border-gold"
+                  />
+                  <label
+                    htmlFor={`brand-social-${network.id}`}
+                    className="font-medium cursor-pointer"
+                  >
+                    {network.name}
+                  </label>
+                </div>
+                {isSelected && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                  >
+                    <Input
+                      value={socialValue}
+                      onChange={(e) => updateFormData("brandSocialNetworks", {
+                        ...formData.brandSocialNetworks,
+                        [network.id]: e.target.value,
+                      })}
+                      placeholder={network.placeholder}
+                      className="h-12 bg-muted/50 border rounded-xl px-4 border-border focus:border-gold"
+                    />
+                  </motion.div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Collaboration Types */}
