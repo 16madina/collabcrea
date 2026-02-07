@@ -328,6 +328,7 @@ export type Database = {
           is_banned: boolean | null
           logo_url: string | null
           pricing: Json | null
+          residence_country: string | null
           sector: string | null
           snapchat_followers: string | null
           tiktok_followers: string | null
@@ -358,6 +359,7 @@ export type Database = {
           is_banned?: boolean | null
           logo_url?: string | null
           pricing?: Json | null
+          residence_country?: string | null
           sector?: string | null
           snapchat_followers?: string | null
           tiktok_followers?: string | null
@@ -388,6 +390,7 @@ export type Database = {
           is_banned?: boolean | null
           logo_url?: string | null
           pricing?: Json | null
+          residence_country?: string | null
           sector?: string | null
           snapchat_followers?: string | null
           tiktok_followers?: string | null
