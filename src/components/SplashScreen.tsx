@@ -10,9 +10,9 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
   const [phase, setPhase] = useState<"logo" | "text" | "exit">("logo");
 
   useEffect(() => {
-    const timer1 = setTimeout(() => setPhase("text"), 800);
-    const timer2 = setTimeout(() => setPhase("exit"), 2200);
-    const timer3 = setTimeout(() => onComplete(), 2800);
+    const timer1 = setTimeout(() => setPhase("text"), 1000);
+    const timer2 = setTimeout(() => setPhase("exit"), 4200);
+    const timer3 = setTimeout(() => onComplete(), 4800);
 
     return () => {
       clearTimeout(timer1);
@@ -169,21 +169,21 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
               <motion.img
                 src={logoFull}
                 alt="CollabCréa"
-                className="h-20 md:h-28 w-auto"
+                className="h-32 md:h-44 w-auto"
                 initial={{ y: 20 }}
                 animate={{ y: 0 }}
                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
               />
             </motion.div>
 
-            {/* Tagline */}
+            {/* Slogan */}
             <motion.p
-              className="mt-6 text-sm md:text-base text-muted-foreground font-light tracking-widest uppercase"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: phase === "text" ? 1 : 0, y: phase === "text" ? 0 : 10 }}
-              transition={{ duration: 0.5 }}
+              className="mt-8 text-base md:text-xl text-foreground/90 font-medium tracking-wide text-center max-w-md px-4"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: phase === "text" ? 1 : 0, y: phase === "text" ? 0 : 15 }}
+              transition={{ duration: 0.6 }}
             >
-              Créateurs × Marques
+              Connectez votre marque aux voix qui comptent.
             </motion.p>
 
             {/* Loading bar */}
@@ -200,7 +200,7 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
                 }}
                 initial={{ width: "0%" }}
                 animate={{ width: "100%" }}
-                transition={{ duration: 2, ease: "easeInOut" }}
+                transition={{ duration: 4, ease: "easeInOut" }}
               />
             </motion.div>
           </motion.div>
