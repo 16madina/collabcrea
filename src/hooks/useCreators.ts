@@ -108,6 +108,7 @@ function mapProfileToCreator(profile: ProfileWithRole): Creator & { userId: stri
     image: profile.avatar_url || "/placeholder.svg",
     rating: undefined, // Could be calculated from reviews later
     bio: profile.bio || undefined,
+    isVerified: profile.identity_verified === true,
     socials: {
       youtube: profile.youtube_followers || undefined,
       instagram: profile.instagram_followers || undefined,
