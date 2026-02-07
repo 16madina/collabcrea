@@ -61,9 +61,11 @@ const CreatorCard = ({ creator, index = 0, variant = "grid", onClick }: CreatorC
 
         {/* Infos */}
         <div className="p-3">
-          {/* Pays */}
+          {/* Pays avec double drapeau si disponible */}
           <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-            <span>{creator.flag}</span>
+            <span>
+              {creator.residenceFlag ? `${creator.residenceFlag}-${creator.flag}` : creator.flag}
+            </span>
             <span>{creator.country}</span>
           </div>
           
@@ -128,9 +130,11 @@ const CreatorCard = ({ creator, index = 0, variant = "grid", onClick }: CreatorC
 
       {/* Infos */}
       <div className="p-3">
-        {/* Pays */}
+        {/* Pays avec double drapeau si disponible */}
         <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-          <span>{creator.flag}</span>
+          <span>
+            {creator.residenceFlag ? `${creator.residenceFlag}-${creator.flag}` : creator.flag}
+          </span>
           <span>{creator.country}</span>
         </div>
 

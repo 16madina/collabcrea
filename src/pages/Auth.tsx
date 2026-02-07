@@ -252,6 +252,10 @@ const Auth = () => {
           full_name: `${formData.firstName} ${formData.lastName}`,
           avatar_url: avatarUrl,
           country: displayCountry,
+          // For creators, store residence country for dual-flag display
+          residence_country: formData.role === "creator" 
+            ? (residenceCountry?.name || formData.residenceCountry)
+            : null,
         });
 
         if (profileError) {

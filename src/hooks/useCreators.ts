@@ -11,6 +11,7 @@ interface ProfileWithRole {
   bio: string | null;
   category: string | null;
   country: string | null;
+  residence_country: string | null;
   followers: string | null;
   youtube_followers: string | null;
   instagram_followers: string | null;
@@ -21,8 +22,8 @@ interface ProfileWithRole {
   is_banned: boolean | null;
 }
 
-// Country to flag mapping
-const countryFlags: Record<string, string> = {
+// Country to flag mapping (African countries)
+const africanCountryFlags: Record<string, string> = {
   "Côte d'Ivoire": "🇨🇮",
   "Sénégal": "🇸🇳",
   "Mali": "🇲🇱",
@@ -45,9 +46,37 @@ const countryFlags: Record<string, string> = {
   "Afrique du Sud": "🇿🇦",
 };
 
+// Worldwide country flags (for residence)
+const worldCountryFlags: Record<string, string> = {
+  // Africa
+  ...africanCountryFlags,
+  // Europe
+  "France": "🇫🇷",
+  "Belgique": "🇧🇪",
+  "Suisse": "🇨🇭",
+  "Allemagne": "🇩🇪",
+  "Royaume-Uni": "🇬🇧",
+  "Espagne": "🇪🇸",
+  "Italie": "🇮🇹",
+  "Portugal": "🇵🇹",
+  "Pays-Bas": "🇳🇱",
+  // Americas
+  "Canada": "🇨🇦",
+  "États-Unis": "🇺🇸",
+  "Brésil": "🇧🇷",
+  "Mexique": "🇲🇽",
+  // Others
+  "Chine": "🇨🇳",
+  "Japon": "🇯🇵",
+  "Australie": "🇦🇺",
+  "Émirats Arabes Unis": "🇦🇪",
+  "Arabie Saoudite": "🇸🇦",
+  "Qatar": "🇶🇦",
+};
+
 function getFlag(country: string | null): string {
   if (!country) return "🌍";
-  return countryFlags[country] || "🌍";
+  return worldCountryFlags[country] || africanCountryFlags[country] || "🌍";
 }
 
 function mapProfileToCreator(profile: ProfileWithRole): Creator & { userId: string } {
@@ -65,6 +94,9 @@ function mapProfileToCreator(profile: ProfileWithRole): Creator & { userId: stri
     }));
   }
 
+  // Get residence flag only if different from origin
+  const residenceFlag = profile.residence_country ? getFlag(profile.residence_country) : undefined;
+
   return {
     userId: profile.user_id,
     firstName,
@@ -72,6 +104,7 @@ function mapProfileToCreator(profile: ProfileWithRole): Creator & { userId: stri
     category: profile.category || "Lifestyle",
     country: profile.country || "Afrique",
     flag: getFlag(profile.country),
+    residenceFlag: residenceFlag !== getFlag(profile.country) ? residenceFlag : undefined,
     image: profile.avatar_url || "/placeholder.svg",
     rating: undefined, // Could be calculated from reviews later
     bio: profile.bio || undefined,
