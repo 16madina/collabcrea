@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import BottomNav from "@/components/BottomNav";
 import BrandProfileHeader from "@/components/brand/BrandProfileHeader";
 import BrandStats from "@/components/brand/BrandStats";
@@ -124,6 +125,52 @@ const BrandProfile = () => {
     fetchProfile();
     fetchOffers();
   }, [user]);
+
+  // Detect email verification for brands and send welcome email
+  useEffect(() => {
+    const checkEmailVerification = async () => {
+      if (!user || !profileData) return;
+
+      const confirmedAt = (user as any)?.email_confirmed_at || (user as any)?.confirmed_at;
+      
+      // Check if email was just confirmed by looking at user metadata
+      const { data: dbProfile } = await supabase
+        .from("profiles")
+        .select("email_verified")
+        .eq("user_id", user.id)
+        .single();
+
+      if (confirmedAt && dbProfile && !dbProfile.email_verified) {
+        // Email was just confirmed! Update profile and show toast
+        await supabase
+          .from("profiles")
+          .update({ email_verified: true })
+          .eq("user_id", user.id);
+        
+        toast.success("Email vérifié avec succès ! ✅", {
+          description: "Vous pouvez maintenant accéder à toutes les fonctionnalités.",
+        });
+
+        // Send welcome email for brands
+        try {
+          await supabase.functions.invoke("send-welcome-email", {
+            body: {
+              email: user.email,
+              userName: profileData.company_name,
+              userRole: "brand",
+            },
+          });
+          console.log("Welcome email sent successfully");
+        } catch (emailError) {
+          console.error("Failed to send welcome email:", emailError);
+        }
+        
+        fetchProfile();
+      }
+    };
+
+    checkEmailVerification();
+  }, [user, profileData?.company_name]);
 
   useEffect(() => {
     const tab = searchParams.get("tab") as BrandProfileTabType;

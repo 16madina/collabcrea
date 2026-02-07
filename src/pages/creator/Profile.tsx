@@ -145,6 +145,22 @@ const CreatorProfile = () => {
         toast.success("Email vérifié avec succès ! ✅", {
           description: "Vous pouvez maintenant accéder à toutes les fonctionnalités.",
         });
+
+        // Send welcome email
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          await supabase.functions.invoke("send-welcome-email", {
+            body: {
+              email: user.email,
+              userName: profileData.full_name?.split(" ")[0],
+              userRole: "creator",
+            },
+          });
+          console.log("Welcome email sent successfully");
+        } catch (emailError) {
+          console.error("Failed to send welcome email:", emailError);
+          // Don't block the flow if email fails
+        }
         
         fetchProfile();
       }
