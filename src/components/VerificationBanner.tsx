@@ -31,9 +31,8 @@ const VerificationBanner = ({ status, showActions = true, userRole = "creator" }
         return;
       }
 
-      // Use the published URL for redirect, not the preview URL
-      // This ensures users can access the link from their email without needing Lovable access
-      const baseUrl = "https://collabcrea.lovable.app";
+      // Use the official domain for redirect
+      const baseUrl = "https://collabcrea.com";
       const redirectTo = userRole === "brand" 
         ? `${baseUrl}/brand/profile`
         : `${baseUrl}/creator/profile`;
