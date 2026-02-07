@@ -54,6 +54,7 @@ export interface Creator {
   image: string;
   rating?: number;
   bio?: string;
+  isVerified?: boolean; // Identity verified
   socials: CreatorSocials;
   pricing?: CreatorPricing[];
 }
