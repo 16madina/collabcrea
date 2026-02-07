@@ -1084,23 +1084,26 @@ const StepBrandInfo = ({ formData, updateFormData, errors }: StepBrandInfoProps)
       <div className="space-y-2">
         <Label>Types de collaboration recherchés *</Label>
         <div className="flex flex-wrap gap-2">
-          {COLLABORATION_TYPES.map((type) => (
-            <button
-              key={type.id}
-              type="button"
-              onClick={() => toggleCollaborationType(type.id)}
-              className={`px-3 py-2 rounded-full text-sm font-medium transition-all ${
-                formData.collaborationTypes.includes(type.id)
-                  ? "bg-gold text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80"
-              }`}
-            >
-              {formData.collaborationTypes.includes(type.id) && (
-                <Check className="w-3 h-3 inline mr-1" />
-              )}
-              {type.label}
-            </button>
-          ))}
+          {COLLABORATION_TYPES.map((type) => {
+            const isSelected = (formData.collaborationTypes || []).includes(type.id);
+            return (
+              <button
+                key={type.id}
+                type="button"
+                onClick={() => toggleCollaborationType(type.id)}
+                className={`px-3 py-2 rounded-full text-sm font-medium transition-all ${
+                  isSelected
+                    ? "bg-gold text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                }`}
+              >
+                {isSelected && (
+                  <Check className="w-3 h-3 inline mr-1" />
+                )}
+                {type.label}
+              </button>
+            );
+          })}
         </div>
         {errors.collaborationTypes && <p className="text-destructive text-xs">{errors.collaborationTypes}</p>}
       </div>
@@ -1109,23 +1112,26 @@ const StepBrandInfo = ({ formData, updateFormData, errors }: StepBrandInfoProps)
       <div className="space-y-2">
         <Label>Catégories de créateurs recherchées *</Label>
         <div className="flex flex-wrap gap-2">
-          {CREATOR_CATEGORIES.map((category) => (
-            <button
-              key={category}
-              type="button"
-              onClick={() => toggleTargetCategory(category)}
-              className={`px-3 py-2 rounded-full text-sm font-medium transition-all ${
-                formData.targetCategories.includes(category)
-                  ? "bg-accent text-accent-foreground"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80"
-              }`}
-            >
-              {formData.targetCategories.includes(category) && (
-                <Check className="w-3 h-3 inline mr-1" />
-              )}
-              {category}
-            </button>
-          ))}
+          {CREATOR_CATEGORIES.map((category) => {
+            const isSelected = (formData.targetCategories || []).includes(category);
+            return (
+              <button
+                key={category}
+                type="button"
+                onClick={() => toggleTargetCategory(category)}
+                className={`px-3 py-2 rounded-full text-sm font-medium transition-all ${
+                  isSelected
+                    ? "bg-accent text-accent-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                }`}
+              >
+                {isSelected && (
+                  <Check className="w-3 h-3 inline mr-1" />
+                )}
+                {category}
+              </button>
+            );
+          })}
         </div>
         {errors.targetCategories && <p className="text-destructive text-xs">{errors.targetCategories}</p>}
       </div>
@@ -1134,13 +1140,13 @@ const StepBrandInfo = ({ formData, updateFormData, errors }: StepBrandInfoProps)
       <div className="space-y-2">
         <Label>Description de votre entreprise *</Label>
         <textarea
-          value={formData.companyDescription}
+          value={formData.companyDescription || ""}
           onChange={(e) => updateFormData("companyDescription", e.target.value)}
           placeholder="Décrivez brièvement votre activité et vos valeurs (2-3 phrases)"
           rows={3}
           className={`w-full bg-muted/50 border rounded-xl p-4 text-foreground resize-none ${errors.companyDescription ? "border-destructive" : "border-border focus:border-gold"}`}
         />
-        <p className="text-xs text-muted-foreground">{formData.companyDescription.length}/500 caractères</p>
+        <p className="text-xs text-muted-foreground">{(formData.companyDescription || "").length}/500 caractères</p>
         {errors.companyDescription && <p className="text-destructive text-xs">{errors.companyDescription}</p>}
       </div>
     </motion.div>
