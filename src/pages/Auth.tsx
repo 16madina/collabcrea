@@ -491,7 +491,16 @@ const LoginForm = ({
       </Button>
     </form>
 
-    <div className="mt-6 text-center">
+    <div className="mt-4 text-center">
+      <Link
+        to="/forgot-password"
+        className="text-muted-foreground text-sm hover:text-gold"
+      >
+        Mot de passe oublié ?
+      </Link>
+    </div>
+
+    <div className="mt-4 text-center">
       <p className="text-muted-foreground text-sm">
         Pas encore de compte ?{" "}
         <button onClick={onSwitchToSignup} className="text-gold font-medium hover:underline">
