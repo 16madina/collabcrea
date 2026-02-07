@@ -22,6 +22,7 @@ import SocialEditSheet from "@/components/creator/SocialEditSheet";
 import AvatarEditSheet from "@/components/creator/AvatarEditSheet";
 import BannerEditSheet from "@/components/creator/BannerEditSheet";
 import BioEditSheet from "@/components/creator/BioEditSheet";
+import ResidenceEditSheet from "@/components/creator/ResidenceEditSheet";
 
 interface PricingItem {
   type: string;
@@ -34,6 +35,7 @@ interface ProfileData {
   bio: string | null;
   category: string | null;
   country: string | null;
+  residence_country: string | null;
   youtube_followers: string | null;
   instagram_followers: string | null;
   tiktok_followers: string | null;
@@ -61,6 +63,7 @@ const CreatorProfile = () => {
   const [showAvatarSheet, setShowAvatarSheet] = useState(false);
   const [showBannerSheet, setShowBannerSheet] = useState(false);
   const [showBioSheet, setShowBioSheet] = useState(false);
+  const [showResidenceSheet, setShowResidenceSheet] = useState(false);
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<ProfileTabType>(
@@ -91,6 +94,7 @@ const CreatorProfile = () => {
         bio: data.bio,
         category: data.category,
         country: data.country,
+        residence_country: data.residence_country,
         youtube_followers: data.youtube_followers,
         instagram_followers: data.instagram_followers,
         tiktok_followers: data.tiktok_followers,
@@ -362,10 +366,12 @@ const CreatorProfile = () => {
             <InfoTab
               bio={profileData?.bio || null}
               country={profileData?.country || null}
+              residenceCountry={profileData?.residence_country || null}
               socialAccounts={socialAccounts}
               joinedDate={formatJoinedDate()}
               onEditBio={() => setShowBioSheet(true)}
               onEditSocial={() => setShowSocialSheet(true)}
+              onEditResidence={() => setShowResidenceSheet(true)}
             />
           )}
           
@@ -438,6 +444,14 @@ const CreatorProfile = () => {
         isOpen={showBioSheet}
         onClose={() => setShowBioSheet(false)}
         currentBio={profileData?.bio || null}
+        onUpdate={fetchProfile}
+      />
+
+      {/* Residence Edit Sheet */}
+      <ResidenceEditSheet
+        isOpen={showResidenceSheet}
+        onClose={() => setShowResidenceSheet(false)}
+        currentResidence={profileData?.residence_country || null}
         onUpdate={fetchProfile}
       />
 
