@@ -31,15 +31,21 @@ const VerificationBanner = ({ status, showActions = true, userRole = "creator" }
         return;
       }
 
-      const { error } = await supabase.auth.resend({
-        type: "signup",
-        email: user.email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/creator/profile`,
+      // Use our custom edge function with Resend for better email deliverability
+      const redirectTo = userRole === "brand" 
+        ? `${window.location.origin}/brand/profile`
+        : `${window.location.origin}/creator/profile`;
+
+      const { data, error } = await supabase.functions.invoke("send-auth-email", {
+        body: {
+          type: "signup",
+          email: user.email,
+          redirectTo,
         },
       });
 
       if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || "Erreur inconnue");
 
       toast.success("Email de vérification envoyé !", {
         description: `Vérifiez votre boîte de réception à ${user.email}`,
