@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
-import { Star, BadgeCheck } from "lucide-react";
+import { Star, BadgeCheck, Eye } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import type { Creator } from "./CreatorDetailSheet";
 
 // Social media icons
@@ -187,6 +188,20 @@ const CreatorCard = ({ creator, index = 0, variant = "grid", onClick }: CreatorC
             </div>
           )}
         </div>
+        
+        {/* Bouton Voir profil */}
+        <Button
+          variant="gold"
+          size="sm"
+          className="w-full mt-3 h-8 text-xs"
+          onClick={(e) => {
+            e.stopPropagation();
+            onClick?.();
+          }}
+        >
+          <Eye className="w-3.5 h-3.5 mr-1" />
+          Voir profil
+        </Button>
       </div>
     </motion.div>
   );
