@@ -20,6 +20,8 @@ import CreatorMessages from "./pages/creator/Messages";
 import CreatorProfile from "./pages/creator/Profile";
 import BrandProfile from "./pages/brand/Profile";
 import BrandDashboard from "./pages/brand/Dashboard";
+import BrandMarketplace from "./pages/brand/Marketplace";
+import BrandOffers from "./pages/brand/Offers";
 import AdminDashboard from "./pages/admin/Dashboard";
 import NotFound from "./pages/NotFound";
 import TermsOfService from "./pages/TermsOfService";
@@ -79,9 +81,10 @@ const AppContent = () => {
           
           {/* Brand Routes */}
           <Route path="/brand/dashboard" element={<Navigate to="/brand/profile" replace />} />
-          <Route path="/brand/marketplace" element={<BrandDashboard />} />
+          <Route path="/brand/marketplace" element={<BrandMarketplace />} />
+          <Route path="/brand/offers" element={<BrandOffers />} />
           <Route path="/brand/create-offer" element={<BrandDashboard />} />
-          <Route path="/brand/favorites" element={<BrandDashboard />} />
+          <Route path="/brand/messages" element={<CreatorMessages />} />
           <Route path="/brand/profile" element={<BrandProfile />} />
           
           {/* Admin Routes */}
