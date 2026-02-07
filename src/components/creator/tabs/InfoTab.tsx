@@ -38,7 +38,8 @@ interface InfoTabProps {
   website?: string | null;
   joinedDate?: string | null;
   socialAccounts: SocialAccount[];
-  onEdit: () => void;
+  onEditBio: () => void;
+  onEditSocial: () => void;
 }
 
 const InfoTab = ({
@@ -49,7 +50,8 @@ const InfoTab = ({
   website,
   joinedDate,
   socialAccounts,
-  onEdit,
+  onEditBio,
+  onEditSocial,
 }: InfoTabProps) => {
   const getPlatformIcon = (platform: string) => {
     switch (platform.toLowerCase()) {
@@ -91,7 +93,7 @@ const InfoTab = ({
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="font-display font-semibold text-foreground">À propos</h3>
-          <Button variant="ghost" size="sm" onClick={onEdit} className="text-gold">
+          <Button variant="ghost" size="sm" onClick={onEditBio} className="text-gold">
             <Edit3 className="w-4 h-4 mr-1" />
             Modifier
           </Button>
@@ -104,7 +106,7 @@ const InfoTab = ({
             <p className="text-muted-foreground text-sm mb-2">
               Ajoutez une bio pour vous présenter aux marques
             </p>
-            <Button variant="outline" size="sm" onClick={onEdit}>
+            <Button variant="outline" size="sm" onClick={onEditBio}>
               Ajouter une bio
             </Button>
           </div>
@@ -173,7 +175,7 @@ const InfoTab = ({
             <p className="text-muted-foreground text-sm mb-2">
               Connectez vos réseaux sociaux
             </p>
-            <Button variant="outline" size="sm" onClick={onEdit}>
+            <Button variant="outline" size="sm" onClick={onEditSocial}>
               Ajouter mes réseaux
             </Button>
           </div>

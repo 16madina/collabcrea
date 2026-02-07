@@ -14,6 +14,8 @@ import PricingTab from "@/components/creator/tabs/PricingTab";
 import OffersTab from "@/components/creator/tabs/OffersTab";
 import ReviewsTab from "@/components/creator/tabs/ReviewsTab";
 import IdentityVerificationTab from "@/components/creator/IdentityVerificationTab";
+import PricingEditSheet from "@/components/creator/PricingEditSheet";
+import SocialEditSheet from "@/components/creator/SocialEditSheet";
 
 interface PricingItem {
   type: string;
@@ -45,6 +47,8 @@ const CreatorProfile = () => {
   const { user, signOut } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showPricingSheet, setShowPricingSheet] = useState(false);
+  const [showSocialSheet, setShowSocialSheet] = useState(false);
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<ProfileTabType>(
@@ -248,14 +252,15 @@ const CreatorProfile = () => {
               country={profileData?.country || null}
               socialAccounts={socialAccounts}
               joinedDate={formatJoinedDate()}
-              onEdit={() => setIsEditing(true)}
+              onEditBio={() => setIsEditing(true)}
+              onEditSocial={() => setShowSocialSheet(true)}
             />
           )}
           
           {activeTab === "pricing" && (
             <PricingTab
               pricing={profileData?.pricing || null}
-              onEdit={() => setIsEditing(true)}
+              onEditPricing={() => setShowPricingSheet(true)}
             />
           )}
           
@@ -277,6 +282,27 @@ const CreatorProfile = () => {
           )}
         </motion.div>
       </AnimatePresence>
+
+      {/* Pricing Edit Sheet */}
+      <PricingEditSheet
+        isOpen={showPricingSheet}
+        onClose={() => setShowPricingSheet(false)}
+        initialPricing={profileData?.pricing || null}
+        onUpdate={fetchProfile}
+      />
+
+      {/* Social Edit Sheet */}
+      <SocialEditSheet
+        isOpen={showSocialSheet}
+        onClose={() => setShowSocialSheet(false)}
+        initialData={{
+          youtube_followers: profileData?.youtube_followers || null,
+          instagram_followers: profileData?.instagram_followers || null,
+          tiktok_followers: profileData?.tiktok_followers || null,
+          snapchat_followers: profileData?.snapchat_followers || null,
+        }}
+        onUpdate={fetchProfile}
+      />
 
       <BottomNav userRole="creator" />
     </div>
