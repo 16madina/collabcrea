@@ -2,14 +2,13 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import Explore from "./pages/Explore";
 import Contact from "./pages/Contact";
 import Messages from "./pages/Messages";
-import CreatorDashboard from "./pages/creator/Dashboard";
 import CreatorOffers from "./pages/creator/Offers";
 import CreatorPortfolio from "./pages/creator/Portfolio";
 import CreatorMessages from "./pages/creator/Messages";
@@ -34,7 +33,7 @@ const App = () => (
             <Route path="/messages" element={<Messages />} />
             
             {/* Creator Routes */}
-            <Route path="/creator/dashboard" element={<CreatorDashboard />} />
+            <Route path="/creator/dashboard" element={<Navigate to="/creator/profile" replace />} />
             <Route path="/creator/offers" element={<CreatorOffers />} />
             <Route path="/creator/portfolio" element={<CreatorPortfolio />} />
             <Route path="/creator/messages" element={<CreatorMessages />} />
