@@ -138,51 +138,55 @@ const BrandProfile = () => {
     fetchOffers();
   }, [user]);
 
-  // Detect email verification for brands and send welcome email
+  // Listen for email verification event (when user clicks the verification link)
   useEffect(() => {
-    const checkEmailVerification = async () => {
-      if (!user || !profileData) return;
-
-      const confirmedAt = (user as any)?.email_confirmed_at || (user as any)?.confirmed_at;
-      
-      // Check if email was just confirmed by looking at user metadata
-      const { data: dbProfile } = await supabase
-        .from("profiles")
-        .select("email_verified")
-        .eq("user_id", user.id)
-        .single();
-
-      if (confirmedAt && dbProfile && !dbProfile.email_verified) {
-        // Email was just confirmed! Update profile and show toast
-        await supabase
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // Only trigger on EMAIL_VERIFIED event (user clicked verification link)
+      if (event === 'USER_UPDATED' && session?.user) {
+        const userMeta = session.user.user_metadata;
+        const emailVerified = userMeta?.email_verified === true;
+        
+        // Check if database has different status
+        const { data: dbProfile } = await supabase
           .from("profiles")
-          .update({ email_verified: true })
-          .eq("user_id", user.id);
+          .select("email_verified")
+          .eq("user_id", session.user.id)
+          .single();
         
-        toast.success("Email vérifié avec succès ! ✅", {
-          description: "Vous pouvez maintenant accéder à toutes les fonctionnalités.",
-        });
-
-        // Send welcome email for brands
-        try {
-          await supabase.functions.invoke("send-welcome-email", {
-            body: {
-              email: user.email,
-              userName: profileData.company_name,
-              userRole: "brand",
-            },
+        if (emailVerified && dbProfile && !dbProfile.email_verified) {
+          // Email was just verified via link! Update profile
+          await supabase
+            .from("profiles")
+            .update({ email_verified: true })
+            .eq("user_id", session.user.id);
+          
+          toast.success("Email vérifié avec succès ! ✅", {
+            description: "Vous pouvez maintenant accéder à toutes les fonctionnalités.",
           });
-          console.log("Welcome email sent successfully");
-        } catch (emailError) {
-          console.error("Failed to send welcome email:", emailError);
-        }
-        
-        fetchProfile();
-      }
-    };
 
-    checkEmailVerification();
-  }, [user, profileData?.company_name]);
+          // Send welcome email for brands
+          if (profileData?.company_name) {
+            try {
+              await supabase.functions.invoke("send-welcome-email", {
+                body: {
+                  email: session.user.email,
+                  userName: profileData.company_name,
+                  userRole: "brand",
+                },
+              });
+              console.log("Welcome email sent successfully");
+            } catch (emailError) {
+              console.error("Failed to send welcome email:", emailError);
+            }
+          }
+          
+          fetchProfile();
+        }
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [profileData?.company_name]);
 
   useEffect(() => {
     const tab = searchParams.get("tab") as BrandProfileTabType;
