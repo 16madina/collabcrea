@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useYouTubeSync } from "@/hooks/useYouTubeSync";
+import { useTikTokSync } from "@/hooks/useTikTokSync";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/BottomNav";
 import ProfileEditForm from "@/components/creator/ProfileEditForm";
@@ -49,6 +51,8 @@ const CreatorProfile = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user, signOut } = useAuth();
+  const { handleOAuthCallback: handleYouTubeCallback } = useYouTubeSync();
+  const { handleOAuthCallback: handleTikTokCallback } = useTikTokSync();
   const [isEditing, setIsEditing] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showPricingSheet, setShowPricingSheet] = useState(false);
@@ -102,6 +106,43 @@ const CreatorProfile = () => {
   useEffect(() => {
     fetchProfile();
   }, [user]);
+
+  // Handle OAuth callbacks from YouTube and TikTok
+  useEffect(() => {
+    const code = searchParams.get("code");
+    const state = searchParams.get("state");
+    const error = searchParams.get("error");
+
+    if (error) {
+      console.error("OAuth error:", error);
+      // Clear URL params
+      setSearchParams({});
+      return;
+    }
+
+    if (code && state && user) {
+      // Determine which OAuth flow this is based on stored session data
+      const tiktokVerifier = sessionStorage.getItem("tiktok_code_verifier");
+      const youtubeRedirectUri = sessionStorage.getItem("youtube_redirect_uri");
+
+      if (tiktokVerifier) {
+        // This is a TikTok callback
+        handleTikTokCallback(code, state)
+          .then(() => fetchProfile())
+          .catch((err) => console.error("TikTok sync failed:", err))
+          .finally(() => setSearchParams({}));
+      } else if (youtubeRedirectUri) {
+        // This is a YouTube callback
+        handleYouTubeCallback(code, state)
+          .then(() => fetchProfile())
+          .catch((err) => console.error("YouTube sync failed:", err))
+          .finally(() => setSearchParams({}));
+      } else {
+        // Unknown callback, clear params
+        setSearchParams({});
+      }
+    }
+  }, [searchParams, user]);
 
   useEffect(() => {
     const tab = searchParams.get("tab") as ProfileTabType;
