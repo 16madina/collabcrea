@@ -77,21 +77,56 @@ export const usePushNotifications = () => {
 
   const savePushToken = async (pushToken: string, userId: string) => {
     try {
-      // You can save the token to your database to send targeted notifications
       console.log('Saving push token for user:', userId);
-      // Example: Save to a push_tokens table
-      // await supabase.from('push_tokens').upsert({
-      //   user_id: userId,
-      //   token: pushToken,
-      //   platform: Capacitor.getPlatform()
-      // });
+      
+      const platform = Capacitor.getPlatform();
+      
+      // Upsert the token (insert or update if exists)
+      const { error } = await supabase
+        .from('push_tokens')
+        .upsert(
+          {
+            user_id: userId,
+            token: pushToken,
+            platform: platform,
+            device_info: navigator.userAgent,
+          },
+          {
+            onConflict: 'user_id,token',
+          }
+        );
+
+      if (error) {
+        console.error('Error saving push token:', error);
+      } else {
+        console.log('Push token saved successfully');
+      }
     } catch (error) {
       console.error('Error saving push token:', error);
     }
   };
 
+  const removePushToken = async () => {
+    if (!token || !user?.id) return;
+
+    try {
+      const { error } = await supabase
+        .from('push_tokens')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('token', token);
+
+      if (error) {
+        console.error('Error removing push token:', error);
+      }
+    } catch (error) {
+      console.error('Error removing push token:', error);
+    }
+  };
+
   return {
     token,
-    isSupported
+    isSupported,
+    removePushToken
   };
 };
