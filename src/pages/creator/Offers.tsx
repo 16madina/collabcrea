@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Clock, MapPin, DollarSign, ChevronRight, X, Loader2, Send } from "lucide-react";
+import { Search, Clock, MapPin, DollarSign, ChevronRight, X, Loader2, Send, Flag } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useApplyToOffer } from "@/hooks/useApplyToOffer";
 import { useNavigate } from "react-router-dom";
+import ReportDialog from "@/components/ReportDialog";
 
 interface Offer {
   id: string;
@@ -52,6 +53,7 @@ const CreatorOffers = () => {
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
   const [applicationMessage, setApplicationMessage] = useState("");
   const [loading, setLoading] = useState(true);
+  const [showReportDialog, setShowReportDialog] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -417,10 +419,33 @@ const CreatorOffers = () => {
                   </Button>
                 </div>
               )}
+
+              {/* Report button */}
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="w-full mt-4 text-muted-foreground hover:text-destructive"
+                onClick={() => setShowReportDialog(true)}
+              >
+                <Flag className="w-4 h-4 mr-2" />
+                Signaler cette offre
+              </Button>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Report Dialog */}
+      {selectedOffer && (
+        <ReportDialog
+          open={showReportDialog}
+          onOpenChange={setShowReportDialog}
+          reportType="offer"
+          targetOfferId={selectedOffer.id}
+          targetUserId={selectedOffer.brand_id}
+          targetName={`${selectedOffer.brand_name} - ${selectedOffer.title}`}
+        />
+      )}
 
       <BottomNav userRole="creator" />
     </div>

@@ -1,7 +1,10 @@
+import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Star, MapPin, MessageCircle } from "lucide-react";
+import { Star, MapPin, MessageCircle, Flag } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import ReportDialog from "@/components/ReportDialog";
 
 // Social media icons
 const YoutubeIcon = ({ className }: { className?: string }) => (
@@ -56,6 +59,7 @@ export interface Creator {
 
 interface CreatorDetailSheetProps {
   creator: Creator | null;
+  creatorUserId?: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -68,12 +72,17 @@ const defaultPricing: CreatorPricing[] = [
   { type: "Pack Complet", price: "250 000 FCFA", description: "Story + Post + Reel" },
 ];
 
-const CreatorDetailSheet = ({ creator, open, onOpenChange }: CreatorDetailSheetProps) => {
+const CreatorDetailSheet = ({ creator, creatorUserId, open, onOpenChange }: CreatorDetailSheetProps) => {
+  const { user } = useAuth();
+  const [showReportDialog, setShowReportDialog] = useState(false);
+
   if (!creator) return null;
 
   const pricing = creator.pricing || defaultPricing;
+  const creatorFullName = `${creator.firstName} ${creator.lastName}`;
 
   return (
+    <>
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl overflow-y-auto">
         <SheetHeader className="sr-only">
@@ -197,18 +206,41 @@ const CreatorDetailSheet = ({ creator, open, onOpenChange }: CreatorDetailSheetP
             </div>
           </div>
 
-          {/* Bouton Contacter */}
-          <div className="pt-4 pb-8">
+          {/* Actions */}
+          <div className="pt-4 pb-8 space-y-3">
             <Link to="/auth?role=brand">
               <Button variant="gold" size="lg" className="w-full">
                 <MessageCircle className="w-5 h-5 mr-2" />
                 Contacter {creator.firstName}
               </Button>
             </Link>
+
+            {/* Report button - only show if logged in and not own profile */}
+            {user && creatorUserId && user.id !== creatorUserId && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="w-full text-muted-foreground hover:text-destructive"
+                onClick={() => setShowReportDialog(true)}
+              >
+                <Flag className="w-4 h-4 mr-2" />
+                Signaler ce profil
+              </Button>
+            )}
           </div>
         </div>
       </SheetContent>
     </Sheet>
+
+    {/* Report Dialog */}
+    <ReportDialog
+      open={showReportDialog}
+      onOpenChange={setShowReportDialog}
+      reportType="user"
+      targetUserId={creatorUserId}
+      targetName={creatorFullName}
+    />
+    </>
   );
 };
 
