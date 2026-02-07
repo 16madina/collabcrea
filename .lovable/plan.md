@@ -1,57 +1,68 @@
 
+# Plan de correction : Probleme de connexion
 
-# Plan de correction : Déconnexion intempestive
+## Diagnostic
 
-## Problemes identifies
+Lors de la connexion, une erreur 406 (PGRST116) se produit car le compte possede deux roles dans la base de donnees (creator et admin). Le code utilise `.single()` pour recuperer le role, ce qui echoue quand plusieurs lignes sont retournees.
 
-### 1. Rate limit sur le rafraichissement de token
-Le code actuel declenche plusieurs appels `supabase.auth.refreshSession()` en parallele :
-- Dans `useAuth.tsx` : `onAuthStateChange` + `getSession()`
-- Dans `Profile.tsx` : `checkEmailVerification()` appelle aussi `refreshSession()`
+## Solution
 
-Cela cause une erreur 429 (rate limit) qui revoque les tokens et deconnecte l'utilisateur.
+Modifier la logique de recuperation du role pour gerer le cas ou un utilisateur a plusieurs roles, en priorisant le role principal (creator ou brand) tout en conservant le role admin separement.
 
-### 2. Pas de redirection explicite apres login
-Dans `Auth.tsx`, apres un login reussi (ligne 315), le code affiche seulement un toast mais ne redirige pas. La redirection automatique (lignes 96-100) depend du `userRole` qui n'est pas encore charge.
+## Modifications a apporter
 
-## Solution proposee
+### Fichier 1 : src/hooks/useAuth.tsx
 
-### Etape 1 : Supprimer le refreshSession() redondant dans Profile.tsx
-- Retirer l'appel `supabase.auth.refreshSession()` dans `checkEmailVerification()`
-- Utiliser directement les donnees du `user` de `useAuth` qui sont deja a jour
+**Changement** : Remplacer `.single()` par `.limit(1)` et ajouter une logique de priorite pour les roles multiples.
 
-### Etape 2 : Ajouter une redirection explicite apres login dans Auth.tsx
-- Apres un login reussi, attendre que le role soit charge
-- Rediriger vers `/creator/profile` ou `/brand/profile` selon le role
+```typescript
+// Avant (ligne 52-56)
+supabase
+  .from("user_roles")
+  .select("role")
+  .eq("user_id", userId)
+  .single()
 
-### Etape 3 : Eviter les appels paralleles dans useAuth.tsx
-- Ajouter un flag pour eviter les appels multiples a `fetchUserData`
-- S'assurer que `loading` reste `true` jusqu'a ce que le role soit charge
-
-## Fichiers a modifier
-
-| Fichier | Modification |
-|---------|--------------|
-| `src/pages/creator/Profile.tsx` | Supprimer `refreshSession()` dans `checkEmailVerification` |
-| `src/pages/Auth.tsx` | Ajouter redirection explicite apres login avec attente du role |
-| `src/hooks/useAuth.tsx` | Ajouter flag anti-doublon et attendre le role avant de mettre loading=false |
-
-## Details techniques
-
-```text
-Auth.tsx - handleLogin()
-+----------------------------------+
-| 1. signIn() reussi               |
-| 2. Attendre fetchUserData()      |
-| 3. Rediriger vers profil         |
-+----------------------------------+
-
-useAuth.tsx - fetchUserData()
-+----------------------------------+
-| 1. Check si deja en cours        |
-| 2. Fetch profile + role          |
-| 3. loading = false seulement     |
-|    apres role charge             |
-+----------------------------------+
+// Apres
+supabase
+  .from("user_roles")
+  .select("role")
+  .eq("user_id", userId)
 ```
 
+Ensuite, adapter le traitement du resultat pour :
+1. Recuperer tous les roles de l'utilisateur
+2. Prioriser "creator" ou "brand" comme role principal (pour la redirection)
+3. Ignorer "admin" pour la redirection (admin est un role supplementaire)
+
+### Details techniques
+
+```text
+Flux de recuperation du role
++----------------------------------+
+| 1. Fetch tous les roles         |
+| 2. Filtrer roles principaux     |
+|    (creator ou brand)           |
+| 3. Si trouve -> setRole()       |
+| 4. Redirection vers profil      |
++----------------------------------+
+
+Logique de priorite :
+- Si l'utilisateur a "creator" -> rediriger vers /creator/profile
+- Si l'utilisateur a "brand" -> rediriger vers /brand/profile
+- "admin" ne compte pas pour la redirection
+```
+
+### Impact
+
+| Avant | Apres |
+|-------|-------|
+| Echec si plusieurs roles | Fonctionne avec plusieurs roles |
+| Pas de redirection | Redirection vers le bon profil |
+| Role reste null | Role principal correctement detecte |
+
+## Benefices
+
+- Les utilisateurs avec un role admin supplementaire pourront se connecter
+- La redirection apres connexion fonctionnera correctement
+- Le systeme reste compatible avec les utilisateurs ayant un seul role
