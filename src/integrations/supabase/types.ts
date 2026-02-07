@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_logs: {
+        Row: {
+          action_type: string
+          admin_id: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          target_user_id: string | null
+        }
+        Insert: {
+          action_type: string
+          admin_id: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          target_user_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          admin_id?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
       applications: {
         Row: {
           conversation_id: string | null
@@ -164,6 +191,69 @@ export type Database = {
           },
         ]
       }
+      notification_templates: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string
+          name: string
+          title: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message: string
+          name: string
+          title: string
+          type?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string
+          name?: string
+          title?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_read: boolean | null
+          message: string
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_read?: boolean | null
+          message: string
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       offers: {
         Row: {
           brand_id: string
@@ -218,6 +308,8 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          ban_reason: string | null
+          banned_at: string | null
           banner_url: string | null
           bio: string | null
           category: string | null
@@ -233,6 +325,7 @@ export type Database = {
           identity_submitted_at: string | null
           identity_verified: boolean | null
           instagram_followers: string | null
+          is_banned: boolean | null
           logo_url: string | null
           pricing: Json | null
           sector: string | null
@@ -245,6 +338,8 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          ban_reason?: string | null
+          banned_at?: string | null
           banner_url?: string | null
           bio?: string | null
           category?: string | null
@@ -260,6 +355,7 @@ export type Database = {
           identity_submitted_at?: string | null
           identity_verified?: boolean | null
           instagram_followers?: string | null
+          is_banned?: boolean | null
           logo_url?: string | null
           pricing?: Json | null
           sector?: string | null
@@ -272,6 +368,8 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          ban_reason?: string | null
+          banned_at?: string | null
           banner_url?: string | null
           bio?: string | null
           category?: string | null
@@ -287,6 +385,7 @@ export type Database = {
           identity_submitted_at?: string | null
           identity_verified?: boolean | null
           instagram_followers?: string | null
+          is_banned?: boolean | null
           logo_url?: string | null
           pricing?: Json | null
           sector?: string | null
