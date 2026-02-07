@@ -18,6 +18,7 @@ import PricingEditSheet from "@/components/creator/PricingEditSheet";
 import SocialEditSheet from "@/components/creator/SocialEditSheet";
 import AvatarEditSheet from "@/components/creator/AvatarEditSheet";
 import BannerEditSheet from "@/components/creator/BannerEditSheet";
+import BioEditSheet from "@/components/creator/BioEditSheet";
 
 interface PricingItem {
   type: string;
@@ -54,6 +55,7 @@ const CreatorProfile = () => {
   const [showSocialSheet, setShowSocialSheet] = useState(false);
   const [showAvatarSheet, setShowAvatarSheet] = useState(false);
   const [showBannerSheet, setShowBannerSheet] = useState(false);
+  const [showBioSheet, setShowBioSheet] = useState(false);
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<ProfileTabType>(
@@ -259,7 +261,7 @@ const CreatorProfile = () => {
               country={profileData?.country || null}
               socialAccounts={socialAccounts}
               joinedDate={formatJoinedDate()}
-              onEditBio={() => setIsEditing(true)}
+              onEditBio={() => setShowBioSheet(true)}
               onEditSocial={() => setShowSocialSheet(true)}
             />
           )}
@@ -324,6 +326,14 @@ const CreatorProfile = () => {
         isOpen={showBannerSheet}
         onClose={() => setShowBannerSheet(false)}
         currentBannerUrl={profileData?.banner_url || null}
+        onUpdate={fetchProfile}
+      />
+
+      {/* Bio Edit Sheet */}
+      <BioEditSheet
+        isOpen={showBioSheet}
+        onClose={() => setShowBioSheet(false)}
+        currentBio={profileData?.bio || null}
         onUpdate={fetchProfile}
       />
 
