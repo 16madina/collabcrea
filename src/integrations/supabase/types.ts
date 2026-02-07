@@ -265,6 +265,7 @@ export type Database = {
           deadline: string | null
           description: string
           id: string
+          images: string[] | null
           location: string | null
           logo_url: string | null
           status: string
@@ -281,6 +282,7 @@ export type Database = {
           deadline?: string | null
           description: string
           id?: string
+          images?: string[] | null
           location?: string | null
           logo_url?: string | null
           status?: string
@@ -297,6 +299,7 @@ export type Database = {
           deadline?: string | null
           description?: string
           id?: string
+          images?: string[] | null
           location?: string | null
           logo_url?: string | null
           status?: string
