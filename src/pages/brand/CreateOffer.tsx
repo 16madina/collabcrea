@@ -20,7 +20,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -58,13 +58,18 @@ const MAX_IMAGES = 3;
 
 const CreateOffer = () => {
   const navigate = useNavigate();
+  const { offerId } = useParams<{ offerId: string }>();
+  const isEditMode = Boolean(offerId);
+  
   const { user, loading: authLoading } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCountryPicker, setShowCountryPicker] = useState(false);
   const [productImages, setProductImages] = useState<File[]>([]);
   const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
+  const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [loadingOffer, setLoadingOffer] = useState(false);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -81,17 +86,110 @@ const CreateOffer = () => {
     expectations: "",
   });
 
+  // Load existing offer data when in edit mode
+  useEffect(() => {
+    if (!offerId || !user) return;
+
+    const loadOffer = async () => {
+      setLoadingOffer(true);
+      try {
+        const { data: offer, error } = await supabase
+          .from("offers")
+          .select("*")
+          .eq("id", offerId)
+          .eq("brand_id", user.id)
+          .maybeSingle();
+
+        if (error) throw error;
+        if (!offer) {
+          toast.error("Offre introuvable");
+          navigate("/brand/offers");
+          return;
+        }
+
+        // Parse description to extract expectations and restrictions
+        let description = offer.description;
+        let expectations = "";
+        let restrictions = "";
+
+        const expectationsMatch = description.match(/\*\*Attentes:\*\*\n([\s\S]*?)(?=\n\n\*\*Restrictions:|$)/);
+        if (expectationsMatch) {
+          expectations = expectationsMatch[1].trim();
+          description = description.replace(/\n\n\*\*Attentes:\*\*\n[\s\S]*?(?=\n\n\*\*Restrictions:|$)/, "");
+        }
+
+        const restrictionsMatch = description.match(/\*\*Restrictions:\*\*\n([\s\S]*?)$/);
+        if (restrictionsMatch) {
+          restrictions = restrictionsMatch[1].trim();
+          description = description.replace(/\n\n\*\*Restrictions:\*\*\n[\s\S]*?$/, "");
+        }
+
+        // Determine budget type
+        let budgetType: BudgetType = "range";
+        let budgetMin = "";
+        let budgetMax = "";
+        let budgetFixed = "";
+
+        if (offer.budget_min === 0 && offer.budget_max === 0) {
+          budgetType = "negotiable";
+        } else if (offer.budget_min === offer.budget_max) {
+          budgetType = "fixed";
+          budgetFixed = offer.budget_min.toString();
+        } else {
+          budgetType = "range";
+          budgetMin = offer.budget_min.toString();
+          budgetMax = offer.budget_max.toString();
+        }
+
+        // Parse countries
+        const countries = offer.location ? offer.location.split(", ").filter(Boolean) : [];
+
+        // Parse content types
+        const contentTypes = offer.content_type ? offer.content_type.split(", ").filter(Boolean) : [];
+
+        // Load existing images
+        const images = (offer as any).images || [];
+        setExistingImageUrls(images);
+        setImagePreviewUrls(images);
+
+        setFormData({
+          title: offer.title,
+          description: description.trim(),
+          category: offer.category,
+          content_types: contentTypes,
+          budget_type: budgetType,
+          budget_min: budgetMin,
+          budget_max: budgetMax,
+          budget_fixed: budgetFixed,
+          deadline: offer.deadline || "",
+          countries,
+          restrictions,
+          expectations,
+        });
+      } catch (error) {
+        console.error("Error loading offer:", error);
+        toast.error("Erreur lors du chargement de l'offre");
+      } finally {
+        setLoadingOffer(false);
+      }
+    };
+
+    loadOffer();
+  }, [offerId, user, navigate]);
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate("/auth");
     }
   }, [user, authLoading, navigate]);
 
+  const totalImages = existingImageUrls.length + productImages.length;
+
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
 
-    const remainingSlots = MAX_IMAGES - productImages.length;
+    const remainingSlots = MAX_IMAGES - totalImages;
     if (remainingSlots <= 0) {
       toast.error(`Maximum ${MAX_IMAGES} photos autorisées`);
       return;
@@ -122,9 +220,18 @@ const CreateOffer = () => {
   };
 
   const removeImage = (index: number) => {
-    URL.revokeObjectURL(imagePreviewUrls[index]);
-    setProductImages((prev) => prev.filter((_, i) => i !== index));
-    setImagePreviewUrls((prev) => prev.filter((_, i) => i !== index));
+    // Check if it's an existing image or a new upload
+    if (index < existingImageUrls.length) {
+      // Remove existing image
+      setExistingImageUrls((prev) => prev.filter((_, i) => i !== index));
+      setImagePreviewUrls((prev) => prev.filter((_, i) => i !== index));
+    } else {
+      // Remove new upload
+      const newIndex = index - existingImageUrls.length;
+      URL.revokeObjectURL(imagePreviewUrls[index]);
+      setProductImages((prev) => prev.filter((_, i) => i !== newIndex));
+      setImagePreviewUrls((prev) => prev.filter((_, i) => i !== index));
+    }
   };
 
   const uploadImages = async (): Promise<string[]> => {
@@ -243,10 +350,13 @@ const CreateOffer = () => {
     setIsSubmitting(true);
 
     try {
-      // Upload images first
+      // Upload new images
       setUploadingImages(true);
-      const imageUrls = await uploadImages();
+      const newImageUrls = await uploadImages();
       setUploadingImages(false);
+
+      // Combine existing and new images
+      const allImageUrls = [...existingImageUrls, ...newImageUrls];
 
       // Get user's profile for logo_url
       const { data: profile } = await supabase
@@ -264,8 +374,7 @@ const CreateOffer = () => {
         fullDescription += `\n\n**Restrictions:**\n${formData.restrictions.trim()}`;
       }
 
-      const { error } = await supabase.from("offers").insert({
-        brand_id: user.id,
+      const offerData = {
         title: formData.title.trim(),
         description: fullDescription,
         category: formData.category,
@@ -276,16 +385,40 @@ const CreateOffer = () => {
         location: formData.countries.length > 0 ? formData.countries.join(", ") : null,
         logo_url: profile?.logo_url || null,
         status,
-        images: imageUrls,
-      } as any);
+        images: allImageUrls,
+      } as any;
 
-      if (error) throw error;
+      if (isEditMode && offerId) {
+        // Update existing offer
+        const { error } = await supabase
+          .from("offers")
+          .update(offerData)
+          .eq("id", offerId)
+          .eq("brand_id", user.id);
 
-      toast.success(
-        status === "draft" 
-          ? "Brouillon enregistré avec succès" 
-          : "Offre publiée avec succès"
-      );
+        if (error) throw error;
+
+        toast.success(
+          status === "draft" 
+            ? "Brouillon mis à jour" 
+            : "Offre mise à jour avec succès"
+        );
+      } else {
+        // Create new offer
+        const { error } = await supabase.from("offers").insert({
+          ...offerData,
+          brand_id: user.id,
+        });
+
+        if (error) throw error;
+
+        toast.success(
+          status === "draft" 
+            ? "Brouillon enregistré avec succès" 
+            : "Offre publiée avec succès"
+        );
+      }
+
       navigate("/brand/offers");
     } catch (error) {
       console.error("Error creating offer:", error);
@@ -296,7 +429,7 @@ const CreateOffer = () => {
     }
   };
 
-  if (authLoading) {
+  if (authLoading || loadingOffer) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-gold animate-spin" />
@@ -317,7 +450,7 @@ const CreateOffer = () => {
             <ArrowLeft className="w-6 h-6 text-foreground" />
           </button>
           <h1 className="font-display text-xl font-bold text-gold-gradient">
-            Créer une offre
+            {isEditMode ? "Modifier l'offre" : "Créer une offre"}
           </h1>
         </motion.div>
       </div>
@@ -562,7 +695,7 @@ const CreateOffer = () => {
                 </button>
               </div>
             ))}
-            {productImages.length < MAX_IMAGES && (
+            {totalImages < MAX_IMAGES && (
               <label className="w-24 h-24 rounded-xl border-2 border-dashed border-border hover:border-gold/50 transition-colors cursor-pointer flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-gold">
                 <ImagePlus className="w-6 h-6" />
                 <span className="text-xs">Ajouter</span>
@@ -577,7 +710,7 @@ const CreateOffer = () => {
             )}
           </div>
           <p className="text-xs text-muted-foreground">
-            {productImages.length}/{MAX_IMAGES} photos • JPG, PNG max 5MB
+            {totalImages}/{MAX_IMAGES} photos • JPG, PNG max 5MB
           </p>
         </div>
 
@@ -612,10 +745,10 @@ const CreateOffer = () => {
             {isSubmitting ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                {uploadingImages ? "Upload photos..." : "Publication..."}
+                {uploadingImages ? "Upload photos..." : isEditMode ? "Mise à jour..." : "Publication..."}
               </>
             ) : (
-              "Publier l'offre"
+              isEditMode ? "Mettre à jour" : "Publier l'offre"
             )}
           </Button>
         </div>

@@ -85,6 +85,7 @@ const AppContent = () => {
           <Route path="/brand/marketplace" element={<BrandMarketplace />} />
           <Route path="/brand/offers" element={<BrandOffers />} />
           <Route path="/brand/create-offer" element={<CreateOffer />} />
+          <Route path="/brand/edit-offer/:offerId" element={<CreateOffer />} />
           <Route path="/brand/messages" element={<CreatorMessages />} />
           <Route path="/brand/profile" element={<BrandProfile />} />
           
