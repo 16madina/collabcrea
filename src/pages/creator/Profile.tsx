@@ -67,8 +67,12 @@ const CreatorProfile = () => {
   );
 
   const fetchProfile = async () => {
-    if (!user) return;
-    
+    if (!user) {
+      setLoading(false);
+      navigate("/auth");
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from("profiles")
@@ -77,6 +81,9 @@ const CreatorProfile = () => {
         .single();
 
       if (error) throw error;
+
+      const authEmailVerified = Boolean((user as any)?.email_confirmed_at || (user as any)?.confirmed_at);
+      const combinedEmailVerified = (data.email_verified ?? false) || authEmailVerified;
 
       setProfileData({
         full_name: data.full_name,
@@ -88,7 +95,7 @@ const CreatorProfile = () => {
         tiktok_followers: data.tiktok_followers,
         snapchat_followers: data.snapchat_followers,
         pricing: data.pricing as unknown as PricingItem[] | null,
-        email_verified: data.email_verified ?? false,
+        email_verified: combinedEmailVerified,
         identity_verified: data.identity_verified ?? false,
         identity_document_url: data.identity_document_url,
         identity_submitted_at: data.identity_submitted_at,
@@ -96,6 +103,18 @@ const CreatorProfile = () => {
         banner_url: data.banner_url,
         created_at: data.created_at,
       });
+
+      // Keep DB flag in sync when the auth email is already verified
+      if (authEmailVerified && !data.email_verified) {
+        supabase
+          .from("profiles")
+          .update({ email_verified: true })
+          .eq("user_id", user.id)
+          .then(
+            () => undefined,
+            () => undefined,
+          );
+      }
     } catch (error) {
       console.error("Error fetching profile:", error);
     } finally {

@@ -45,19 +45,18 @@ const ProfileHeader = ({
     setSendingEmail(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (!user?.email) {
         toast.error("Email non trouvé");
         return;
       }
 
-      // Call our custom edge function to send the email
-      const { data, error } = await supabase.functions.invoke("send-auth-email", {
+      const { error } = await supabase.functions.invoke("send-auth-email", {
         body: {
           type: "signup",
           email: user.email,
-          tokenHash: "resend-verification",
           redirectTo: `${window.location.origin}/creator/profile`,
+          userName: fullName || undefined,
         },
       });
 
@@ -68,7 +67,9 @@ const ProfileHeader = ({
       });
     } catch (error: any) {
       console.error("Error sending verification email:", error);
-      toast.error("Erreur lors de l'envoi");
+      toast.error("Erreur lors de l'envoi", {
+        description: error.message || "Veuillez réessayer",
+      });
     } finally {
       setSendingEmail(false);
     }
