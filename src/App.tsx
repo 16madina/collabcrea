@@ -13,6 +13,7 @@ import CreatorOffers from "./pages/creator/Offers";
 import CreatorPortfolio from "./pages/creator/Portfolio";
 import CreatorMessages from "./pages/creator/Messages";
 import CreatorProfile from "./pages/creator/Profile";
+import BrandProfile from "./pages/brand/Profile";
 import BrandDashboard from "./pages/brand/Dashboard";
 import NotFound from "./pages/NotFound";
 
@@ -40,11 +41,11 @@ const App = () => (
             <Route path="/creator/profile" element={<CreatorProfile />} />
             
             {/* Brand Routes */}
-            <Route path="/brand/dashboard" element={<BrandDashboard />} />
+            <Route path="/brand/dashboard" element={<Navigate to="/brand/profile" replace />} />
             <Route path="/brand/marketplace" element={<BrandDashboard />} />
             <Route path="/brand/create-offer" element={<BrandDashboard />} />
             <Route path="/brand/favorites" element={<BrandDashboard />} />
-            <Route path="/brand/profile" element={<BrandDashboard />} />
+            <Route path="/brand/profile" element={<BrandProfile />} />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
