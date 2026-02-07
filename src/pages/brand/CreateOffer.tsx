@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Loader2, X, Check } from "lucide-react";
+import { ArrowLeft, Loader2, X, Check, ImagePlus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -47,11 +47,16 @@ const contentTypes = [
 
 type BudgetType = "range" | "fixed" | "negotiable";
 
+const MAX_IMAGES = 3;
+
 const CreateOffer = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCountryPicker, setShowCountryPicker] = useState(false);
+  const [productImages, setProductImages] = useState<File[]>([]);
+  const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
+  const [uploadingImages, setUploadingImages] = useState(false);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -73,6 +78,74 @@ const CreateOffer = () => {
       navigate("/auth");
     }
   }, [user, authLoading, navigate]);
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const remainingSlots = MAX_IMAGES - productImages.length;
+    if (remainingSlots <= 0) {
+      toast.error(`Maximum ${MAX_IMAGES} photos autorisées`);
+      return;
+    }
+
+    const newFiles = Array.from(files).slice(0, remainingSlots);
+    const validFiles = newFiles.filter((file) => {
+      if (!file.type.startsWith("image/")) {
+        toast.error(`${file.name} n'est pas une image valide`);
+        return false;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`${file.name} dépasse 5MB`);
+        return false;
+      }
+      return true;
+    });
+
+    if (validFiles.length > 0) {
+      setProductImages((prev) => [...prev, ...validFiles]);
+      validFiles.forEach((file) => {
+        const url = URL.createObjectURL(file);
+        setImagePreviewUrls((prev) => [...prev, url]);
+      });
+    }
+
+    e.target.value = "";
+  };
+
+  const removeImage = (index: number) => {
+    URL.revokeObjectURL(imagePreviewUrls[index]);
+    setProductImages((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviewUrls((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadImages = async (): Promise<string[]> => {
+    if (!user || productImages.length === 0) return [];
+
+    const uploadedUrls: string[] = [];
+
+    for (const file of productImages) {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("offer-images")
+        .upload(fileName, file);
+
+      if (uploadError) {
+        console.error("Upload error:", uploadError);
+        continue;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("offer-images")
+        .getPublicUrl(fileName);
+
+      uploadedUrls.push(publicUrl);
+    }
+
+    return uploadedUrls;
+  };
 
   const handleInputChange = (field: string, value: string | string[]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -150,6 +223,11 @@ const CreateOffer = () => {
     setIsSubmitting(true);
 
     try {
+      // Upload images first
+      setUploadingImages(true);
+      const imageUrls = await uploadImages();
+      setUploadingImages(false);
+
       // Get user's profile for logo_url
       const { data: profile } = await supabase
         .from("profiles")
@@ -178,7 +256,8 @@ const CreateOffer = () => {
         location: formData.countries.length > 0 ? formData.countries.join(", ") : null,
         logo_url: profile?.logo_url || null,
         status,
-      });
+        images: imageUrls,
+      } as any);
 
       if (error) throw error;
 
@@ -193,6 +272,7 @@ const CreateOffer = () => {
       toast.error("Erreur lors de la création de l'offre");
     } finally {
       setIsSubmitting(false);
+      setUploadingImages(false);
     }
   };
 
@@ -439,6 +519,48 @@ const CreateOffer = () => {
           />
         </div>
 
+        {/* Product Images Upload */}
+        <div className="space-y-3">
+          <Label>Photos du produit (max {MAX_IMAGES})</Label>
+          <div className="flex flex-wrap gap-3">
+            {imagePreviewUrls.map((url, index) => (
+              <div
+                key={index}
+                className="relative w-24 h-24 rounded-xl overflow-hidden border border-border"
+              >
+                <img
+                  src={url}
+                  alt={`Produit ${index + 1}`}
+                  className="w-full h-full object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeImage(index)}
+                  className="absolute top-1 right-1 p-1 bg-destructive rounded-full text-white hover:bg-destructive/80 transition-colors"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+            {productImages.length < MAX_IMAGES && (
+              <label className="w-24 h-24 rounded-xl border-2 border-dashed border-border hover:border-gold/50 transition-colors cursor-pointer flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-gold">
+                <ImagePlus className="w-6 h-6" />
+                <span className="text-xs">Ajouter</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageSelect}
+                  className="hidden"
+                />
+              </label>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {productImages.length}/{MAX_IMAGES} photos • JPG, PNG max 5MB
+          </p>
+        </div>
+
         {/* Action buttons */}
         <div className="flex gap-3 pt-4">
           <Button
@@ -446,7 +568,7 @@ const CreateOffer = () => {
             variant="outline"
             className="flex-1"
             onClick={(e) => handleSubmit(e, "draft")}
-            disabled={isSubmitting}
+            disabled={isSubmitting || uploadingImages}
           >
             Enregistrer brouillon
           </Button>
@@ -454,12 +576,12 @@ const CreateOffer = () => {
             type="submit"
             variant="gold"
             className="flex-1"
-            disabled={isSubmitting}
+            disabled={isSubmitting || uploadingImages}
           >
             {isSubmitting ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Publication...
+                {uploadingImages ? "Upload photos..." : "Publication..."}
               </>
             ) : (
               "Publier l'offre"
