@@ -33,6 +33,7 @@ interface SocialAccount {
 interface InfoTabProps {
   bio: string | null;
   country: string | null;
+  residenceCountry?: string | null;
   email?: string | null;
   phone?: string | null;
   website?: string | null;
@@ -40,11 +41,13 @@ interface InfoTabProps {
   socialAccounts: SocialAccount[];
   onEditBio: () => void;
   onEditSocial: () => void;
+  onEditResidence?: () => void;
 }
 
 const InfoTab = ({
   bio,
   country,
+  residenceCountry,
   email,
   phone,
   website,
@@ -52,6 +55,7 @@ const InfoTab = ({
   socialAccounts,
   onEditBio,
   onEditSocial,
+  onEditResidence,
 }: InfoTabProps) => {
   const getPlatformIcon = (platform: string) => {
     switch (platform.toLowerCase()) {
@@ -115,7 +119,15 @@ const InfoTab = ({
 
       {/* Contact Info */}
       <div className="space-y-3">
-        <h3 className="font-display font-semibold text-foreground">Informations</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="font-display font-semibold text-foreground">Informations</h3>
+          {onEditResidence && (
+            <Button variant="ghost" size="sm" onClick={onEditResidence} className="text-gold">
+              <Edit3 className="w-4 h-4 mr-1" />
+              Modifier
+            </Button>
+          )}
+        </div>
         <div className="space-y-2">
           {country && (
             <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl">
@@ -123,16 +135,32 @@ const InfoTab = ({
                 <MapPin className="w-5 h-5 text-gold" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Localisation</p>
+                <p className="text-xs text-muted-foreground">Pays d'origine</p>
                 <p className="font-medium text-foreground">{country}</p>
               </div>
             </div>
           )}
           
+          {/* Residence country */}
+          <div 
+            className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl cursor-pointer hover:bg-muted/50 transition-colors"
+            onClick={onEditResidence}
+          >
+            <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
+              <Globe className="w-5 h-5 text-accent" />
+            </div>
+            <div className="flex-1">
+              <p className="text-xs text-muted-foreground">Pays de résidence</p>
+              <p className="font-medium text-foreground">
+                {residenceCountry || "Non renseigné"}
+              </p>
+            </div>
+          </div>
+          
           {joinedDate && (
             <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl">
-              <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
-                <Calendar className="w-5 h-5 text-accent" />
+              <div className="w-10 h-10 rounded-full bg-gold/10 flex items-center justify-center">
+                <Calendar className="w-5 h-5 text-gold" />
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Membre depuis</p>
