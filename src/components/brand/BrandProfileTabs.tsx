@@ -4,10 +4,11 @@ import {
   Megaphone, 
   Users, 
   Star,
+  Shield,
   type LucideIcon 
 } from "lucide-react";
 
-export type BrandProfileTabType = "info" | "offers" | "collaborations" | "reviews";
+export type BrandProfileTabType = "info" | "offers" | "collaborations" | "reviews" | "verification";
 
 interface Tab {
   id: BrandProfileTabType;
@@ -22,6 +23,7 @@ interface BrandProfileTabsProps {
   offersCount?: number;
   collaborationsCount?: number;
   reviewsCount?: number;
+  showVerificationTab?: boolean;
 }
 
 const BrandProfileTabs = ({
@@ -30,13 +32,18 @@ const BrandProfileTabs = ({
   offersCount = 0,
   collaborationsCount = 0,
   reviewsCount = 0,
+  showVerificationTab = false,
 }: BrandProfileTabsProps) => {
-  const tabs: Tab[] = [
+  const baseTabs: Tab[] = [
     { id: "info", label: "Entreprise", icon: Building2 },
     { id: "offers", label: "Offres", icon: Megaphone, badge: offersCount },
     { id: "collaborations", label: "Collabs", icon: Users, badge: collaborationsCount },
     { id: "reviews", label: "Avis", icon: Star, badge: reviewsCount },
   ];
+
+  const tabs: Tab[] = showVerificationTab 
+    ? [...baseTabs, { id: "verification" as BrandProfileTabType, label: "Vérification", icon: Shield }]
+    : baseTabs;
 
   return (
     <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border">
