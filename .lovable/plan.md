@@ -1,59 +1,85 @@
 
-## Plan de correction des Safe Areas iOS
+# Plan : Unifier la Navigation de l'Application
 
-### Probleme identifie
-L'application Capacitor iOS ne respecte pas les safe areas (zones securisees) sur les iPhones avec encoche (notch). Le logo et les boutons sont affiches derriere la barre d'etat du telephone, ce qui rend le contenu illisible.
+## Problème Identifié
+L'application utilise deux barres de navigation distinctes :
+- `LandingNav.tsx` : pages publiques (onglets "Messages, Connexion")
+- `BottomNav.tsx` : pages authentifiées (onglets "Collabs, Profil")
 
-### Cause technique
-1. Le fichier `index.html` manque la balise meta `viewport-fit=cover` necessaire pour Capacitor iOS
-2. Plusieurs pages n'utilisent pas correctement les classes `safe-top` ou le padding `pt-[max(env(safe-area-inset-top),1rem)]`
-3. Les headers de banniere (profils createur/marque) utilisent `pt-[env(safe-area-inset-top)]` mais cela doit etre applique au contenu interactif (boutons), pas seulement a la hauteur
+Cela crée une confusion où l'utilisateur a l'impression d'utiliser deux applications différentes.
 
-### Pages a corriger
+## Solution Proposée
+Unifier la navigation en utilisant un **seul composant intelligent** qui adapte ses onglets selon le contexte (connecté ou non).
 
-| Page | Probleme | Correction |
-|------|----------|------------|
-| `index.html` | Manque `viewport-fit=cover` | Ajouter dans la balise meta viewport |
-| `Landing.tsx` | Header utilise `pt-[max(env(safe-area-inset-top),0.5rem)]` - insuffisant | Augmenter a `pt-[max(env(safe-area-inset-top),1rem)]` |
-| `Auth.tsx` | Header sans safe area (`px-6 pt-2 pb-2`) | Ajouter `pt-[max(env(safe-area-inset-top),0.75rem)]` |
-| `ForgotPassword.tsx` | Header sans safe area | Ajouter padding safe area |
-| `ResetPassword.tsx` | Meme probleme sur 3 variants d'ecran | Corriger tous les headers |
-| `TermsOfService.tsx` | Aucun safe area | Ajouter `safe-top` au container |
-| `PrivacyPolicy.tsx` | Aucun safe area | Ajouter `safe-top` au container |
-| `NotFound.tsx` | Aucun safe area | Ajouter `safe-top` |
-| `BrandProfileHeader.tsx` | Boutons a `top-4` - trop haut | Utiliser `top-[calc(env(safe-area-inset-top)+1rem)]` |
-| `ProfileHeader.tsx` (createur) | Meme probleme | Corriger positions boutons |
+## Architecture Technique
 
-### Modifications techniques detaillees
+### 1. Supprimer LandingNav et utiliser uniquement BottomNav
+Le composant `BottomNav` sera modifié pour gérer trois états :
+- **Non connecté** : "Accueil, Explorer, Offres, Messages, Connexion"
+- **Connecté (Créateur)** : "Accueil, Explorer, Offres, Collabs, Profil"
+- **Connecté (Marque)** : "Accueil, Créateurs, Offres, Collabs, Profil"
 
-#### 1. index.html
-```html
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+### 2. Modifications de fichiers
+
+**Fichier : `src/components/BottomNav.tsx`**
+- Ajouter la détection de l'état d'authentification via `useAuth()`
+- Rendre le prop `userRole` optionnel
+- Créer trois configurations de navigation :
+  - `guestNavItems` : pour visiteurs non connectés
+  - `creatorNavItems` : pour créateurs connectés
+  - `brandNavItems` : pour marques connectées
+- Conserver le badge des messages non lus sur "Collabs" pour les utilisateurs connectés
+
+**Fichier : `src/pages/Landing.tsx`**
+- Remplacer `<LandingNav />` par `<BottomNav />` sans props (mode invité)
+
+**Fichier : `src/pages/Explore.tsx`**
+- Remplacer `<LandingNav />` par `<BottomNav />` sans props (mode invité)
+
+**Fichier : `src/components/LandingNav.tsx`**
+- Supprimer ce fichier (obsolète)
+
+### 3. Logique de sélection des onglets
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                    BottomNav                                │
+├─────────────────────────────────────────────────────────────┤
+│  useAuth() → user, role                                     │
+│                                                             │
+│  if (!user) → guestNavItems                                 │
+│    [Accueil, Explorer, Offres, Messages, Connexion]         │
+│                                                             │
+│  if (role === "creator") → creatorNavItems                  │
+│    [Accueil, Explorer, Offres, Collabs*, Profil]            │
+│                                                             │
+│  if (role === "brand") → brandNavItems                      │
+│    [Accueil, Créateurs, Offres, Collabs*, Profil]           │
+│                                                             │
+│  * = avec badge messages non lus                            │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-#### 2. Composants ProfileHeader (createur et marque)
-Les boutons (admin, notification, camera, settings) sont positionnes avec `absolute top-4` qui ne tient pas compte du safe area. Il faut:
-- Utiliser `top-[calc(env(safe-area-inset-top)+1rem)]` pour tous les boutons dans la banniere
+### 4. Cohérence des icônes et libellés
 
-#### 3. Pages Auth/ForgotPassword/ResetPassword
-Ajouter `pt-[max(env(safe-area-inset-top),0.75rem)]` aux headers
+| Position | Invité | Créateur | Marque |
+|----------|--------|----------|--------|
+| 1 | Accueil (Home) | Accueil (Home) | Accueil (Home) |
+| 2 | Explorer (Search) | Explorer (Search) | Créateurs (Search) |
+| 3 | Offres (Briefcase) | Offres (Briefcase) | Offres (Megaphone) |
+| 4 | Messages (MessageCircle) | Collabs (Handshake) | Collabs (Handshake) |
+| 5 | Connexion (User) | Profil (User) | Profil (User) |
 
-#### 4. Pages statiques (Terms, Privacy, NotFound)
-Ajouter `pt-[max(env(safe-area-inset-top),3rem)]` au premier container
+### 5. Gestion des routes
 
-### Verification apres implementation
-1. Recompiler: `npm run build && npx cap sync ios`
-2. Lancer sur simulateur ou appareil iOS
-3. Verifier que le logo et les boutons sont bien sous la barre d'etat sur toutes les pages
+Pour les utilisateurs non connectés qui cliquent sur "Messages" :
+- Rediriger vers `/auth` avec un message invitant à se connecter
 
-### Fichiers a modifier
-- `index.html`
-- `src/pages/Landing.tsx`
-- `src/pages/Auth.tsx`
-- `src/pages/ForgotPassword.tsx`
-- `src/pages/ResetPassword.tsx`
-- `src/pages/TermsOfService.tsx`
-- `src/pages/PrivacyPolicy.tsx`
-- `src/pages/NotFound.tsx`
-- `src/components/creator/ProfileHeader.tsx`
-- `src/components/brand/BrandProfileHeader.tsx`
+Pour les utilisateurs connectés :
+- Les routes adaptées automatiquement selon le rôle (`/creator/*` ou `/brand/*`)
+
+## Résultat Attendu
+- Une seule barre de navigation cohérente sur toutes les pages
+- Transition fluide entre les états connecté/déconnecté
+- Plus de confusion pour l'utilisateur
+- Les onglets 1 (Accueil) et 5 (Connexion/Profil) restent constants visuellement
