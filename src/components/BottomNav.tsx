@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
 import { Home, Search, Megaphone, MessageCircle, User, Briefcase } from "lucide-react";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 
 interface NavItem {
   icon: typeof Home;
@@ -15,6 +16,7 @@ interface BottomNavProps {
 
 const BottomNav = ({ userRole }: BottomNavProps) => {
   const location = useLocation();
+  const unreadMessages = useUnreadMessages();
   const basePath = userRole === "creator" ? "/creator" : "/brand";
 
   const navItems: NavItem[] = userRole === "creator" 
@@ -50,13 +52,21 @@ const BottomNav = ({ userRole }: BottomNavProps) => {
               <Link key={item.path} to={item.path}>
                 <motion.div
                   whileTap={{ scale: 0.9 }}
-                  className="flex flex-col items-center touch-target px-3"
+                  className="flex flex-col items-center touch-target px-3 relative"
                 >
-                  <Icon
-                    className={`w-6 h-6 transition-colors ${
-                      isActive ? "text-gold" : "text-muted-foreground"
-                    }`}
-                  />
+                  <div className="relative">
+                    <Icon
+                      className={`w-6 h-6 transition-colors ${
+                        isActive ? "text-gold" : "text-muted-foreground"
+                      }`}
+                    />
+                    {/* Unread badge for Messages */}
+                    {item.label === "Messages" && unreadMessages > 0 && (
+                      <span className="absolute -top-1 -right-2 min-w-[18px] h-[18px] bg-gold text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+                        {unreadMessages > 99 ? "99+" : unreadMessages}
+                      </span>
+                    )}
+                  </div>
                   <span
                     className={`text-xs mt-1 transition-colors ${
                       isActive ? "text-gold" : "text-muted-foreground"

@@ -85,14 +85,16 @@ const Messages = () => {
           participations.map(async (p) => {
             const conv = p.conversations as any;
             
-            // Get other participants
+            // Get other participants with company_name for brands
             const { data: otherParticipants } = await supabase
               .from("conversation_participants")
               .select(`
                 user_id,
                 profiles!inner (
                   full_name,
-                  avatar_url
+                  avatar_url,
+                  company_name,
+                  logo_url
                 )
               `)
               .eq("conversation_id", conv.id)
@@ -101,6 +103,9 @@ const Messages = () => {
 
             const otherParticipant = otherParticipants?.[0];
             const profile = otherParticipant?.profiles as any;
+            // Use company_name for brands, full_name for creators
+            const displayName = profile?.company_name || profile?.full_name;
+            const displayAvatar = profile?.logo_url || profile?.avatar_url;
 
             // Get last message
             const { data: lastMessages } = await supabase
@@ -123,10 +128,11 @@ const Messages = () => {
               subject: conv.subject,
               created_at: conv.created_at,
               updated_at: conv.updated_at,
+              // Use computed displayName and displayAvatar
               other_participant: profile ? {
                 id: otherParticipant?.user_id || "",
-                full_name: profile.full_name,
-                avatar_url: profile.avatar_url,
+                full_name: displayName || "Utilisateur",
+                avatar_url: displayAvatar || null,
               } : null,
               last_message: lastMessages?.[0] || null,
               unread_count: count || 0,
