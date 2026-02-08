@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Briefcase, MapPin, Calendar, Check, X, ExternalLink } from "lucide-react";
+import { Briefcase, MapPin, Calendar, Check, X, ExternalLink, CheckCircle, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
+import { useCollaborations } from "@/hooks/useCollaborations";
 import {
   Sheet,
   SheetContent,
@@ -25,6 +27,7 @@ interface Offer {
   deadline: string | null;
   logo_url: string | null;
   images: string[] | null;
+  brand_id: string;
 }
 
 interface ProposalCardProps {
@@ -34,23 +37,47 @@ interface ProposalCardProps {
   onRefuse?: () => void;
 }
 
+type ProposalStatus = "pending" | "accepted" | "refused";
+
 const ProposalCard = ({ offerId, conversationId, onAccept, onRefuse }: ProposalCardProps) => {
   const [offer, setOffer] = useState<Offer | null>(null);
   const [loading, setLoading] = useState(true);
   const [showDetails, setShowDetails] = useState(false);
   const [responding, setResponding] = useState(false);
+  const [proposalStatus, setProposalStatus] = useState<ProposalStatus>("pending");
+  const { createCollaboration } = useCollaborations();
 
   useEffect(() => {
-    const fetchOffer = async () => {
+    const fetchOfferAndStatus = async () => {
       try {
-        const { data, error } = await supabase
+        // Fetch offer
+        const { data: offerData, error: offerError } = await supabase
           .from("offers")
-          .select("*")
+          .select("*, brand_id")
           .eq("id", offerId)
           .single();
 
-        if (error) throw error;
-        setOffer(data);
+        if (offerError) throw offerError;
+        setOffer(offerData);
+
+        // Check if there's already a collaboration for this offer and conversation
+        const { data: user } = await supabase.auth.getUser();
+        if (user.user) {
+          const { data: existingCollab } = await supabase
+            .from("collaborations")
+            .select("id, status")
+            .eq("offer_id", offerId)
+            .eq("creator_id", user.user.id)
+            .maybeSingle();
+
+          if (existingCollab) {
+            if (existingCollab.status === "refused") {
+              setProposalStatus("refused");
+            } else {
+              setProposalStatus("accepted");
+            }
+          }
+        }
       } catch (err) {
         console.error("Error fetching offer:", err);
       } finally {
@@ -59,23 +86,40 @@ const ProposalCard = ({ offerId, conversationId, onAccept, onRefuse }: ProposalC
     };
 
     if (offerId) {
-      fetchOffer();
+      fetchOfferAndStatus();
     }
   }, [offerId]);
 
   const handleAccept = async () => {
+    if (!offer) return;
+    
     setResponding(true);
     try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error("Non authentifié");
+
+      // Create a real collaboration with status "pending_payment"
+      const agreedAmount = Math.round((offer.budget_min + offer.budget_max) / 2);
+      const deadline = offer.deadline || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+      await createCollaboration(
+        offer.id,
+        userData.user.id,
+        offer.brand_id,
+        agreedAmount,
+        deadline,
+        conversationId
+      );
+
       // Send acceptance message
-      const { error } = await supabase.from("messages").insert({
+      await supabase.from("messages").insert({
         conversation_id: conversationId,
-        sender_id: (await supabase.auth.getUser()).data.user?.id,
-        content: "✅ J'accepte cette proposition ! Discutons des détails.",
+        sender_id: userData.user.id,
+        content: "✅ J'accepte cette proposition ! La collaboration a été créée.",
       });
 
-      if (error) throw error;
-
-      toast.success("Proposition acceptée !");
+      setProposalStatus("accepted");
+      toast.success("Proposition acceptée ! La marque doit maintenant effectuer le paiement.");
       onAccept?.();
     } catch (err) {
       console.error("Error accepting proposal:", err);
@@ -86,17 +130,37 @@ const ProposalCard = ({ offerId, conversationId, onAccept, onRefuse }: ProposalC
   };
 
   const handleRefuse = async () => {
+    if (!offer) return;
+    
     setResponding(true);
     try {
-      // Send refusal message
-      const { error } = await supabase.from("messages").insert({
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error("Non authentifié");
+
+      // Create a collaboration with "refused" status
+      const platformFee = 0;
+      const { error } = await supabase.from("collaborations").insert({
+        offer_id: offer.id,
+        creator_id: userData.user.id,
+        brand_id: offer.brand_id,
         conversation_id: conversationId,
-        sender_id: (await supabase.auth.getUser()).data.user?.id,
-        content: "❌ Je décline cette proposition pour le moment.",
+        agreed_amount: 0,
+        platform_fee: platformFee,
+        creator_amount: 0,
+        deadline: offer.deadline || new Date().toISOString().split('T')[0],
+        status: "refused",
       });
 
       if (error) throw error;
 
+      // Send refusal message
+      await supabase.from("messages").insert({
+        conversation_id: conversationId,
+        sender_id: userData.user.id,
+        content: "❌ Je décline cette proposition pour le moment.",
+      });
+
+      setProposalStatus("refused");
       toast.success("Proposition refusée");
       onRefuse?.();
     } catch (err) {
@@ -166,36 +230,54 @@ const ProposalCard = ({ offerId, conversationId, onAccept, onRefuse }: ProposalC
           </div>
         </div>
 
-        <button
-          onClick={() => setShowDetails(true)}
-          className="flex items-center gap-1 text-sm text-gold mt-3 hover:underline"
-        >
-          <ExternalLink className="w-4 h-4" />
-          Voir les détails de l'offre
-        </button>
+        {proposalStatus === "pending" && (
+          <>
+            <button
+              onClick={() => setShowDetails(true)}
+              className="flex items-center gap-1 text-sm text-gold mt-3 hover:underline"
+            >
+              <ExternalLink className="w-4 h-4" />
+              Voir les détails de l'offre
+            </button>
 
-        <div className="flex gap-2 mt-4">
-          <Button
-            variant="gold"
-            size="sm"
-            onClick={handleAccept}
-            disabled={responding}
-            className="flex-1"
-          >
-            <Check className="w-4 h-4 mr-1" />
-            Accepter
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefuse}
-            disabled={responding}
-            className="flex-1"
-          >
-            <X className="w-4 h-4 mr-1" />
-            Refuser
-          </Button>
-        </div>
+            <div className="flex gap-2 mt-4">
+              <Button
+                variant="gold"
+                size="sm"
+                onClick={handleAccept}
+                disabled={responding}
+                className="flex-1"
+              >
+                <Check className="w-4 h-4 mr-1" />
+                Accepter
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefuse}
+                disabled={responding}
+                className="flex-1"
+              >
+                <X className="w-4 h-4 mr-1" />
+                Refuser
+              </Button>
+            </div>
+          </>
+        )}
+
+        {proposalStatus === "accepted" && (
+          <div className="flex items-center gap-2 mt-4 p-3 bg-green-500/10 rounded-lg">
+            <CheckCircle className="w-5 h-5 text-green-500" />
+            <span className="text-green-500 font-medium">Proposition acceptée</span>
+          </div>
+        )}
+
+        {proposalStatus === "refused" && (
+          <div className="flex items-center gap-2 mt-4 p-3 bg-red-500/10 rounded-lg">
+            <XCircle className="w-5 h-5 text-red-500" />
+            <span className="text-red-500 font-medium">Proposition refusée</span>
+          </div>
+        )}
       </motion.div>
 
       {/* Offer Details Sheet */}
@@ -270,35 +352,51 @@ const ProposalCard = ({ offerId, conversationId, onAccept, onRefuse }: ProposalC
               </div>
             )}
 
-            {/* Action buttons */}
-            <div className="flex gap-3 pt-4 pb-safe">
-              <Button
-                variant="gold"
-                size="lg"
-                onClick={() => {
-                  setShowDetails(false);
-                  handleAccept();
-                }}
-                disabled={responding}
-                className="flex-1"
-              >
-                <Check className="w-5 h-5 mr-2" />
-                Accepter
-              </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={() => {
-                  setShowDetails(false);
-                  handleRefuse();
-                }}
-                disabled={responding}
-                className="flex-1"
-              >
-                <X className="w-5 h-5 mr-2" />
-                Refuser
-              </Button>
-            </div>
+            {/* Action buttons - only show if pending */}
+            {proposalStatus === "pending" && (
+              <div className="flex gap-3 pt-4 pb-safe">
+                <Button
+                  variant="gold"
+                  size="lg"
+                  onClick={() => {
+                    setShowDetails(false);
+                    handleAccept();
+                  }}
+                  disabled={responding}
+                  className="flex-1"
+                >
+                  <Check className="w-5 h-5 mr-2" />
+                  Accepter
+                </Button>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={() => {
+                    setShowDetails(false);
+                    handleRefuse();
+                  }}
+                  disabled={responding}
+                  className="flex-1"
+                >
+                  <X className="w-5 h-5 mr-2" />
+                  Refuser
+                </Button>
+              </div>
+            )}
+
+            {proposalStatus === "accepted" && (
+              <div className="flex items-center gap-2 pt-4 pb-safe p-4 bg-green-500/10 rounded-lg">
+                <CheckCircle className="w-6 h-6 text-green-500" />
+                <span className="text-green-500 font-semibold">Proposition acceptée - En attente de paiement</span>
+              </div>
+            )}
+
+            {proposalStatus === "refused" && (
+              <div className="flex items-center gap-2 pt-4 pb-safe p-4 bg-red-500/10 rounded-lg">
+                <XCircle className="w-6 h-6 text-red-500" />
+                <span className="text-red-500 font-semibold">Proposition refusée</span>
+              </div>
+            )}
           </div>
         </SheetContent>
       </Sheet>
