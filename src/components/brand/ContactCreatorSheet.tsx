@@ -119,7 +119,7 @@ const ContactCreatorSheet = ({
         if (creatorParticipant) {
           toast.info("Vous avez déjà proposé cette offre à ce créateur");
           onOpenChange(false);
-          navigate("/messages");
+          navigate("/brand/collabs?tab=messages");
           return;
         }
       }
@@ -171,7 +171,7 @@ const ContactCreatorSheet = ({
       onOpenChange(false);
       setMessage("");
       setSelectedOfferId(null);
-      navigate("/messages");
+      navigate("/brand/collabs?tab=messages");
     } catch (error: any) {
       console.error("Error contacting creator:", error);
       toast.error("Erreur lors de l'envoi de la proposition");
