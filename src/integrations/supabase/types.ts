@@ -89,6 +89,84 @@ export type Database = {
           },
         ]
       }
+      collaborations: {
+        Row: {
+          agreed_amount: number
+          approved_at: string | null
+          auto_approve_at: string | null
+          brand_feedback: string | null
+          brand_id: string
+          content_description: string | null
+          content_submitted_at: string | null
+          content_url: string | null
+          conversation_id: string | null
+          created_at: string
+          creator_amount: number
+          creator_id: string
+          deadline: string
+          id: string
+          offer_id: string
+          platform_fee: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          agreed_amount: number
+          approved_at?: string | null
+          auto_approve_at?: string | null
+          brand_feedback?: string | null
+          brand_id: string
+          content_description?: string | null
+          content_submitted_at?: string | null
+          content_url?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          creator_amount?: number
+          creator_id: string
+          deadline: string
+          id?: string
+          offer_id: string
+          platform_fee?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          agreed_amount?: number
+          approved_at?: string | null
+          auto_approve_at?: string | null
+          brand_feedback?: string | null
+          brand_id?: string
+          content_description?: string | null
+          content_submitted_at?: string | null
+          content_url?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          creator_amount?: number
+          creator_id?: string
+          deadline?: string
+          id?: string
+          offer_id?: string
+          platform_fee?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collaborations_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collaborations_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversation_participants: {
         Row: {
           conversation_id: string
@@ -524,6 +602,75 @@ export type Database = {
         }
         Relationships: []
       }
+      transactions: {
+        Row: {
+          amount: number
+          collaboration_id: string | null
+          created_at: string
+          description: string | null
+          fee: number
+          id: string
+          net_amount: number
+          reference: string | null
+          status: string
+          type: string
+          updated_at: string
+          user_id: string
+          wallet_id: string | null
+          withdrawal_details: Json | null
+          withdrawal_method: string | null
+        }
+        Insert: {
+          amount: number
+          collaboration_id?: string | null
+          created_at?: string
+          description?: string | null
+          fee?: number
+          id?: string
+          net_amount?: number
+          reference?: string | null
+          status?: string
+          type: string
+          updated_at?: string
+          user_id: string
+          wallet_id?: string | null
+          withdrawal_details?: Json | null
+          withdrawal_method?: string | null
+        }
+        Update: {
+          amount?: number
+          collaboration_id?: string | null
+          created_at?: string
+          description?: string | null
+          fee?: number
+          id?: string
+          net_amount?: number
+          reference?: string | null
+          status?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+          wallet_id?: string | null
+          withdrawal_details?: Json | null
+          withdrawal_method?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_collaboration_id_fkey"
+            columns: ["collaboration_id"]
+            isOneToOne: false
+            referencedRelation: "collaborations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_wallet_id_fkey"
+            columns: ["wallet_id"]
+            isOneToOne: false
+            referencedRelation: "wallets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -544,6 +691,108 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      wallets: {
+        Row: {
+          balance: number
+          created_at: string
+          id: string
+          pending_balance: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          id?: string
+          pending_balance?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          id?: string
+          pending_balance?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      withdrawal_requests: {
+        Row: {
+          account_holder: string | null
+          account_number: string | null
+          amount: number
+          bank_name: string | null
+          created_at: string
+          id: string
+          method: string
+          mobile_number: string | null
+          mobile_provider: string | null
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          transaction_id: string | null
+          updated_at: string
+          user_id: string
+          wallet_id: string
+        }
+        Insert: {
+          account_holder?: string | null
+          account_number?: string | null
+          amount: number
+          bank_name?: string | null
+          created_at?: string
+          id?: string
+          method: string
+          mobile_number?: string | null
+          mobile_provider?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          transaction_id?: string | null
+          updated_at?: string
+          user_id: string
+          wallet_id: string
+        }
+        Update: {
+          account_holder?: string | null
+          account_number?: string | null
+          amount?: number
+          bank_name?: string | null
+          created_at?: string
+          id?: string
+          method?: string
+          mobile_number?: string | null
+          mobile_provider?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          transaction_id?: string | null
+          updated_at?: string
+          user_id?: string
+          wallet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "withdrawal_requests_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "withdrawal_requests_wallet_id_fkey"
+            columns: ["wallet_id"]
+            isOneToOne: false
+            referencedRelation: "wallets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

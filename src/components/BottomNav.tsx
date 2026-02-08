@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Search, Megaphone, MessageCircle, User, Briefcase } from "lucide-react";
+import { Home, Search, Megaphone, MessageCircle, User, Briefcase, Wallet, Handshake } from "lucide-react";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 
 interface NavItem {
@@ -22,16 +22,16 @@ const BottomNav = ({ userRole }: BottomNavProps) => {
   const navItems: NavItem[] = userRole === "creator" 
     ? [
         { icon: Home, label: "Accueil", path: "/" },
-        { icon: Search, label: "Explorer", path: "/explore" },
-        { icon: Briefcase, label: "Offres", path: `${basePath}/offers`, isCenter: true },
-        { icon: MessageCircle, label: "Messages", path: `${basePath}/messages` },
+        { icon: Briefcase, label: "Offres", path: `${basePath}/offers` },
+        { icon: Handshake, label: "Collabs", path: `${basePath}/collaborations`, isCenter: true },
+        { icon: Wallet, label: "Portefeuille", path: `${basePath}/wallet` },
         { icon: User, label: "Profil", path: `${basePath}/profile` },
       ]
     : [
         { icon: Home, label: "Accueil", path: "/" },
         { icon: Search, label: "Créateurs", path: `${basePath}/marketplace` },
         { icon: Megaphone, label: "Offres", path: `${basePath}/offers`, isCenter: true },
-        { icon: MessageCircle, label: "Messages", path: `${basePath}/messages` },
+        { icon: Handshake, label: "Collabs", path: `${basePath}/collaborations` },
         { icon: User, label: "Profil", path: `${basePath}/profile` },
       ];
 
