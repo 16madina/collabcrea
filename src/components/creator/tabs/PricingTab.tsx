@@ -295,18 +295,25 @@ const PricingTab = ({
                     </div>
                     
                     {/* Pricing Items */}
-                    <div className="space-y-1 px-4">
+                    <div className="space-y-2 px-4">
                       {items.map((item, index) => (
                         <div 
                           key={index} 
-                          className="flex justify-between items-center py-1"
+                          className="py-1"
                         >
-                          <span className="text-white font-medium text-base drop-shadow-md">
-                            {getServiceName(item.type)}
-                          </span>
-                          <span className="text-white font-bold text-base drop-shadow-md">
-                            {formatPrice(item.price)}
-                          </span>
+                          <div className="flex justify-between items-center">
+                            <span className="text-white font-medium text-base drop-shadow-md">
+                              {getServiceName(item.type)}
+                            </span>
+                            <span className="text-white font-bold text-base drop-shadow-md">
+                              {formatPrice(item.price)}
+                            </span>
+                          </div>
+                          {item.description && (
+                            <p className="text-white/70 text-xs mt-0.5 italic">
+                              {item.description}
+                            </p>
+                          )}
                         </div>
                       ))}
                     </div>
