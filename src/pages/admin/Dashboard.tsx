@@ -46,7 +46,7 @@ const AdminDashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-50 glass border-b border-border px-4 py-3">
+      <header className="sticky top-0 z-50 glass border-b border-border px-4 pt-[max(env(safe-area-inset-top),0.75rem)] pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img src={logoCollabCrea} alt="CollabCréa" className="h-8" />
