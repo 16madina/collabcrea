@@ -1,37 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Send, ArrowLeft, MoreVertical, Phone, Video, User } from "lucide-react";
+import { Search, Send, ArrowLeft, MoreVertical, Check, CheckCheck, MessageCircle, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useConversations, Conversation } from "@/hooks/useConversations";
+import { useMessages } from "@/hooks/useMessages";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
-
-interface Conversation {
-  id: string;
-  subject: string | null;
-  created_at: string;
-  updated_at: string;
-  other_participant: {
-    id: string;
-    full_name: string;
-    avatar_url: string | null;
-  } | null;
-  last_message: {
-    content: string;
-    created_at: string;
-    sender_id: string;
-  } | null;
-  unread_count: number;
-}
-
-interface Message {
-  id: string;
-  content: string;
-  sender_id: string;
-  created_at: string;
-  read_at: string | null;
-}
+import { formatDistanceToNow } from "date-fns";
+import { fr } from "date-fns/locale";
+import ProposalCard from "@/components/creator/ProposalCard";
 
 interface MessagesTabProps {
   userRole: "creator" | "brand";
@@ -39,398 +17,307 @@ interface MessagesTabProps {
 
 const MessagesTab = ({ userRole }: MessagesTabProps) => {
   const { user } = useAuth();
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [newMessage, setNewMessage] = useState("");
+  const { conversations, loading: conversationsLoading } = useConversations();
   const [searchQuery, setSearchQuery] = useState("");
-  const [loadingConversations, setLoadingConversations] = useState(true);
-  const [loadingMessages, setLoadingMessages] = useState(false);
+  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
+  const [newMessage, setNewMessage] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Fetch conversations
+  const { messages, loading: messagesLoading, sendMessage } = useMessages(
+    selectedConversation?.id || null
+  );
+
+  const filteredConversations = conversations.filter((conv) => {
+    const name = conv.otherParticipant?.profile?.company_name ||
+      conv.otherParticipant?.profile?.full_name ||
+      "";
+    return name.toLowerCase().includes(searchQuery.toLowerCase());
+  });
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
   useEffect(() => {
-    if (!user) return;
+    scrollToBottom();
+  }, [messages]);
 
-    const fetchConversations = async () => {
-      try {
-        const { data: participations, error: partError } = await supabase
-          .from("conversation_participants")
-          .select(`
-            conversation_id,
-            conversations (
-              id,
-              subject,
-              created_at,
-              updated_at
-            )
-          `)
-          .eq("user_id", user.id);
-
-        if (partError) throw partError;
-
-        if (!participations || participations.length === 0) {
-          setConversations([]);
-          setLoadingConversations(false);
-          return;
-        }
-
-        const conversationsWithDetails: Conversation[] = await Promise.all(
-          participations.map(async (p) => {
-            const conv = p.conversations as any;
-            
-            const { data: otherParticipants } = await supabase
-              .from("conversation_participants")
-              .select("user_id")
-              .eq("conversation_id", conv.id)
-              .neq("user_id", user.id)
-              .limit(1);
-
-            const otherParticipant = otherParticipants?.[0];
-            let displayName = "Utilisateur";
-            let displayAvatar: string | null = null;
-            let otherUserId = otherParticipant?.user_id || "";
-
-            if (otherParticipant?.user_id) {
-              const { data: profileData } = await supabase
-                .from("profiles")
-                .select("full_name, avatar_url, company_name, logo_url")
-                .eq("user_id", otherParticipant.user_id)
-                .single();
-
-              if (profileData) {
-                displayName = profileData.company_name || profileData.full_name || "Utilisateur";
-                displayAvatar = profileData.logo_url || profileData.avatar_url;
-              }
-            }
-
-            const { data: lastMessages } = await supabase
-              .from("messages")
-              .select("content, created_at, sender_id")
-              .eq("conversation_id", conv.id)
-              .order("created_at", { ascending: false })
-              .limit(1);
-
-            const { count } = await supabase
-              .from("messages")
-              .select("*", { count: "exact", head: true })
-              .eq("conversation_id", conv.id)
-              .neq("sender_id", user.id)
-              .is("read_at", null);
-
-            return {
-              id: conv.id,
-              subject: conv.subject,
-              created_at: conv.created_at,
-              updated_at: conv.updated_at,
-              other_participant: {
-                id: otherUserId,
-                full_name: displayName,
-                avatar_url: displayAvatar,
-              },
-              last_message: lastMessages?.[0] || null,
-              unread_count: count || 0,
-            };
-          })
-        );
-
-        setConversations(conversationsWithDetails.sort((a, b) => 
-          new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-        ));
-      } catch (error) {
-        console.error("Error fetching conversations:", error);
-      } finally {
-        setLoadingConversations(false);
-      }
-    };
-
-    fetchConversations();
-  }, [user]);
-
-  // Fetch messages for selected conversation
-  useEffect(() => {
-    if (!selectedConversation || !user) return;
-
-    const fetchMessages = async () => {
-      setLoadingMessages(true);
-      try {
-        const { data, error } = await supabase
-          .from("messages")
-          .select("*")
-          .eq("conversation_id", selectedConversation.id)
-          .order("created_at", { ascending: true });
-
-        if (error) throw error;
-        setMessages(data || []);
-      } catch (error) {
-        console.error("Error fetching messages:", error);
-      } finally {
-        setLoadingMessages(false);
-      }
-    };
-
-    fetchMessages();
-
-    const channel = supabase
-      .channel(`messages:${selectedConversation.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "messages",
-          filter: `conversation_id=eq.${selectedConversation.id}`,
-        },
-        (payload) => {
-          setMessages((prev) => [...prev, payload.new as Message]);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [selectedConversation, user]);
-
-  const sendMessage = async () => {
-    if (!newMessage.trim() || !selectedConversation || !user) return;
-
-    try {
-      const { error } = await supabase.from("messages").insert({
-        conversation_id: selectedConversation.id,
-        sender_id: user.id,
-        content: newMessage.trim(),
-      });
-
-      if (error) throw error;
+  const handleSendMessage = async () => {
+    if (!newMessage.trim()) return;
+    const success = await sendMessage(newMessage);
+    if (success) {
       setNewMessage("");
-    } catch (error) {
-      console.error("Error sending message:", error);
     }
+  };
+
+  const getDisplayName = (conv: Conversation) => {
+    if (!conv.otherParticipant?.profile) return "Utilisateur";
+    return conv.otherParticipant.profile.company_name ||
+      conv.otherParticipant.profile.full_name ||
+      "Utilisateur";
+  };
+
+  const getInitials = (conv: Conversation) => {
+    const name = getDisplayName(conv);
+    return name.charAt(0).toUpperCase();
+  };
+
+  const getAvatarUrl = (conv: Conversation) => {
+    if (!conv.otherParticipant?.profile) return null;
+    return conv.otherParticipant.profile.logo_url ||
+      conv.otherParticipant.profile.avatar_url;
   };
 
   const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-
-    if (days === 0) {
-      return date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
-    } else if (days === 1) {
-      return "Hier";
-    } else if (days < 7) {
-      return date.toLocaleDateString("fr-FR", { weekday: "short" });
-    } else {
-      return date.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+    try {
+      return formatDistanceToNow(new Date(dateString), {
+        addSuffix: false,
+        locale: fr,
+      });
+    } catch {
+      return "";
     }
   };
 
-  const filteredConversations = conversations.filter((conv) =>
-    conv.other_participant?.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    conv.subject?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const formatMessageTime = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleTimeString("fr-FR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return "";
+    }
+  };
 
-  return (
-    <AnimatePresence mode="wait">
-      {!selectedConversation ? (
-        <motion.div
-          key="conversations-list"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0, x: -20 }}
-        >
-          {/* Search */}
-          <div className="relative mb-4">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Rechercher une conversation..."
-              className="pl-12 h-12 bg-muted/50 border-border focus:border-gold rounded-xl"
-            />
+  // Chat View
+  if (selectedConversation) {
+    return (
+      <motion.div
+        key="chat-view"
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 bg-background flex flex-col"
+      >
+        {/* Chat Header */}
+        <div className="px-4 pt-[max(env(safe-area-inset-top),0.75rem)] pb-3 glass-nav border-b border-border">
+          <div className="flex items-center gap-3 min-w-0">
+            <button
+              onClick={() => setSelectedConversation(null)}
+              className="touch-target"
+            >
+              <ArrowLeft className="w-6 h-6 text-foreground" />
+            </button>
+            <div className="relative">
+              {getAvatarUrl(selectedConversation) ? (
+                <img
+                  src={getAvatarUrl(selectedConversation)!}
+                  alt={getDisplayName(selectedConversation)}
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-gold/20 flex items-center justify-center">
+                  <span className="text-gold font-bold">
+                    {getInitials(selectedConversation)}
+                  </span>
+                </div>
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <h2 className="font-semibold truncate">
+                {getDisplayName(selectedConversation)}
+              </h2>
+              {selectedConversation.subject && (
+                <p className="text-xs text-muted-foreground truncate">
+                  {selectedConversation.subject}
+                </p>
+              )}
+            </div>
+            <button className="touch-target">
+              <MoreVertical className="w-5 h-5 text-muted-foreground" />
+            </button>
           </div>
+        </div>
 
-          {/* Conversations */}
-          <div className="space-y-2">
-            {loadingConversations ? (
-              <div className="flex justify-center py-12">
-                <div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin" />
-              </div>
-            ) : filteredConversations.length === 0 ? (
-              <Card className="glass">
-                <CardContent className="p-6 text-center">
-                  <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
-                    <User className="w-8 h-8 text-muted-foreground" />
-                  </div>
-                  <p className="text-muted-foreground">Aucune conversation</p>
-                  <p className="text-muted-foreground text-sm mt-1">
-                    Les conversations apparaîtront ici
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
-              filteredConversations.map((conv, index) => (
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {/* Proposal Card if conversation has an offer (only for creators) */}
+          {userRole === "creator" && selectedConversation.offer_id && (
+            <ProposalCard
+              offerId={selectedConversation.offer_id}
+              conversationId={selectedConversation.id}
+            />
+          )}
+
+          {messagesLoading ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gold" />
+            </div>
+          ) : messages.length === 0 && !selectedConversation.offer_id ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Aucun message pour le moment
+            </div>
+          ) : (
+            messages.map((msg) => {
+              const isOwn = msg.sender_id === user?.id;
+              return (
                 <motion.div
-                  key={conv.id}
+                  key={msg.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  onClick={() => setSelectedConversation(conv)}
-                  className="glass-card p-4 cursor-pointer hover:border-gold/30 transition-all"
+                  className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="relative">
-                      <div className="w-12 h-12 rounded-full bg-gold/20 flex items-center justify-center overflow-hidden">
-                        {conv.other_participant?.avatar_url ? (
-                          <img
-                            src={conv.other_participant.avatar_url}
-                            alt={conv.other_participant.full_name}
-                            className="w-full h-full object-cover"
-                          />
+                  <div
+                    className={`max-w-[80%] px-4 py-2 rounded-2xl ${
+                      isOwn
+                        ? "bg-gold text-primary-foreground rounded-br-md"
+                        : "glass rounded-bl-md"
+                    }`}
+                  >
+                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                    <div
+                      className={`flex items-center justify-end gap-1 mt-1 ${
+                        isOwn ? "text-primary-foreground/70" : "text-muted-foreground"
+                      }`}
+                    >
+                      <span className="text-[10px]">
+                        {formatMessageTime(msg.created_at)}
+                      </span>
+                      {isOwn && (
+                        msg.read_at ? (
+                          <CheckCheck className="w-3 h-3" />
                         ) : (
-                          <User className="w-6 h-6 text-gold" />
-                        )}
-                      </div>
-                      {conv.unread_count > 0 && (
-                        <span className="absolute -top-1 -right-1 w-5 h-5 bg-gold text-primary-foreground text-xs font-bold rounded-full flex items-center justify-center">
-                          {conv.unread_count}
-                        </span>
+                          <Check className="w-3 h-3" />
+                        )
                       )}
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-semibold text-foreground truncate">
-                          {conv.other_participant?.full_name || "Utilisateur"}
-                        </h3>
-                        {conv.last_message && (
-                          <span className="text-xs text-muted-foreground">
-                            {formatTime(conv.last_message.created_at)}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground truncate">
-                        {conv.last_message?.content || conv.subject || "Nouvelle conversation"}
-                      </p>
                     </div>
                   </div>
                 </motion.div>
-              ))
-            )}
+              );
+            })
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Message Input */}
+        <div className="safe-bottom px-4 py-3 glass-card rounded-none border-x-0 border-b-0">
+          <div className="flex items-center gap-2">
+            <Input
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+              placeholder="Écrivez votre message..."
+              className="flex-1 h-12 bg-muted/50 border-border focus:border-gold rounded-xl"
+            />
+            <Button
+              onClick={handleSendMessage}
+              variant="gold"
+              size="icon"
+              className="h-12 w-12 rounded-xl"
+              disabled={!newMessage.trim()}
+            >
+              <Send className="w-5 h-5" />
+            </Button>
           </div>
-        </motion.div>
-      ) : (
-        <motion.div
-          key="chat-view"
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 bg-background flex flex-col"
-        >
-          {/* Chat Header */}
-          <div className="safe-top px-4 py-3 glass-card rounded-none border-x-0 border-t-0">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setSelectedConversation(null)}
-                className="touch-target"
-              >
-                <ArrowLeft className="w-6 h-6 text-foreground" />
-              </button>
+        </div>
+      </motion.div>
+    );
+  }
 
-              <div className="w-10 h-10 rounded-full bg-gold/20 flex items-center justify-center overflow-hidden">
-                {selectedConversation.other_participant?.avatar_url ? (
-                  <img
-                    src={selectedConversation.other_participant.avatar_url}
-                    alt={selectedConversation.other_participant.full_name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <User className="w-5 h-5 text-gold" />
-                )}
-              </div>
+  // Conversations List
+  return (
+    <motion.div
+      key="conversations-list"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0, x: -20 }}
+    >
+      {/* Search */}
+      <div className="relative mb-4">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+        <Input
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Rechercher une conversation..."
+          className="pl-12 h-12 bg-muted/50 border-border focus:border-gold rounded-xl"
+        />
+      </div>
 
-              <div className="flex-1">
-                <h3 className="font-semibold text-foreground">
-                  {selectedConversation.other_participant?.full_name || "Utilisateur"}
-                </h3>
-                <p className="text-xs text-muted-foreground">En ligne</p>
-              </div>
-
-              <button className="touch-target">
-                <MoreVertical className="w-5 h-5 text-muted-foreground" />
-              </button>
-            </div>
+      {/* Conversations */}
+      <div className="space-y-2">
+        {conversationsLoading ? (
+          <div className="flex justify-center py-12">
+            <div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin" />
           </div>
-
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-            {loadingMessages ? (
-              <div className="flex justify-center py-12">
-                <div className="w-6 h-6 border-2 border-gold border-t-transparent rounded-full animate-spin" />
+        ) : filteredConversations.length === 0 ? (
+          <Card className="glass">
+            <CardContent className="p-6 text-center">
+              <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
+                <MessageCircle className="w-8 h-8 text-muted-foreground" />
               </div>
-            ) : messages.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">Aucun message</p>
-                <p className="text-muted-foreground text-sm mt-1">
-                  Envoyez le premier message !
-                </p>
-              </div>
-            ) : (
-              messages.map((msg) => {
-                const isOwn = msg.sender_id === user?.id;
-                return (
-                  <motion.div
-                    key={msg.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
-                  >
-                    <div
-                      className={`max-w-[80%] px-4 py-2 rounded-2xl ${
-                        isOwn
-                          ? "bg-gold text-primary-foreground rounded-br-md"
-                          : "glass rounded-bl-md"
-                      }`}
-                    >
-                      <p className="text-sm">{msg.content}</p>
-                      <p
-                        className={`text-[10px] mt-1 ${
-                          isOwn ? "text-primary-foreground/70" : "text-muted-foreground"
-                        }`}
-                      >
-                        {formatTime(msg.created_at)}
-                      </p>
-                    </div>
-                  </motion.div>
-                );
-              })
-            )}
-          </div>
+              <p className="text-muted-foreground">Aucune conversation</p>
+              <p className="text-muted-foreground text-sm mt-1">
+                {userRole === "creator"
+                  ? "Postulez à une offre pour commencer une conversation"
+                  : "Contactez un créateur pour commencer une conversation"}
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          filteredConversations.map((conv, index) => (
+            <motion.div
+              key={conv.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05 }}
+              onClick={() => setSelectedConversation(conv)}
+              className="glass-card p-4 cursor-pointer hover:border-gold/30 transition-all"
+            >
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <div className="w-12 h-12 rounded-full bg-gold/20 flex items-center justify-center overflow-hidden">
+                    {getAvatarUrl(conv) ? (
+                      <img
+                        src={getAvatarUrl(conv)!}
+                        alt={getDisplayName(conv)}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-gold font-bold text-lg">
+                        {getInitials(conv)}
+                      </span>
+                    )}
+                  </div>
+                  {conv.unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-gold text-primary-foreground text-xs font-bold rounded-full flex items-center justify-center">
+                      {conv.unreadCount}
+                    </span>
+                  )}
+                </div>
 
-          {/* Message Input */}
-          <div className="safe-bottom px-4 py-3 glass-card rounded-none border-x-0 border-b-0">
-            <div className="flex items-center gap-2">
-              <Input
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-                placeholder="Écrivez votre message..."
-                className="flex-1 h-12 bg-muted/50 border-border focus:border-gold rounded-xl"
-              />
-              <Button
-                onClick={sendMessage}
-                variant="gold"
-                size="icon"
-                className="h-12 w-12 rounded-xl"
-                disabled={!newMessage.trim()}
-              >
-                <Send className="w-5 h-5" />
-              </Button>
-            </div>
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-foreground truncate">
+                      {getDisplayName(conv)}
+                    </h3>
+                    {conv.lastMessage && (
+                      <span className="text-xs text-muted-foreground">
+                        {formatTime(conv.lastMessage.created_at)}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground truncate">
+                    {conv.lastMessage?.content || conv.subject || "Nouvelle conversation"}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          ))
+        )}
+      </div>
+    </motion.div>
   );
 };
 
