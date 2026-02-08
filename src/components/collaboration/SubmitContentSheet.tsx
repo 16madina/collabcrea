@@ -46,6 +46,7 @@ const SubmitContentSheet = ({
   const [contentUrls, setContentUrls] = useState<string[]>([""]);
   const [description, setDescription] = useState("");
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -81,7 +82,18 @@ const SubmitContentSheet = ({
         return;
       }
       setVideoFile(file);
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(file);
+      setVideoPreviewUrl(previewUrl);
     }
+  };
+
+  const clearVideoFile = () => {
+    if (videoPreviewUrl) {
+      URL.revokeObjectURL(videoPreviewUrl);
+    }
+    setVideoFile(null);
+    setVideoPreviewUrl(null);
   };
 
   const uploadVideo = async (): Promise<string | null> => {
@@ -250,7 +262,7 @@ const SubmitContentSheet = ({
           </div>
 
           {/* Video Upload */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label className="flex items-center gap-2">
               <Video className="w-4 h-4" />
               Upload vidéo (optionnel)
@@ -262,37 +274,56 @@ const SubmitContentSheet = ({
               onChange={handleVideoSelect}
               className="hidden"
             />
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-border rounded-xl p-4 text-center cursor-pointer hover:border-gold/50 transition-colors bg-muted/30"
-            >
-              {videoFile ? (
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-foreground">
-                    <Video className="w-5 h-5 text-gold" />
-                    <span className="text-sm truncate max-w-[200px]">{videoFile.name}</span>
+            
+            {videoFile && videoPreviewUrl ? (
+              <div className="relative rounded-xl overflow-hidden bg-black">
+                {/* Video Preview */}
+                <video
+                  src={videoPreviewUrl}
+                  className="w-full h-40 object-contain"
+                  controls
+                  muted
+                />
+                {/* Overlay with file info */}
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-white">
+                      <Video className="w-4 h-4 text-gold" />
+                      <span className="text-sm truncate max-w-[180px]">{videoFile.name}</span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        clearVideoFile();
+                      }}
+                      className="text-white hover:text-destructive hover:bg-white/10"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
                   </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setVideoFile(null);
-                    }}
-                    className="text-muted-foreground hover:text-destructive"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
                 </div>
-              ) : (
+                {/* File size badge */}
+                <div className="absolute top-2 right-2">
+                  <Badge variant="secondary" className="bg-black/60 text-white text-xs">
+                    {(videoFile.size / (1024 * 1024)).toFixed(1)} Mo
+                  </Badge>
+                </div>
+              </div>
+            ) : (
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="border-2 border-dashed border-border rounded-xl p-6 text-center cursor-pointer hover:border-gold/50 transition-colors bg-muted/30"
+              >
                 <div className="text-muted-foreground">
-                  <Upload className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">Cliquez pour ajouter une vidéo</p>
-                  <p className="text-xs mt-1">Max 100 Mo</p>
+                  <Upload className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm font-medium">Cliquez pour ajouter une vidéo</p>
+                  <p className="text-xs mt-1">MP4, MOV, AVI • Max 100 Mo</p>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           {/* Description */}
