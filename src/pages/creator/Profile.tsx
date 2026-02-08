@@ -497,6 +497,9 @@ const CreatorProfile = () => {
             <PricingTab
               pricing={profileData?.pricing || null}
               onEditPricing={() => setShowPricingSheet(true)}
+              avatarUrl={profileData?.avatar_url}
+              fullName={profileData?.full_name}
+              category={profileData?.category}
             />
           )}
           
