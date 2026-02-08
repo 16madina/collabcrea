@@ -101,8 +101,8 @@ const CreatorMessages = () => {
     return (
       <div className="min-h-screen bg-background flex flex-col">
         {/* Chat Header */}
-        <div className="safe-top px-4 py-3 glass-nav border-b border-border">
-          <div className="flex items-center gap-3">
+        <div className="px-4 pt-[max(env(safe-area-inset-top),0.75rem)] pb-3 glass-nav border-b border-border">
+          <div className="flex items-center gap-3 min-w-0">
             <button
               onClick={() => setSelectedConversation(null)}
               className="touch-target"
@@ -117,9 +117,9 @@ const CreatorMessages = () => {
                 <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-500 border-2 border-background" />
               )}
             </div>
-            <div className="flex-1">
-              <h2 className="font-semibold">{selectedConversation.brand}</h2>
-              <p className="text-xs text-muted-foreground">
+            <div className="flex-1 min-w-0">
+              <h2 className="font-semibold truncate">{selectedConversation.brand}</h2>
+              <p className="text-xs text-muted-foreground truncate">
                 {selectedConversation.online ? "En ligne" : "Hors ligne"}
               </p>
             </div>
@@ -188,7 +188,7 @@ const CreatorMessages = () => {
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
-      <div className="safe-top px-6 py-4">
+      <div className="px-6 pt-[max(env(safe-area-inset-top),1rem)] pb-4">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
