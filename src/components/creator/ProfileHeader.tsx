@@ -121,7 +121,7 @@ const ProfileHeader = ({
         {isAdmin && (
           <button
             onClick={() => navigate("/admin")}
-            className="absolute top-4 right-40 p-2 rounded-full bg-accent/80 backdrop-blur-sm text-accent-foreground hover:bg-accent transition-colors"
+            className="absolute top-[calc(env(safe-area-inset-top)+1rem)] right-40 p-2 rounded-full bg-accent/80 backdrop-blur-sm text-accent-foreground hover:bg-accent transition-colors"
             title="Panneau Admin"
           >
             <ShieldCheck className="w-5 h-5" />
@@ -129,14 +129,14 @@ const ProfileHeader = ({
         )}
 
         {/* Notification bell */}
-        <div className="absolute top-4 right-28">
+        <div className="absolute top-[calc(env(safe-area-inset-top)+1rem)] right-28">
           <NotificationBell />
         </div>
 
         {/* Edit banner button */}
         <button
           onClick={onEditBanner}
-          className="absolute top-4 right-16 p-2 rounded-full bg-background/50 backdrop-blur-sm text-foreground/80 hover:bg-background/70 transition-colors"
+          className="absolute top-[calc(env(safe-area-inset-top)+1rem)] right-16 p-2 rounded-full bg-background/50 backdrop-blur-sm text-foreground/80 hover:bg-background/70 transition-colors"
         >
           <Camera className="w-4 h-4" />
         </button>
@@ -144,7 +144,7 @@ const ProfileHeader = ({
         {/* Settings button */}
         <button
           onClick={onSettingsClick}
-          className="absolute top-4 right-4 p-2 rounded-full bg-background/50 backdrop-blur-sm text-foreground/80 hover:bg-background/70 transition-colors"
+          className="absolute top-[calc(env(safe-area-inset-top)+1rem)] right-4 p-2 rounded-full bg-background/50 backdrop-blur-sm text-foreground/80 hover:bg-background/70 transition-colors"
         >
           <Settings className="w-5 h-5" />
         </button>

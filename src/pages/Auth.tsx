@@ -508,7 +508,7 @@ const Auth = () => {
       <motion.header
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="px-6 pt-2 pb-2 flex items-center gap-4"
+        className="px-6 pt-[max(env(safe-area-inset-top),1rem)] pb-2 flex items-center gap-4"
       >
         <button
           onClick={handleBack}
