@@ -285,6 +285,29 @@ export const useCollaborations = () => {
     }
   };
 
+  const requestRevision = async (collaborationId: string, feedback: string) => {
+    try {
+      const { error } = await supabase
+        .from("collaborations")
+        .update({
+          status: "revision_requested",
+          brand_feedback: feedback,
+          content_submitted_at: null, // Reset so creator can resubmit
+          auto_approve_at: null,
+        })
+        .eq("id", collaborationId);
+
+      if (error) throw error;
+
+      toast.success("Demande de modification envoyée au créateur.");
+      fetchCollaborations();
+    } catch (error) {
+      console.error("Error requesting revision:", error);
+      toast.error("Erreur lors de l'envoi de la demande");
+      throw error;
+    }
+  };
+
   const refundCollaboration = async (collaborationId: string, reason: string) => {
     try {
       // Get collaboration details
@@ -335,6 +358,7 @@ export const useCollaborations = () => {
     simulatePayment,
     submitContent,
     approveContent,
+    requestRevision,
     refundCollaboration,
     refreshCollaborations: fetchCollaborations,
   };

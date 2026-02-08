@@ -12,6 +12,8 @@ import {
   AlertTriangle,
   Wallet,
   Timer,
+  MessageSquare,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -38,6 +40,8 @@ const getStatusBadge = (status: string) => {
       return <Badge variant="secondary" className="bg-blue-500/20 text-blue-500">En cours</Badge>;
     case "content_submitted":
       return <Badge variant="secondary" className="bg-purple-500/20 text-purple-500">Contenu soumis</Badge>;
+    case "revision_requested":
+      return <Badge variant="secondary" className="bg-orange-500/20 text-orange-500">Modification demandée</Badge>;
     case "completed":
       return <Badge variant="secondary" className="bg-green-500/20 text-green-500">Terminé</Badge>;
     case "refunded":
@@ -118,9 +122,9 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
   const [sheetType, setSheetType] = useState<"submit" | "payment" | "review" | null>(null);
   const [activeSubTab, setActiveSubTab] = useState("active");
 
-  // Active = pending_payment, in_progress, content_submitted (excludes refused)
+  // Active = pending_payment, in_progress, content_submitted, revision_requested (excludes refused)
   const activeCollabs = collaborations.filter((c) =>
-    ["pending_payment", "in_progress", "content_submitted"].includes(c.status)
+    ["pending_payment", "in_progress", "content_submitted", "revision_requested"].includes(c.status)
   );
   // Completed = completed, refunded, expired, refused
   const completedCollabs = collaborations.filter((c) =>
@@ -139,7 +143,7 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
         setSheetType("review");
       }
     } else if (collab.creator_id === user.id) {
-      if (collab.status === "in_progress") {
+      if (collab.status === "in_progress" || collab.status === "revision_requested") {
         setSheetType("submit");
       }
     }
@@ -204,6 +208,30 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
             <div className="flex items-center gap-2 text-red-500 text-sm">
               <XCircle className="w-4 h-4" />
               Proposition déclinée
+            </div>
+          )}
+
+          {/* Revision requested - show feedback from brand */}
+          {collab.status === "revision_requested" && isCreator && (
+            <div className="space-y-3">
+              <div className="rounded-xl p-3 bg-orange-500/10 border border-orange-500/20">
+                <div className="flex items-start gap-2">
+                  <MessageSquare className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-orange-500 mb-1">Modification demandée</p>
+                    <p className="text-sm text-foreground">{collab.brand_feedback}</p>
+                  </div>
+                </div>
+              </div>
+              <Button
+                variant="gold"
+                size="sm"
+                className="w-full"
+                onClick={() => handleAction(collab)}
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Resoumettre le contenu
+              </Button>
             </div>
           )}
 

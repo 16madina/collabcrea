@@ -14,13 +14,13 @@ import { Badge } from "@/components/ui/badge";
 import {
   Loader2,
   CheckCircle,
-  XCircle,
   ExternalLink,
   Clock,
   DollarSign,
   Link as LinkIcon,
   Video,
-  Play,
+  MessageSquare,
+  AlertCircle,
 } from "lucide-react";
 import { useCollaborations, Collaboration } from "@/hooks/useCollaborations";
 import { format, parseISO, differenceInDays } from "date-fns";
@@ -68,9 +68,9 @@ const ReviewContentSheet = ({
   collaboration,
   onSuccess,
 }: ReviewContentSheetProps) => {
-  const { approveContent, refundCollaboration } = useCollaborations();
+  const { approveContent, requestRevision } = useCollaborations();
   const [loading, setLoading] = useState(false);
-  const [action, setAction] = useState<"approve" | "reject" | null>(null);
+  const [action, setAction] = useState<"approve" | "revision" | null>(null);
   const [feedback, setFeedback] = useState("");
 
   // Parse content URLs
@@ -104,13 +104,13 @@ const ReviewContentSheet = ({
     }
   };
 
-  const handleReject = async () => {
+  const handleRequestRevision = async () => {
     if (!feedback.trim()) return;
 
     setLoading(true);
-    setAction("reject");
+    setAction("revision");
     try {
-      await refundCollaboration(collaboration.id, feedback);
+      await requestRevision(collaboration.id, feedback);
       onOpenChange(false);
       onSuccess?.();
     } catch (error) {
@@ -273,15 +273,21 @@ const ReviewContentSheet = ({
             </div>
           </div>
 
-          {/* Feedback */}
+          {/* Feedback for Revision */}
           <div className="space-y-2">
-            <Label>Feedback (requis pour refus)</Label>
+            <Label className="flex items-center gap-2">
+              <MessageSquare className="w-4 h-4" />
+              Demander une modification
+            </Label>
             <Textarea
-              placeholder="Laissez un commentaire..."
+              placeholder="Décrivez les modifications souhaitées..."
               value={feedback}
               onChange={(e) => setFeedback(e.target.value)}
-              className="min-h-[80px] bg-muted/30 border-border focus:border-gold"
+              className="min-h-[100px] bg-muted/30 border-border focus:border-gold"
             />
+            <p className="text-xs text-muted-foreground">
+              Le créateur recevra votre commentaire et pourra resoumettre son contenu.
+            </p>
           </div>
         </div>
 
@@ -291,16 +297,16 @@ const ReviewContentSheet = ({
             <Button
               variant="outline"
               size="lg"
-              className="flex-1 border-destructive text-destructive hover:bg-destructive/10"
-              onClick={handleReject}
+              className="flex-1 border-orange-500 text-orange-500 hover:bg-orange-500/10"
+              onClick={handleRequestRevision}
               disabled={loading || !feedback.trim()}
             >
-              {loading && action === "reject" ? (
+              {loading && action === "revision" ? (
                 <Loader2 className="w-5 h-5 mr-2 animate-spin" />
               ) : (
-                <XCircle className="w-5 h-5 mr-2" />
+                <MessageSquare className="w-5 h-5 mr-2" />
               )}
-              Refuser
+              Modifier
             </Button>
             <Button
               variant="gold"
