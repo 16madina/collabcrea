@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Sparkles, Users, HelpCircle, X, Briefcase, DollarSign, Calendar, MapPin, Send, Shield, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -138,6 +138,33 @@ const Landing = () => {
   const { isAdmin } = useAdmin();
   const { user } = useAuth();
   const { allCreators, loading } = useCreators();
+  
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  // Auto-slide pour les créateurs populaires
+  useEffect(() => {
+    if (loading || allCreators.length === 0) return;
+    
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => {
+        const maxSlides = Math.min(allCreators.length, 4);
+        const next = (prev + 1) % maxSlides;
+        
+        if (scrollContainerRef.current) {
+          const cardWidth = 280; // largeur approximative d'une carte
+          scrollContainerRef.current.scrollTo({
+            left: next * cardWidth,
+            behavior: 'smooth'
+          });
+        }
+        
+        return next;
+      });
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [loading, allCreators.length]);
 
   const handleCreatorClick = (creator: Creator & { userId: string }) => {
     setSelectedCreator(creator);
@@ -198,21 +225,12 @@ const Landing = () => {
           animate="animate"
           className="relative z-10 px-6 pt-8 flex flex-col items-center text-center"
         >
-          {/* Logo centré avec glow effect */}
+          {/* Logo centré avec glow statique */}
           <motion.div 
             variants={fadeInUp} 
             className="mb-4 relative"
-            animate={{
-              filter: [
-                "drop-shadow(0 0 20px rgba(212, 175, 55, 0.3))",
-                "drop-shadow(0 0 40px rgba(212, 175, 55, 0.6))",
-                "drop-shadow(0 0 20px rgba(212, 175, 55, 0.3))"
-              ]
-            }}
-            transition={{
-              duration: 3,
-              repeat: Infinity,
-              ease: "easeInOut"
+            style={{
+              filter: "drop-shadow(0 0 30px rgba(212, 175, 55, 0.5))"
             }}
           >
             <img 
@@ -304,17 +322,45 @@ const Landing = () => {
                 <Loader2 className="w-6 h-6 text-gold animate-spin" />
               </div>
             ) : (
-              <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-6 px-6 pb-4">
-                {allCreators.slice(0, 4).map((creator, index) => (
-                  <CreatorCard
-                    key={creator.userId}
-                    creator={creator}
-                    index={index}
-                    variant="horizontal"
-                    onClick={() => handleCreatorClick(creator)}
-                  />
-                ))}
-              </div>
+              <>
+                <div 
+                  ref={scrollContainerRef}
+                  className="flex gap-3 overflow-x-auto no-scrollbar -mx-6 px-6 pb-4 scroll-smooth"
+                >
+                  {allCreators.slice(0, 4).map((creator, index) => (
+                    <CreatorCard
+                      key={creator.userId}
+                      creator={creator}
+                      index={index}
+                      variant="horizontal"
+                      onClick={() => handleCreatorClick(creator)}
+                    />
+                  ))}
+                </div>
+                {/* Indicateurs de slide */}
+                <div className="flex justify-center gap-2 mt-2">
+                  {allCreators.slice(0, 4).map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        setCurrentSlide(index);
+                        if (scrollContainerRef.current) {
+                          const cardWidth = 280;
+                          scrollContainerRef.current.scrollTo({
+                            left: index * cardWidth,
+                            behavior: 'smooth'
+                          });
+                        }
+                      }}
+                      className={`w-2 h-2 rounded-full transition-all ${
+                        currentSlide === index 
+                          ? 'bg-gold w-4' 
+                          : 'bg-muted-foreground/30'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </>
             )}
           </motion.div>
         </motion.div>
