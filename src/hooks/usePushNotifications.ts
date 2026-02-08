@@ -18,6 +18,20 @@ export const usePushNotifications = () => {
 
     setIsSupported(true);
     registerPushNotifications();
+    
+    // Listen for FCM Token from native bridge (iOS sends FCM token via notification)
+    const handleFCMToken = (event: CustomEvent<{ token: string }>) => {
+      console.log('FCM Token received from native:', event.detail.token);
+      if (event.detail.token) {
+        setToken(event.detail.token);
+      }
+    };
+    
+    window.addEventListener('FCMToken' as any, handleFCMToken);
+    
+    return () => {
+      window.removeEventListener('FCMToken' as any, handleFCMToken);
+    };
   }, []);
 
   // Save token to database when user is authenticated
@@ -44,10 +58,19 @@ export const usePushNotifications = () => {
       // Register with FCM
       await PushNotifications.register();
 
-      // Listen for token
+      // Listen for token from Capacitor plugin
+      // Note: On iOS, this returns APNs token. We prefer FCM token from native bridge.
       PushNotifications.addListener('registration', (token: Token) => {
-        console.log('Push registration success, token:', token.value);
-        setToken(token.value);
+        console.log('Capacitor push registration token:', token.value);
+        // Only use this if we haven't received FCM token from native
+        // FCM tokens start with a project-specific prefix followed by :APA91b
+        if (!token.value.includes(':APA91b')) {
+          // This is likely an APNs token on iOS, we'll wait for FCM token
+          console.log('Received APNs token, waiting for FCM token from native bridge...');
+        } else {
+          // This is already an FCM token (Android or properly bridged iOS)
+          setToken(token.value);
+        }
       });
 
       // Handle registration errors
