@@ -46,7 +46,7 @@ const BrandProfileHeader = ({
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="relative h-40 bg-gradient-to-br from-primary/40 via-gold/20 to-accent/30 overflow-hidden"
+        className="relative h-40 pt-[env(safe-area-inset-top)] bg-gradient-to-br from-primary/40 via-gold/20 to-accent/30 overflow-hidden"
       >
         {bannerUrl ? (
           <img 

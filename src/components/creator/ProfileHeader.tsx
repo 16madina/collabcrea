@@ -95,7 +95,7 @@ const ProfileHeader = ({
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="relative h-44 bg-gradient-to-br from-gold/30 via-accent/20 to-primary/30 overflow-hidden"
+        className="relative h-44 pt-[env(safe-area-inset-top)] bg-gradient-to-br from-gold/30 via-accent/20 to-primary/30 overflow-hidden"
       >
         {bannerUrl ? (
           <img 
