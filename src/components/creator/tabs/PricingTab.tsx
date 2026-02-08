@@ -1,7 +1,6 @@
 import { motion } from "framer-motion";
-import { Plus, Mail, MapPin, Sparkles } from "lucide-react";
+import { Plus, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { YouTubeIcon, InstagramIcon, TikTokIcon, SnapchatIcon } from "@/components/ui/social-icons";
 
 interface PricingItem {
   type: string;
@@ -25,10 +24,6 @@ const PricingTab = ({
   onEditPricing, 
   avatarUrl, 
   fullName, 
-  category,
-  socialAccounts = [],
-  email,
-  country
 }: PricingTabProps) => {
   const hasPricing = pricing && pricing.length > 0;
 
@@ -38,48 +33,24 @@ const PricingTab = ({
     if (item.type.toLowerCase().includes("instagram")) platform = "Instagram";
     else if (item.type.toLowerCase().includes("tiktok")) platform = "TikTok";
     else if (item.type.toLowerCase().includes("youtube")) platform = "YouTube";
-    else if (item.type.toLowerCase().includes("snapchat")) platform = "Snapchat";
+    else if (item.type.toLowerCase().includes("snapchat") || item.type.toLowerCase().includes("snap")) platform = "Snap";
     
     if (!acc[platform]) acc[platform] = [];
     acc[platform].push(item);
     return acc;
   }, {} as Record<string, PricingItem[]>) : {};
 
-  const getSocialIcon = (platform: string) => {
-    switch (platform.toLowerCase()) {
-      case "instagram":
-        return <InstagramIcon className="w-6 h-6 p-1" size={14} />;
-      case "tiktok":
-        return <TikTokIcon className="w-6 h-6 p-1" size={14} />;
-      case "youtube":
-        return <YouTubeIcon className="w-6 h-6 p-1" size={14} />;
-      case "snapchat":
-        return <SnapchatIcon className="w-6 h-6 p-1" size={14} />;
-      default:
-        return null;
-    }
-  };
-
   const formatPrice = (price: number) => {
-    return price.toLocaleString("fr-FR");
+    return price.toLocaleString("fr-FR") + "f";
   };
 
   // Get service name without platform prefix
   const getServiceName = (type: string) => {
-    return type.replace(/instagram|tiktok|youtube|snapchat/gi, "").trim() || type;
+    return type.replace(/instagram|tiktok|youtube|snapchat|snap/gi, "").trim() || type;
   };
 
-  // List of common services for empty state
-  const defaultServices = [
-    "Vidéo sponsorisée",
-    "Story Instagram",
-    "Post carrousel",
-    "Unboxing vidéo",
-    "Témoignage produit",
-    "ASMR & Voiceover",
-    "Photos lifestyle",
-    "Contenu UGC"
-  ];
+  // Platform order for display
+  const platformOrder = ["Snap", "TikTok", "Instagram", "YouTube", "Autres"];
 
   return (
     <motion.div
@@ -87,165 +58,106 @@ const PricingTab = ({
       animate={{ opacity: 1, y: 0 }}
       className="p-4"
     >
-      {/* CV Style Rate Card - Clickable to edit */}
+      {/* Flyer Style Rate Card */}
       <motion.div
         onClick={onEditPricing}
         whileHover={{ scale: 1.01 }}
         whileTap={{ scale: 0.99 }}
-        className="relative overflow-hidden rounded-2xl cursor-pointer group shadow-xl"
+        className="relative overflow-hidden rounded-2xl cursor-pointer group shadow-2xl"
+        style={{ minHeight: "500px" }}
       >
+        {/* Background Image */}
+        <div className="absolute inset-0">
+          {avatarUrl ? (
+            <img 
+              src={avatarUrl} 
+              alt="Background" 
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-violet-deep via-background to-violet" />
+          )}
+          {/* Dark overlay for better text readability */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/50 to-black/70" />
+        </div>
+
         {/* Edit overlay on hover */}
-        <div className="absolute inset-0 bg-gold/10 opacity-0 group-hover:opacity-100 transition-opacity z-10 flex items-center justify-center">
+        <div className="absolute inset-0 bg-gold/10 opacity-0 group-hover:opacity-100 transition-opacity z-20 flex items-center justify-center">
           <div className="bg-background/90 backdrop-blur-sm px-4 py-2 rounded-full border border-gold/50 shadow-lg">
             <span className="text-gold font-medium text-sm">✏️ Modifier ma grille</span>
           </div>
         </div>
 
-        <div className="flex">
-          {/* Left Column - Dark */}
-          <div className="w-[42%] bg-gradient-to-b from-[#2a2a2a] to-[#1a1a1a] p-4 flex flex-col">
-            {/* Profile Photo */}
-            <div className="mb-4">
-              <div className="aspect-[3/4] rounded-lg overflow-hidden border-2 border-gold/30 shadow-lg">
-                {avatarUrl ? (
-                  <img 
-                    src={avatarUrl} 
-                    alt={fullName} 
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-gold/40 to-gold/20 flex items-center justify-center">
-                    <span className="text-4xl font-bold text-white/80">
-                      {fullName?.charAt(0) || "C"}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Contact Section */}
-            <div className="mb-5">
-              <h4 className="text-gold font-display font-bold text-sm uppercase tracking-wider mb-3">
-                Contact
-              </h4>
-              {email && (
-                <div className="flex items-center gap-2 mb-2">
-                  <Mail className="w-3.5 h-3.5 text-gold/70" />
-                  <span className="text-white/80 text-[10px] truncate">{email}</span>
-                </div>
-              )}
-              {country && (
-                <div className="flex items-center gap-2 mb-2">
-                  <MapPin className="w-3.5 h-3.5 text-gold/70" />
-                  <span className="text-white/80 text-[10px]">{country}</span>
-                </div>
-              )}
-              
-              {/* Social Handles */}
-              <div className="space-y-1.5 mt-3">
-                {socialAccounts.map((account) => (
-                  <div key={account.platform} className="flex items-center gap-2">
-                    {getSocialIcon(account.platform)}
-                    <span className="text-white/80 text-[10px]">
-                      {account.followers} abonnés
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Services Section */}
-            <div>
-              <h4 className="text-gold font-display font-bold text-sm uppercase tracking-wider mb-3">
-                Services
-              </h4>
-              <ul className="space-y-1.5">
-                {hasPricing ? (
-                  // Show actual services from pricing
-                  [...new Set(pricing.map(p => getServiceName(p.type)))].slice(0, 8).map((service, index) => (
-                    <li key={index} className="flex items-start gap-2">
-                      <span className="text-gold mt-0.5">•</span>
-                      <span className="text-white/80 text-[10px] leading-tight">{service}</span>
-                    </li>
-                  ))
-                ) : (
-                  // Show default services
-                  defaultServices.map((service, index) => (
-                    <li key={index} className="flex items-start gap-2">
-                      <span className="text-gold/50 mt-0.5">•</span>
-                      <span className="text-white/40 text-[10px] leading-tight">{service}</span>
-                    </li>
-                  ))
-                )}
-              </ul>
-            </div>
+        {/* Content */}
+        <div className="relative z-10 p-6 flex flex-col min-h-[500px]">
+          {/* Header */}
+          <div className="text-center mb-6">
+            <h1 className="font-display text-3xl font-bold text-white drop-shadow-lg tracking-wide">
+              {fullName || "MA GRILLE"}
+            </h1>
+            <p className="text-white/80 text-sm mt-1 font-medium tracking-widest uppercase">
+              Rate Card
+            </p>
           </div>
 
-          {/* Right Column - Light */}
-          <div className="w-[58%] bg-gradient-to-b from-[#f5f5f5] to-[#e8e8e8] p-4 flex flex-col">
-            {/* Header */}
-            <div className="text-center mb-4 pb-3 border-b-2 border-foreground/20">
-              <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
-                Créateur UGC
-              </p>
-              <h2 className="font-display font-bold text-lg text-foreground leading-tight">
-                {fullName || "Votre Nom"}
-              </h2>
-              {category && (
-                <p className="text-xs text-gold mt-0.5">{category}</p>
-              )}
-            </div>
-
-            {/* Rate Card Title */}
-            <div className="text-center mb-4">
-              <div className="inline-block px-4 py-1 border-t-2 border-b-2 border-foreground/30">
-                <h3 className="font-display font-bold text-sm uppercase tracking-wider text-foreground">
-                  Rate Card
-                </h3>
-              </div>
-            </div>
-
-            {hasPricing ? (
-              /* Pricing Content */
-              <div className="flex-1 space-y-4 text-center">
-                {Object.entries(groupedPricing).map(([platform, items]) => (
-                  <div key={platform}>
-                    <h4 className="font-bold text-xs text-foreground mb-2">
-                      {platform === "Autres" ? "Contenus" : platform}
-                    </h4>
-                    <div className="space-y-1">
+          {hasPricing ? (
+            /* Pricing Content */
+            <div className="flex-1 space-y-5">
+              {platformOrder.map((platform) => {
+                const items = groupedPricing[platform];
+                if (!items || items.length === 0) return null;
+                
+                return (
+                  <div key={platform} className="space-y-2">
+                    {/* Platform Badge */}
+                    <div className="flex justify-center">
+                      <div className="px-8 py-2 rounded-full bg-[#8B7355]/90 backdrop-blur-sm shadow-lg">
+                        <span className="text-white font-semibold text-sm tracking-wider uppercase">
+                          {platform === "Autres" ? "AUTRES" : platform.toUpperCase()}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {/* Pricing Items */}
+                    <div className="space-y-1 px-4">
                       {items.map((item, index) => (
-                        <div key={index} className="text-[10px] text-foreground/80">
-                          <span>{getServiceName(item.type)}</span>
-                          <span className="mx-1">–</span>
-                          <span className="font-semibold text-gold">
-                            {formatPrice(item.price)} FCFA
+                        <div 
+                          key={index} 
+                          className="flex justify-between items-center py-1"
+                        >
+                          <span className="text-white font-medium text-base drop-shadow-md">
+                            {getServiceName(item.type)}
+                          </span>
+                          <span className="text-white font-bold text-base drop-shadow-md">
+                            {formatPrice(item.price)}
                           </span>
                         </div>
                       ))}
                     </div>
                   </div>
-                ))}
+                );
+              })}
+            </div>
+          ) : (
+            /* Empty State */
+            <div className="flex-1 flex flex-col items-center justify-center text-center py-8">
+              <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center mb-4">
+                <Sparkles className="w-8 h-8 text-white" />
               </div>
-            ) : (
-              /* Empty State */
-              <div className="flex-1 flex flex-col items-center justify-center text-center py-4">
-                <div className="w-12 h-12 rounded-full bg-gold/10 flex items-center justify-center mb-3">
-                  <Sparkles className="w-6 h-6 text-gold/50" />
-                </div>
-                <p className="text-[10px] text-foreground/50 mb-1">
-                  Ajoutez vos tarifs
-                </p>
-                <p className="text-[9px] text-foreground/40 max-w-[120px]">
-                  Cliquez pour définir votre grille tarifaire
-                </p>
-              </div>
-            )}
+              <p className="text-white font-semibold text-lg mb-2">
+                Créez votre grille tarifaire
+              </p>
+              <p className="text-white/70 text-sm max-w-[200px]">
+                Ajoutez vos services et tarifs pour les marques
+              </p>
+            </div>
+          )}
 
-            {/* Footer Note */}
-            <div className="mt-auto pt-3 border-t border-foreground/10">
-              <p className="text-[8px] text-center text-foreground/40 italic">
-                *Prix négociables selon le projet
+          {/* Footer */}
+          <div className="mt-auto pt-4">
+            <div className="text-center">
+              <p className="text-white/60 text-xs italic">
+                *Tarifs négociables selon le projet
               </p>
             </div>
           </div>
@@ -276,7 +188,7 @@ const PricingTab = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
-        className="text-center text-[10px] text-muted-foreground mt-4"
+        className="text-center text-xs text-muted-foreground mt-4"
       >
         💡 Touchez la carte pour modifier vos tarifs
       </motion.p>
