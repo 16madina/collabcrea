@@ -13,6 +13,7 @@ import { useAdmin } from "@/hooks/useAdmin";
 import { useAuth } from "@/hooks/useAuth";
 import heroImage from "@/assets/hero-creator.jpg";
 import logoCollabCrea from "@/assets/logo-collabcrea.png";
+import logoCollabCreaFull from "@/assets/logo-collabcrea-full-new.png";
 import logoKariteDor from "@/assets/logo-karite-dor.jpg";
 import logoTechAfrik from "@/assets/logo-techafrik.jpg";
 import logoNestleAfrique from "@/assets/logo-nestle-afrique.jpg";
@@ -195,29 +196,32 @@ const Landing = () => {
           variants={stagger}
           initial="initial"
           animate="animate"
-          className="relative z-10 px-6 pt-4"
+          className="relative z-10 px-6 pt-8 flex flex-col items-center text-center"
         >
+          {/* Logo centré */}
+          <motion.div variants={fadeInUp} className="mb-4">
+            <img 
+              src={logoCollabCreaFull} 
+              alt="CollabCréa" 
+              className="h-32 md:h-40 w-auto mx-auto drop-shadow-2xl"
+            />
+          </motion.div>
+
+          {/* Slogan */}
+          <motion.h2
+            variants={fadeInUp}
+            className="font-display text-xl md:text-2xl font-bold text-foreground leading-tight mb-4 max-w-sm"
+          >
+            Connectez votre marque aux{" "}
+            <span className="text-gold-gradient">voix qui comptent</span>
+          </motion.h2>
+
           <motion.div variants={fadeInUp} className="mb-2">
             <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass text-gold text-xs font-medium">
               <Sparkles className="w-3 h-3" />
               Marketplace Africain #1
             </span>
           </motion.div>
-
-          <motion.h2
-            variants={fadeInUp}
-            className="font-display text-xl md:text-2xl font-bold text-foreground leading-tight mb-2"
-          >
-            Connectez votre marque aux{" "}
-            <span className="text-gold-gradient">voix qui comptent</span>
-          </motion.h2>
-
-          <motion.p
-            variants={fadeInUp}
-            className="text-muted-foreground text-xs mb-4 max-w-sm"
-          >
-            La plateforme premium de mise en relation entre créateurs africains et marques mondiales.
-          </motion.p>
 
           <motion.div variants={fadeInUp} className="flex items-center justify-center gap-4 mb-4 flex-wrap">
             <Link to="/auth?role=creator">
