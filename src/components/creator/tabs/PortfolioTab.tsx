@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Image, Play, FolderOpen } from "lucide-react";
 import { usePortfolio, PortfolioItem } from "@/hooks/usePortfolio";
+import PortfolioMediaViewer from "@/components/creator/PortfolioMediaViewer";
 
 interface PortfolioTabProps {
   userId: string;
@@ -8,6 +10,13 @@ interface PortfolioTabProps {
 
 const PortfolioTab = ({ userId }: PortfolioTabProps) => {
   const { items, loading } = usePortfolio(userId);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  const handleItemClick = (index: number) => {
+    setSelectedIndex(index);
+    setViewerOpen(true);
+  };
 
   if (loading) {
     return (
@@ -43,50 +52,68 @@ const PortfolioTab = ({ userId }: PortfolioTabProps) => {
   const videos = items.filter((item) => item.media_type === "video");
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Stats */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex gap-4"
-      >
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50">
-          <Image className="w-4 h-4 text-gold" />
-          <span className="text-sm font-medium">{images.length} photos</span>
-        </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50">
-          <Play className="w-4 h-4 text-gold" />
-          <span className="text-sm font-medium">{videos.length} vidéos</span>
-        </div>
-      </motion.div>
+    <>
+      <div className="p-6 space-y-6">
+        {/* Stats */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex gap-4"
+        >
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50">
+            <Image className="w-4 h-4 text-gold" />
+            <span className="text-sm font-medium">{images.length} photos</span>
+          </div>
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50">
+            <Play className="w-4 h-4 text-gold" />
+            <span className="text-sm font-medium">{videos.length} vidéos</span>
+          </div>
+        </motion.div>
 
-      {/* Grid */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.1 }}
-        className="grid grid-cols-2 gap-3"
-      >
-        {items.map((item, index) => (
-          <PortfolioItemCard key={item.id} item={item} index={index} />
-        ))}
-      </motion.div>
-    </div>
+        {/* Grid */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.1 }}
+          className="grid grid-cols-2 gap-3"
+        >
+          {items.map((item, index) => (
+            <PortfolioItemCard 
+              key={item.id} 
+              item={item} 
+              index={index} 
+              onClick={() => handleItemClick(index)}
+            />
+          ))}
+        </motion.div>
+      </div>
+
+      {/* Media Viewer */}
+      <PortfolioMediaViewer
+        items={items}
+        initialIndex={selectedIndex}
+        open={viewerOpen}
+        onOpenChange={setViewerOpen}
+      />
+    </>
   );
 };
 
 interface PortfolioItemCardProps {
   item: PortfolioItem;
   index: number;
+  onClick: () => void;
 }
 
-const PortfolioItemCard = ({ item, index }: PortfolioItemCardProps) => {
+const PortfolioItemCard = ({ item, index, onClick }: PortfolioItemCardProps) => {
   return (
-    <motion.div
+    <motion.button
+      type="button"
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay: 0.05 * index }}
-      className="relative aspect-square rounded-xl overflow-hidden bg-muted/30 group cursor-pointer"
+      onClick={onClick}
+      className="relative aspect-square rounded-xl overflow-hidden bg-muted/30 group cursor-pointer text-left w-full focus:outline-none focus:ring-2 focus:ring-gold focus:ring-offset-2 focus:ring-offset-background"
     >
       {item.media_type === "image" ? (
         <img
@@ -129,7 +156,7 @@ const PortfolioItemCard = ({ item, index }: PortfolioItemCardProps) => {
           <p className="text-xs text-muted-foreground">{item.platform}</p>
         )}
       </div>
-    </motion.div>
+    </motion.button>
   );
 };
 
