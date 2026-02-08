@@ -240,25 +240,38 @@ export const useCollaborations = () => {
       if (updateError) throw updateError;
 
       // Get or create creator wallet
-      let { data: wallet } = await supabase
+      let { data: wallet, error: walletError } = await supabase
         .from("wallets")
         .select("*")
         .eq("user_id", collab.creator_id)
         .maybeSingle();
 
+      if (walletError) {
+        console.error("Error fetching wallet:", walletError);
+      }
+
       if (!wallet) {
-        const { data: newWallet } = await supabase
+        const { data: newWallet, error: createWalletError } = await supabase
           .from("wallets")
           .insert({ user_id: collab.creator_id })
           .select()
           .single();
+        
+        if (createWalletError) {
+          console.error("Error creating wallet:", createWalletError);
+          throw createWalletError;
+        }
         wallet = newWallet;
       }
 
-      // Create release transaction
-      await supabase.from("transactions").insert({
+      if (!wallet) {
+        throw new Error("Impossible de créer ou récupérer le portefeuille");
+      }
+
+      // Create release transaction for creator
+      const { error: txError } = await supabase.from("transactions").insert({
         collaboration_id: collaborationId,
-        wallet_id: wallet?.id,
+        wallet_id: wallet.id,
         user_id: collab.creator_id,
         type: "release",
         status: "completed",
@@ -268,13 +281,25 @@ export const useCollaborations = () => {
         description: `Paiement pour collaboration`,
       });
 
+      if (txError) {
+        console.error("Error creating release transaction:", txError);
+        throw txError;
+      }
+
       // Update wallet balance
-      await supabase
+      const newBalance = (wallet.balance || 0) + collab.creator_amount;
+      const { error: updateWalletError } = await supabase
         .from("wallets")
         .update({
-          balance: (wallet?.balance || 0) + collab.creator_amount,
+          balance: newBalance,
+          updated_at: new Date().toISOString(),
         })
-        .eq("id", wallet?.id);
+        .eq("id", wallet.id);
+
+      if (updateWalletError) {
+        console.error("Error updating wallet balance:", updateWalletError);
+        throw updateWalletError;
+      }
 
       toast.success("Contenu approuvé ! Le paiement a été libéré au créateur.");
       fetchCollaborations();
