@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Search, Megaphone, User, Briefcase, Handshake, MessageCircle } from "lucide-react";
+import { Home, Search, Briefcase, Handshake, User } from "lucide-react";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -11,56 +11,43 @@ interface NavItem {
   showBadge?: boolean;
 }
 
-interface BottomNavProps {
-  userRole?: "creator" | "brand";
-}
-
-const BottomNav = ({ userRole: propUserRole }: BottomNavProps) => {
+const BottomNav = () => {
   const location = useLocation();
   const unreadMessages = useUnreadMessages();
-  const { user, role: authRole } = useAuth();
+  const { user, role } = useAuth();
 
-  // Determine the effective role: prop > auth > null
-  const effectiveRole = propUserRole || authRole;
   const isAuthenticated = !!user;
-  const basePath = effectiveRole === "brand" ? "/brand" : "/creator";
+  const basePath = role === "brand" ? "/brand" : "/creator";
 
-  // Guest navigation (not authenticated)
-  const guestNavItems: NavItem[] = [
-    { icon: Home, label: "Accueil", path: "/" },
-    { icon: Search, label: "Explorer", path: "/explore" },
-    { icon: Briefcase, label: "Offres", path: "/auth?tab=offers" },
-    { icon: MessageCircle, label: "Messages", path: "/auth" },
-    { icon: User, label: "Connexion", path: "/auth" },
+  // Same 5 tabs for everyone - routes adapt based on auth state
+  const navItems: NavItem[] = [
+    { 
+      icon: Home, 
+      label: "Accueil", 
+      path: "/" 
+    },
+    { 
+      icon: Search, 
+      label: "Créateurs", 
+      path: isAuthenticated && role === "brand" ? "/brand/marketplace" : "/explore" 
+    },
+    { 
+      icon: Briefcase, 
+      label: "Offres", 
+      path: isAuthenticated ? `${basePath}/offers` : "/auth?tab=offers"
+    },
+    { 
+      icon: Handshake, 
+      label: "Collabs", 
+      path: isAuthenticated ? `${basePath}/collabs` : "/auth",
+      showBadge: isAuthenticated
+    },
+    { 
+      icon: User, 
+      label: isAuthenticated ? "Profil" : "Connexion", 
+      path: isAuthenticated ? `${basePath}/profile` : "/auth"
+    },
   ];
-
-  // Creator navigation (authenticated as creator)
-  const creatorNavItems: NavItem[] = [
-    { icon: Home, label: "Accueil", path: "/" },
-    { icon: Search, label: "Explorer", path: "/explore" },
-    { icon: Briefcase, label: "Offres", path: "/creator/offers" },
-    { icon: Handshake, label: "Collabs", path: "/creator/collabs", showBadge: true },
-    { icon: User, label: "Profil", path: "/creator/profile" },
-  ];
-
-  // Brand navigation (authenticated as brand)
-  const brandNavItems: NavItem[] = [
-    { icon: Home, label: "Accueil", path: "/" },
-    { icon: Search, label: "Créateurs", path: "/brand/marketplace" },
-    { icon: Megaphone, label: "Offres", path: "/brand/offers" },
-    { icon: Handshake, label: "Collabs", path: "/brand/collabs", showBadge: true },
-    { icon: User, label: "Profil", path: "/brand/profile" },
-  ];
-
-  // Select nav items based on authentication state and role
-  let navItems: NavItem[];
-  if (!isAuthenticated) {
-    navItems = guestNavItems;
-  } else if (effectiveRole === "brand") {
-    navItems = brandNavItems;
-  } else {
-    navItems = creatorNavItems;
-  }
 
   return (
     <motion.nav
@@ -71,13 +58,13 @@ const BottomNav = ({ userRole: propUserRole }: BottomNavProps) => {
     >
       <div className="glass-nav safe-bottom">
         <div className="flex items-center justify-around px-2 py-2">
-          {navItems.map((item) => {
+          {navItems.map((item, index) => {
             const isActive = location.pathname === item.path || 
               (item.path !== "/" && location.pathname.startsWith(item.path.split("?")[0]));
             const Icon = item.icon;
 
             return (
-              <Link key={item.path} to={item.path}>
+              <Link key={`${item.label}-${index}`} to={item.path}>
                 <motion.div
                   whileTap={{ scale: 0.9 }}
                   className="flex flex-col items-center touch-target px-3 relative"

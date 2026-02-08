@@ -326,7 +326,7 @@ const CollaborationsPage = () => {
         />
       )}
 
-      <BottomNav userRole={userRole || "creator"} />
+      <BottomNav />
     </div>
   );
 };

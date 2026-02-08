@@ -262,7 +262,7 @@ const CreatorPortfolio = () => {
         )}
       </AnimatePresence>
 
-      <BottomNav userRole="creator" />
+      <BottomNav />
     </div>
   );
 };

@@ -176,7 +176,7 @@ const BrandDashboard = () => {
         </motion.div>
       </div>
 
-      <BottomNav userRole="brand" />
+      <BottomNav />
     </div>
   );
 };

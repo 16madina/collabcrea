@@ -479,7 +479,7 @@ const BrandProfile = () => {
         </motion.div>
       </AnimatePresence>
 
-      <BottomNav userRole="brand" />
+      <BottomNav />
     </div>
   );
 };

@@ -354,7 +354,7 @@ const Messages = () => {
               )}
             </div>
 
-            <BottomNav userRole={role || "creator"} />
+            <BottomNav />
           </motion.div>
         ) : (
           // Chat View

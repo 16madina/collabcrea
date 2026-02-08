@@ -256,7 +256,7 @@ const CreatorWallet = () => {
         }}
       />
 
-      <BottomNav userRole="creator" />
+      <BottomNav />
     </div>
   );
 };

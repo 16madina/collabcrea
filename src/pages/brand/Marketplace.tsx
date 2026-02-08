@@ -282,7 +282,7 @@ const BrandMarketplace = () => {
         }}
       />
 
-      <BottomNav userRole="brand" />
+      <BottomNav />
     </div>
   );
 };

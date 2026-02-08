@@ -416,7 +416,7 @@ const CreatorOffers = () => {
         />
       )}
 
-      <BottomNav userRole="creator" />
+      <BottomNav />
     </div>
   );
 };

@@ -257,7 +257,7 @@ const BrandOffers = () => {
         </AnimatePresence>
       </div>
 
-      <BottomNav userRole="brand" />
+      <BottomNav />
     </div>
   );
 };
