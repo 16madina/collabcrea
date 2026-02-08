@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Sparkles, Users, HelpCircle, X, Briefcase, DollarSign, Calendar, MapPin, Send, Shield, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -138,33 +138,6 @@ const Landing = () => {
   const { isAdmin } = useAdmin();
   const { user } = useAuth();
   const { allCreators, loading } = useCreators();
-  
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [currentSlide, setCurrentSlide] = useState(0);
-
-  // Auto-slide pour les créateurs populaires
-  useEffect(() => {
-    if (loading || allCreators.length === 0) return;
-    
-    const interval = setInterval(() => {
-      setCurrentSlide((prev) => {
-        const maxSlides = Math.min(allCreators.length, 4);
-        const next = (prev + 1) % maxSlides;
-        
-        if (scrollContainerRef.current) {
-          const cardWidth = 280; // largeur approximative d'une carte
-          scrollContainerRef.current.scrollTo({
-            left: next * cardWidth,
-            behavior: 'smooth'
-          });
-        }
-        
-        return next;
-      });
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, [loading, allCreators.length]);
 
   const handleCreatorClick = (creator: Creator & { userId: string }) => {
     setSelectedCreator(creator);
@@ -256,65 +229,65 @@ const Landing = () => {
             </span>
           </motion.div>
 
-          {/* Boutons avec stats en dessous */}
-          <motion.div variants={fadeInUp} className="flex items-stretch justify-center gap-3 mb-6 w-full max-w-md">
+          {/* Boutons avec stats en dessous - Optimisé mobile */}
+          <motion.div variants={fadeInUp} className="flex items-stretch justify-center gap-2 mb-4 w-full px-2">
             {/* Je suis Créateur + stat */}
-            <div className="flex-1 flex flex-col items-center">
+            <div className="flex-1 flex flex-col items-center min-w-0">
               <Link to="/auth?role=creator" className="w-full">
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-gold hover:text-gold/80 text-sm w-full"
+                  className="text-gold hover:text-gold/80 text-xs sm:text-sm w-full px-1 sm:px-3 h-auto py-2"
                 >
-                  <Users className="w-4 h-4 mr-2" />
-                  Je suis Créateur
+                  <Users className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 flex-shrink-0" />
+                  <span className="truncate">Créateur</span>
                 </Button>
               </Link>
-              <div className="glass rounded-lg px-4 py-2 text-center mt-2 w-full">
-                <p className="text-lg font-bold text-gold-gradient">10K+</p>
-                <p className="text-xs text-muted-foreground">Créateurs</p>
+              <div className="glass rounded-lg px-2 sm:px-3 py-1.5 text-center mt-1.5 w-full">
+                <p className="text-base sm:text-lg font-bold text-gold-gradient">10K+</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">Créateurs</p>
               </div>
             </div>
 
             {/* Je suis une Marque + stat */}
-            <div className="flex-1 flex flex-col items-center">
+            <div className="flex-1 flex flex-col items-center min-w-0">
               <Link to="/auth?role=brand" className="w-full">
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-gold hover:text-gold/80 text-sm w-full"
+                  className="text-gold hover:text-gold/80 text-xs sm:text-sm w-full px-1 sm:px-3 h-auto py-2"
                 >
-                  <Briefcase className="w-4 h-4 mr-2" />
-                  Je suis une Marque
+                  <Briefcase className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 flex-shrink-0" />
+                  <span className="truncate">Marque</span>
                 </Button>
               </Link>
-              <div className="glass rounded-lg px-4 py-2 text-center mt-2 w-full">
-                <p className="text-lg font-bold text-gold-gradient">500+</p>
-                <p className="text-xs text-muted-foreground">Marques</p>
+              <div className="glass rounded-lg px-2 sm:px-3 py-1.5 text-center mt-1.5 w-full">
+                <p className="text-base sm:text-lg font-bold text-gold-gradient">500+</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">Marques</p>
               </div>
             </div>
 
             {/* Comment ça marche + stat */}
-            <div className="flex-1 flex flex-col items-center">
+            <div className="flex-1 flex flex-col items-center min-w-0">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowHowItWorks(true)}
-                className="text-gold hover:text-gold/80 text-sm w-full"
+                className="text-gold hover:text-gold/80 text-xs sm:text-sm w-full px-1 sm:px-3 h-auto py-2"
               >
-                <HelpCircle className="w-4 h-4 mr-2" />
-                Comment ça marche ?
+                <HelpCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 flex-shrink-0" />
+                <span className="truncate">Comment ?</span>
               </Button>
-              <div className="glass rounded-lg px-4 py-2 text-center mt-2 w-full">
-                <p className="text-lg font-bold text-gold-gradient">54+</p>
-                <p className="text-xs text-muted-foreground">Pays</p>
+              <div className="glass rounded-lg px-2 sm:px-3 py-1.5 text-center mt-1.5 w-full">
+                <p className="text-base sm:text-lg font-bold text-gold-gradient">54+</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">Pays</p>
               </div>
             </div>
           </motion.div>
 
-          {/* Créateurs populaires */}
-          <motion.div variants={fadeInUp} className="mt-8">
-            <h3 className="font-display text-lg font-bold mb-4">
+          {/* Créateurs populaires - Défilement infini */}
+          <motion.div variants={fadeInUp} className="mt-6 w-full">
+            <h3 className="font-display text-base font-bold mb-3 text-center">
               Créateurs <span className="text-gold-gradient">populaires</span>
             </h3>
             {loading ? (
@@ -322,45 +295,32 @@ const Landing = () => {
                 <Loader2 className="w-6 h-6 text-gold animate-spin" />
               </div>
             ) : (
-              <>
-                <div 
-                  ref={scrollContainerRef}
-                  className="flex gap-3 overflow-x-auto no-scrollbar -mx-6 px-6 pb-4 scroll-smooth"
-                >
+              <div className="overflow-hidden -mx-6">
+                <div className="flex animate-marquee gap-3 w-max">
+                  {/* Première série de cartes */}
                   {allCreators.slice(0, 4).map((creator, index) => (
-                    <CreatorCard
-                      key={creator.userId}
-                      creator={creator}
-                      index={index}
-                      variant="horizontal"
-                      onClick={() => handleCreatorClick(creator)}
-                    />
+                    <div key={`first-${creator.userId}`} className="flex-shrink-0">
+                      <CreatorCard
+                        creator={creator}
+                        index={index}
+                        variant="horizontal"
+                        onClick={() => handleCreatorClick(creator)}
+                      />
+                    </div>
+                  ))}
+                  {/* Duplication pour effet infini */}
+                  {allCreators.slice(0, 4).map((creator, index) => (
+                    <div key={`second-${creator.userId}`} className="flex-shrink-0">
+                      <CreatorCard
+                        creator={creator}
+                        index={index}
+                        variant="horizontal"
+                        onClick={() => handleCreatorClick(creator)}
+                      />
+                    </div>
                   ))}
                 </div>
-                {/* Indicateurs de slide */}
-                <div className="flex justify-center gap-2 mt-2">
-                  {allCreators.slice(0, 4).map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => {
-                        setCurrentSlide(index);
-                        if (scrollContainerRef.current) {
-                          const cardWidth = 280;
-                          scrollContainerRef.current.scrollTo({
-                            left: index * cardWidth,
-                            behavior: 'smooth'
-                          });
-                        }
-                      }}
-                      className={`w-2 h-2 rounded-full transition-all ${
-                        currentSlide === index 
-                          ? 'bg-gold w-4' 
-                          : 'bg-muted-foreground/30'
-                      }`}
-                    />
-                  ))}
-                </div>
-              </>
+              </div>
             )}
           </motion.div>
         </motion.div>
