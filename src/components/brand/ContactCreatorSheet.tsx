@@ -100,28 +100,22 @@ const ContactCreatorSheet = ({
       // Get offer details for conversation subject
       const selectedOffer = offers.find(o => o.id === selectedOfferId);
 
-      // Check if conversation already exists for this offer + creator
-      const { data: existingConv } = await supabase
-        .from("conversations")
-        .select("id")
+      // Check if there's an active collaboration for this offer + creator
+      // Allow new proposal only if no active collaboration exists
+      const { data: existingCollab } = await supabase
+        .from("collaborations")
+        .select("id, status")
         .eq("offer_id", selectedOfferId)
-        .eq("created_by", user.id);
+        .eq("creator_id", creatorId)
+        .eq("brand_id", user.id)
+        .not("status", "in", '("completed","rejected")')
+        .maybeSingle();
 
-      if (existingConv && existingConv.length > 0) {
-        // Check if creator is participant
-        const { data: creatorParticipant } = await supabase
-          .from("conversation_participants")
-          .select("id")
-          .eq("conversation_id", existingConv[0].id)
-          .eq("user_id", creatorId)
-          .maybeSingle();
-
-        if (creatorParticipant) {
-          toast.info("Vous avez déjà proposé cette offre à ce créateur");
-          onOpenChange(false);
-          navigate("/brand/collabs?tab=messages");
-          return;
-        }
+      if (existingCollab) {
+        toast.info("Une collaboration est déjà en cours avec ce créateur pour cette offre");
+        onOpenChange(false);
+        navigate("/brand/collabs?tab=messages");
+        return;
       }
 
       // Create conversation
