@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Clock,
@@ -11,6 +11,7 @@ import {
   DollarSign,
   AlertTriangle,
   Wallet,
+  Timer,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -21,7 +22,7 @@ import { useAuth } from "@/hooks/useAuth";
 import SubmitContentSheet from "@/components/collaboration/SubmitContentSheet";
 import PaymentSheet from "@/components/collaboration/PaymentSheet";
 import ReviewContentSheet from "@/components/collaboration/ReviewContentSheet";
-import { format, parseISO, differenceInDays, isPast } from "date-fns";
+import { format, parseISO, differenceInDays, differenceInHours, differenceInMinutes, isPast } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
 
@@ -43,9 +44,66 @@ const getStatusBadge = (status: string) => {
       return <Badge variant="secondary" className="bg-red-500/20 text-red-500">Remboursé</Badge>;
     case "expired":
       return <Badge variant="secondary" className="bg-gray-500/20 text-gray-500">Expiré</Badge>;
+    case "refused":
+      return <Badge variant="secondary" className="bg-red-500/20 text-red-500 border border-red-500/30">Refusé</Badge>;
     default:
       return <Badge variant="secondary">{status}</Badge>;
   }
+};
+
+// Countdown component for real-time updates
+const CountdownTimer = ({ deadline }: { deadline: string }) => {
+  const [timeLeft, setTimeLeft] = useState("");
+  const [urgency, setUrgency] = useState<"normal" | "warning" | "danger">("normal");
+
+  useEffect(() => {
+    const updateCountdown = () => {
+      const deadlineDate = parseISO(deadline);
+      const now = new Date();
+      
+      if (isPast(deadlineDate)) {
+        setTimeLeft("Expiré");
+        setUrgency("danger");
+        return;
+      }
+
+      const days = differenceInDays(deadlineDate, now);
+      const hours = differenceInHours(deadlineDate, now) % 24;
+      const minutes = differenceInMinutes(deadlineDate, now) % 60;
+
+      if (days > 3) {
+        setTimeLeft(`${days}j ${hours}h`);
+        setUrgency("normal");
+      } else if (days > 0) {
+        setTimeLeft(`${days}j ${hours}h ${minutes}m`);
+        setUrgency("warning");
+      } else if (hours > 0) {
+        setTimeLeft(`${hours}h ${minutes}m`);
+        setUrgency("danger");
+      } else {
+        setTimeLeft(`${minutes}m`);
+        setUrgency("danger");
+      }
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 60000); // Update every minute
+
+    return () => clearInterval(interval);
+  }, [deadline]);
+
+  const colorClasses = {
+    normal: "text-blue-500 bg-blue-500/10",
+    warning: "text-orange-500 bg-orange-500/10",
+    danger: "text-red-500 bg-red-500/10",
+  };
+
+  return (
+    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium ${colorClasses[urgency]}`}>
+      <Timer className="w-3.5 h-3.5" />
+      <span>{timeLeft}</span>
+    </div>
+  );
 };
 
 interface CollaborationsTabProps {
@@ -60,11 +118,13 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
   const [sheetType, setSheetType] = useState<"submit" | "payment" | "review" | null>(null);
   const [activeSubTab, setActiveSubTab] = useState("active");
 
+  // Active = pending_payment, in_progress, content_submitted (excludes refused)
   const activeCollabs = collaborations.filter((c) =>
     ["pending_payment", "in_progress", "content_submitted"].includes(c.status)
   );
+  // Completed = completed, refunded, expired, refused
   const completedCollabs = collaborations.filter((c) =>
-    ["completed", "refunded", "expired"].includes(c.status)
+    ["completed", "refunded", "expired", "refused"].includes(c.status)
   );
 
   const handleAction = (collab: Collaboration) => {
@@ -116,38 +176,34 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
                 {formatCurrency(isCreator ? collab.creator_amount : collab.agreed_amount)}
               </span>
             </div>
-            <div
-              className={`flex items-center gap-1 ${
-                isExpired
-                  ? "text-destructive"
-                  : daysLeft <= 3
-                  ? "text-orange-500"
-                  : "text-muted-foreground"
-              }`}
-            >
+            <div className="flex items-center gap-1 text-muted-foreground">
               <Calendar className="w-4 h-4" />
               <span>{format(deadline, "dd MMM yyyy", { locale: fr })}</span>
             </div>
           </div>
 
-          {collab.status === "in_progress" && isCreator && (
-            <div
-              className={`rounded-lg p-2 text-xs ${
-                isExpired
-                  ? "bg-destructive/10 text-destructive"
-                  : daysLeft <= 3
-                  ? "bg-orange-500/10 text-orange-500"
-                  : "bg-blue-500/10 text-blue-500"
-              }`}
-            >
-              {isExpired ? (
-                <span className="flex items-center gap-1">
-                  <AlertTriangle className="w-3 h-3" />
-                  Deadline dépassée !
-                </span>
-              ) : (
-                `${daysLeft} jour${daysLeft > 1 ? "s" : ""} pour livrer`
-              )}
+          {/* Real-time countdown for active collaborations */}
+          {collab.status === "in_progress" && !isExpired && (
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">Temps restant :</span>
+              <CountdownTimer deadline={collab.deadline} />
+            </div>
+          )}
+
+          {collab.status === "in_progress" && isCreator && isExpired && (
+            <div className="rounded-lg p-2 text-xs bg-destructive/10 text-destructive">
+              <span className="flex items-center gap-1">
+                <AlertTriangle className="w-3 h-3" />
+                Deadline dépassée !
+              </span>
+            </div>
+          )}
+
+          {/* Refused status message */}
+          {collab.status === "refused" && (
+            <div className="flex items-center gap-2 text-red-500 text-sm">
+              <XCircle className="w-4 h-4" />
+              Proposition déclinée
             </div>
           )}
 
