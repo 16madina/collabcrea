@@ -47,17 +47,27 @@ serve(async (req) => {
     // Get collaboration details
     const { data: collab, error: collabError } = await supabaseClient
       .from("collaborations")
-      .select(`
-        *,
-        offer:offers(title, logo_url),
-        creator:profiles!collaborations_creator_id_fkey(full_name)
-      `)
+      .select("*")
       .eq("id", collaborationId)
       .single();
 
     if (collabError || !collab) {
       throw new Error(`Collaboration not found: ${collabError?.message}`);
     }
+
+    // Get offer details
+    const { data: offer } = await supabaseClient
+      .from("offers")
+      .select("title, logo_url")
+      .eq("id", collab.offer_id)
+      .single();
+
+    // Get creator name
+    const { data: creator } = await supabaseClient
+      .from("profiles")
+      .select("full_name")
+      .eq("user_id", collab.creator_id)
+      .single();
     logStep("Collaboration found", { amount: collab.agreed_amount, status: collab.status });
 
     // Verify the user is the brand owner
@@ -81,8 +91,8 @@ serve(async (req) => {
     }
 
     // Create line item description
-    const creatorName = collab.creator?.full_name || "Créateur";
-    const offerTitle = collab.offer?.title || "Collaboration";
+    const creatorName = creator?.full_name || "Créateur";
+    const offerTitle = offer?.title || "Collaboration";
     const description = `${offerTitle} - Créateur: ${creatorName}`;
 
     // Amount in centimes (FCFA uses centimes for Stripe)
@@ -103,7 +113,7 @@ serve(async (req) => {
             product_data: {
               name: offerTitle,
               description: description,
-              images: collab.offer?.logo_url ? [collab.offer.logo_url] : [],
+              images: offer?.logo_url ? [offer.logo_url] : [],
             },
             unit_amount: amountInCentimes,
           },
