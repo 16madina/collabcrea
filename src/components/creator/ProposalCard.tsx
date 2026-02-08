@@ -60,22 +60,19 @@ const ProposalCard = ({ offerId, conversationId, onAccept, onRefuse }: ProposalC
         if (offerError) throw offerError;
         setOffer(offerData);
 
-        // Check if there's already a collaboration for this offer and conversation
-        const { data: user } = await supabase.auth.getUser();
-        if (user.user) {
-          const { data: existingCollab } = await supabase
-            .from("collaborations")
-            .select("id, status")
-            .eq("offer_id", offerId)
-            .eq("creator_id", user.user.id)
-            .maybeSingle();
+        // Check if there's already a collaboration for THIS SPECIFIC conversation
+        // This allows multiple proposals for the same offer if previous ones are completed/refused
+        const { data: existingCollab } = await supabase
+          .from("collaborations")
+          .select("id, status")
+          .eq("conversation_id", conversationId)
+          .maybeSingle();
 
-          if (existingCollab) {
-            if (existingCollab.status === "refused") {
-              setProposalStatus("refused");
-            } else {
-              setProposalStatus("accepted");
-            }
+        if (existingCollab) {
+          if (existingCollab.status === "refused") {
+            setProposalStatus("refused");
+          } else {
+            setProposalStatus("accepted");
           }
         }
       } catch (err) {
