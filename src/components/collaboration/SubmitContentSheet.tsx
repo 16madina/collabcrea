@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   Sheet,
   SheetContent,
@@ -18,10 +18,15 @@ import {
   Calendar,
   Clock,
   AlertTriangle,
+  Plus,
+  X,
+  Video,
 } from "lucide-react";
 import { useCollaborations, Collaboration } from "@/hooks/useCollaborations";
 import { format, parseISO, differenceInDays, isPast } from "date-fns";
 import { fr } from "date-fns/locale";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface SubmitContentSheetProps {
   open: boolean;
@@ -38,19 +43,97 @@ const SubmitContentSheet = ({
 }: SubmitContentSheetProps) => {
   const { submitContent } = useCollaborations();
   const [loading, setLoading] = useState(false);
-  const [contentUrl, setContentUrl] = useState("");
+  const [contentUrls, setContentUrls] = useState<string[]>([""]);
   const [description, setDescription] = useState("");
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const MAX_LINKS = 4;
   const deadline = parseISO(collaboration.deadline);
   const daysLeft = differenceInDays(deadline, new Date());
   const isExpired = isPast(deadline);
 
+  const addLinkField = () => {
+    if (contentUrls.length < MAX_LINKS) {
+      setContentUrls([...contentUrls, ""]);
+    }
+  };
+
+  const removeLinkField = (index: number) => {
+    if (contentUrls.length > 1) {
+      setContentUrls(contentUrls.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateLink = (index: number, value: string) => {
+    const newUrls = [...contentUrls];
+    newUrls[index] = value;
+    setContentUrls(newUrls);
+  };
+
+  const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Check file size (max 100MB)
+      if (file.size > 100 * 1024 * 1024) {
+        toast.error("La vidéo ne doit pas dépasser 100 Mo");
+        return;
+      }
+      setVideoFile(file);
+    }
+  };
+
+  const uploadVideo = async (): Promise<string | null> => {
+    if (!videoFile) return null;
+
+    setUploadingVideo(true);
+    try {
+      const fileExt = videoFile.name.split(".").pop();
+      const fileName = `${collaboration.id}/${Date.now()}.${fileExt}`;
+
+      const { data, error } = await supabase.storage
+        .from("collaboration-content")
+        .upload(fileName, videoFile);
+
+      if (error) throw error;
+
+      const { data: urlData } = supabase.storage
+        .from("collaboration-content")
+        .getPublicUrl(fileName);
+
+      return urlData.publicUrl;
+    } catch (error) {
+      console.error("Error uploading video:", error);
+      toast.error("Erreur lors de l'upload de la vidéo");
+      return null;
+    } finally {
+      setUploadingVideo(false);
+    }
+  };
+
+  const hasValidUrls = contentUrls.some((url) => url.trim() !== "");
+
   const handleSubmit = async () => {
-    if (!contentUrl.trim()) return;
+    if (!hasValidUrls && !videoFile) return;
 
     setLoading(true);
     try {
-      await submitContent(collaboration.id, contentUrl, description);
+      // Upload video if present
+      const videoUrl = await uploadVideo();
+
+      // Filter out empty URLs and combine with video URL
+      const validUrls = contentUrls.filter((url) => url.trim() !== "");
+      if (videoUrl) {
+        validUrls.push(videoUrl);
+      }
+
+      // Store as JSON string for multiple URLs
+      const contentUrlString = validUrls.length === 1 
+        ? validUrls[0] 
+        : JSON.stringify(validUrls);
+
+      await submitContent(collaboration.id, contentUrlString, description);
       onOpenChange(false);
       onSuccess?.();
     } catch (error) {
@@ -118,21 +201,98 @@ const SubmitContentSheet = ({
             </div>
           </div>
 
-          {/* Content URL */}
+          {/* Content URLs */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label className="flex items-center gap-2">
+                <LinkIcon className="w-4 h-4" />
+                Liens vers le contenu *
+              </Label>
+              {contentUrls.length < MAX_LINKS && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={addLinkField}
+                  className="text-gold hover:text-gold/80 h-8 px-2"
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  Ajouter un lien
+                </Button>
+              )}
+            </div>
+            
+            {contentUrls.map((url, index) => (
+              <div key={index} className="flex gap-2">
+                <Input
+                  placeholder="https://www.tiktok.com/@username/video/..."
+                  value={url}
+                  onChange={(e) => updateLink(index, e.target.value)}
+                  className="bg-muted/30 border-border focus:border-gold flex-1"
+                />
+                {contentUrls.length > 1 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeLinkField(index)}
+                    className="text-muted-foreground hover:text-destructive h-10 w-10"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+            ))}
+            
+            <p className="text-xs text-muted-foreground">
+              Collez les liens de vos vidéos TikTok, YouTube, Instagram, etc. ({contentUrls.length}/{MAX_LINKS} max)
+            </p>
+          </div>
+
+          {/* Video Upload */}
           <div className="space-y-2">
             <Label className="flex items-center gap-2">
-              <LinkIcon className="w-4 h-4" />
-              Lien vers le contenu *
+              <Video className="w-4 h-4" />
+              Upload vidéo (optionnel)
             </Label>
-            <Input
-              placeholder="https://www.tiktok.com/@username/video/..."
-              value={contentUrl}
-              onChange={(e) => setContentUrl(e.target.value)}
-              className="bg-muted/30 border-border focus:border-gold"
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="video/*"
+              onChange={handleVideoSelect}
+              className="hidden"
             />
-            <p className="text-xs text-muted-foreground">
-              Collez le lien de votre vidéo TikTok, YouTube, Instagram, etc.
-            </p>
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className="border-2 border-dashed border-border rounded-xl p-4 text-center cursor-pointer hover:border-gold/50 transition-colors bg-muted/30"
+            >
+              {videoFile ? (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-foreground">
+                    <Video className="w-5 h-5 text-gold" />
+                    <span className="text-sm truncate max-w-[200px]">{videoFile.name}</span>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setVideoFile(null);
+                    }}
+                    className="text-muted-foreground hover:text-destructive"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="text-muted-foreground">
+                  <Upload className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">Cliquez pour ajouter une vidéo</p>
+                  <p className="text-xs mt-1">Max 100 Mo</p>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Description */}
@@ -168,14 +328,18 @@ const SubmitContentSheet = ({
             size="lg"
             className="w-full"
             onClick={handleSubmit}
-            disabled={loading || !contentUrl.trim() || isExpired}
+            disabled={loading || uploadingVideo || (!hasValidUrls && !videoFile) || isExpired}
           >
-            {loading ? (
+            {loading || uploadingVideo ? (
               <Loader2 className="w-5 h-5 mr-2 animate-spin" />
             ) : (
               <Upload className="w-5 h-5 mr-2" />
             )}
-            {isExpired ? "Deadline dépassée" : "Soumettre le contenu"}
+            {isExpired 
+              ? "Deadline dépassée" 
+              : uploadingVideo 
+                ? "Upload en cours..."
+                : "Soumettre le contenu"}
           </Button>
         </div>
       </SheetContent>
