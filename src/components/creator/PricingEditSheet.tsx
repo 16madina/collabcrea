@@ -53,7 +53,7 @@ const contentTypesByPlatform: Record<string, string[]> = {
 
 // Duration options
 const durationOptions = [
-  { value: "", label: "Sans durée" },
+  { value: "none", label: "Sans durée" },
   { value: "24h", label: "24h" },
   { value: "48h", label: "48h" },
   { value: "72h", label: "72h" },
@@ -91,7 +91,7 @@ const PricingEditSheet = ({ isOpen, onClose, initialPricing, onUpdate }: Pricing
   const [selectedPlatform, setSelectedPlatform] = useState("");
   const [selectedContentType, setSelectedContentType] = useState("");
   const [selectedQuantity, setSelectedQuantity] = useState(1);
-  const [selectedDuration, setSelectedDuration] = useState("");
+  const [selectedDuration, setSelectedDuration] = useState("none");
   const [price, setPrice] = useState<number>(0);
 
   // Pack form state
@@ -128,7 +128,7 @@ const PricingEditSheet = ({ isOpen, onClose, initialPricing, onUpdate }: Pricing
     typeStr += selectedContentType.toLowerCase();
     
     // Duration
-    if (selectedDuration) {
+    if (selectedDuration && selectedDuration !== "none") {
       typeStr += ` de ${selectedDuration}`;
     }
     
@@ -159,7 +159,7 @@ const PricingEditSheet = ({ isOpen, onClose, initialPricing, onUpdate }: Pricing
     // Reset form
     setSelectedContentType("");
     setSelectedQuantity(1);
-    setSelectedDuration("");
+    setSelectedDuration("none");
     setPrice(0);
 
     toast({
