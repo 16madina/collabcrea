@@ -1,100 +1,88 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Send, ArrowLeft, MoreVertical, Check, CheckCheck } from "lucide-react";
+import { Search, Send, ArrowLeft, MoreVertical, Check, CheckCheck, MessageCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import BottomNav from "@/components/BottomNav";
-
-interface Conversation {
-  id: number;
-  brand: string;
-  logo: string;
-  lastMessage: string;
-  time: string;
-  unread: number;
-  online: boolean;
-}
-
-interface Message {
-  id: number;
-  sender: "me" | "them";
-  text: string;
-  time: string;
-  read: boolean;
-}
-
-const conversations: Conversation[] = [
-  {
-    id: 1,
-    brand: "Afrik'Beauty",
-    logo: "A",
-    lastMessage: "Parfait ! On valide le brief demain.",
-    time: "14:30",
-    unread: 2,
-    online: true,
-  },
-  {
-    id: 2,
-    brand: "TechAfrica",
-    logo: "T",
-    lastMessage: "Merci pour votre proposition !",
-    time: "Hier",
-    unread: 0,
-    online: false,
-  },
-  {
-    id: 3,
-    brand: "Mode Dakar",
-    logo: "M",
-    lastMessage: "Les photos sont superbes 🔥",
-    time: "Lun",
-    unread: 0,
-    online: true,
-  },
-  {
-    id: 4,
-    brand: "Cuisine Mama",
-    logo: "C",
-    lastMessage: "Quand seriez-vous disponible ?",
-    time: "Dim",
-    unread: 1,
-    online: false,
-  },
-];
-
-const mockMessages: Message[] = [
-  { id: 1, sender: "them", text: "Bonjour ! Nous avons adoré votre profil 😍", time: "10:00", read: true },
-  { id: 2, sender: "me", text: "Merci beaucoup ! Je suis ravie de collaborer avec vous.", time: "10:05", read: true },
-  { id: 3, sender: "them", text: "Nous cherchons une créatrice pour notre nouvelle campagne beauté.", time: "10:06", read: true },
-  { id: 4, sender: "me", text: "Ça m'intéresse ! Pouvez-vous m'en dire plus sur le brief ?", time: "10:10", read: true },
-  { id: 5, sender: "them", text: "Bien sûr ! Il s'agit d'un Reel Instagram pour notre gamme de soins capillaires.", time: "10:15", read: true },
-  { id: 6, sender: "them", text: "Budget: 150,000 FCFA. Livraison dans 5 jours.", time: "10:15", read: true },
-  { id: 7, sender: "me", text: "Parfait, ça me convient ! 🙌", time: "10:20", read: true },
-  { id: 8, sender: "them", text: "Parfait ! On valide le brief demain.", time: "14:30", read: false },
-];
+import { useConversations, Conversation } from "@/hooks/useConversations";
+import { useMessages } from "@/hooks/useMessages";
+import { useAuth } from "@/hooks/useAuth";
+import { formatDistanceToNow } from "date-fns";
+import { fr } from "date-fns/locale";
 
 const CreatorMessages = () => {
+  const { user } = useAuth();
+  const { conversations, loading: conversationsLoading } = useConversations();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [newMessage, setNewMessage] = useState("");
-  const [messages, setMessages] = useState(mockMessages);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const filteredConversations = conversations.filter((conv) =>
-    conv.brand.toLowerCase().includes(searchQuery.toLowerCase())
+  const { messages, loading: messagesLoading, sendMessage } = useMessages(
+    selectedConversation?.id || null
   );
 
-  const handleSendMessage = () => {
+  const filteredConversations = conversations.filter((conv) => {
+    const name = conv.otherParticipant?.profile?.company_name ||
+      conv.otherParticipant?.profile?.full_name ||
+      "";
+    return name.toLowerCase().includes(searchQuery.toLowerCase());
+  });
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const handleSendMessage = async () => {
     if (!newMessage.trim()) return;
-    
-    const message: Message = {
-      id: messages.length + 1,
-      sender: "me",
-      text: newMessage,
-      time: new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
-      read: false,
-    };
-    
-    setMessages([...messages, message]);
-    setNewMessage("");
+    const success = await sendMessage(newMessage);
+    if (success) {
+      setNewMessage("");
+    }
+  };
+
+  const getDisplayName = (conv: Conversation) => {
+    if (!conv.otherParticipant?.profile) return "Utilisateur";
+    return conv.otherParticipant.profile.company_name ||
+      conv.otherParticipant.profile.full_name ||
+      "Utilisateur";
+  };
+
+  const getInitials = (conv: Conversation) => {
+    const name = getDisplayName(conv);
+    return name.charAt(0).toUpperCase();
+  };
+
+  const getAvatarUrl = (conv: Conversation) => {
+    if (!conv.otherParticipant?.profile) return null;
+    return conv.otherParticipant.profile.logo_url ||
+      conv.otherParticipant.profile.avatar_url;
+  };
+
+  const formatTime = (dateString: string) => {
+    try {
+      return formatDistanceToNow(new Date(dateString), {
+        addSuffix: false,
+        locale: fr,
+      });
+    } catch {
+      return "";
+    }
+  };
+
+  const formatMessageTime = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleTimeString("fr-FR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return "";
+    }
   };
 
   if (selectedConversation) {
@@ -110,18 +98,29 @@ const CreatorMessages = () => {
               <ArrowLeft className="w-6 h-6 text-foreground" />
             </button>
             <div className="relative">
-              <div className="w-10 h-10 rounded-full bg-gold/20 flex items-center justify-center">
-                <span className="text-gold font-bold">{selectedConversation.logo}</span>
-              </div>
-              {selectedConversation.online && (
-                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-500 border-2 border-background" />
+              {getAvatarUrl(selectedConversation) ? (
+                <img
+                  src={getAvatarUrl(selectedConversation)!}
+                  alt={getDisplayName(selectedConversation)}
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-gold/20 flex items-center justify-center">
+                  <span className="text-gold font-bold">
+                    {getInitials(selectedConversation)}
+                  </span>
+                </div>
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <h2 className="font-semibold truncate">{selectedConversation.brand}</h2>
-              <p className="text-xs text-muted-foreground truncate">
-                {selectedConversation.online ? "En ligne" : "Hors ligne"}
-              </p>
+              <h2 className="font-semibold truncate">
+                {getDisplayName(selectedConversation)}
+              </h2>
+              {selectedConversation.subject && (
+                <p className="text-xs text-muted-foreground truncate">
+                  {selectedConversation.subject}
+                </p>
+              )}
             </div>
             <button className="touch-target">
               <MoreVertical className="w-5 h-5 text-muted-foreground" />
@@ -131,36 +130,52 @@ const CreatorMessages = () => {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {messages.map((message) => (
-            <motion.div
-              key={message.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={`flex ${message.sender === "me" ? "justify-end" : "justify-start"}`}
-            >
-              <div
-                className={`max-w-[80%] px-4 py-3 rounded-2xl ${
-                  message.sender === "me"
-                    ? "bg-gold text-primary-foreground rounded-br-md"
-                    : "glass rounded-bl-md"
-                }`}
+          {messagesLoading ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gold" />
+            </div>
+          ) : messages.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Aucun message pour le moment
+            </div>
+          ) : (
+            messages.map((message) => (
+              <motion.div
+                key={message.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`flex ${message.sender_id === user?.id ? "justify-end" : "justify-start"}`}
               >
-                <p className="text-sm">{message.text}</p>
-                <div className={`flex items-center justify-end gap-1 mt-1 ${
-                  message.sender === "me" ? "text-primary-foreground/70" : "text-muted-foreground"
-                }`}>
-                  <span className="text-xs">{message.time}</span>
-                  {message.sender === "me" && (
-                    message.read ? (
-                      <CheckCheck className="w-3 h-3" />
-                    ) : (
-                      <Check className="w-3 h-3" />
-                    )
-                  )}
+                <div
+                  className={`max-w-[80%] px-4 py-3 rounded-2xl ${
+                    message.sender_id === user?.id
+                      ? "bg-gold text-primary-foreground rounded-br-md"
+                      : "glass rounded-bl-md"
+                  }`}
+                >
+                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                  <div
+                    className={`flex items-center justify-end gap-1 mt-1 ${
+                      message.sender_id === user?.id
+                        ? "text-primary-foreground/70"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    <span className="text-xs">
+                      {formatMessageTime(message.created_at)}
+                    </span>
+                    {message.sender_id === user?.id &&
+                      (message.read_at ? (
+                        <CheckCheck className="w-3 h-3" />
+                      ) : (
+                        <Check className="w-3 h-3" />
+                      ))}
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            ))
+          )}
+          <div ref={messagesEndRef} />
         </div>
 
         {/* Input */}
@@ -169,13 +184,14 @@ const CreatorMessages = () => {
             <Input
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+              onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
               placeholder="Écrivez un message..."
               className="flex-1 h-12 bg-muted/50 border-border focus:border-gold rounded-full px-5"
             />
             <button
               onClick={handleSendMessage}
-              className="w-12 h-12 rounded-full bg-gold flex items-center justify-center shadow-[0_4px_20px_hsl(43_72%_53%_/_0.3)]"
+              disabled={!newMessage.trim()}
+              className="w-12 h-12 rounded-full bg-gold flex items-center justify-center shadow-[0_4px_20px_hsl(43_72%_53%_/_0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Send className="w-5 h-5 text-primary-foreground" />
             </button>
@@ -212,50 +228,79 @@ const CreatorMessages = () => {
 
       {/* Conversations */}
       <div className="px-6 mt-4 space-y-2">
-        <AnimatePresence>
-          {filteredConversations.map((conv, index) => (
-            <motion.div
-              key={conv.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.05 }}
-              onClick={() => setSelectedConversation(conv)}
-              className="glass-card p-4 flex items-center gap-4 cursor-pointer hover:border-gold/30 transition-all"
-            >
-              <div className="relative">
-                <div className="w-14 h-14 rounded-full bg-gold/20 flex items-center justify-center">
-                  <span className="text-gold font-bold text-xl">{conv.logo}</span>
-                </div>
-                {conv.online && (
-                  <div className="absolute bottom-0 right-0 w-4 h-4 rounded-full bg-green-500 border-2 border-card" />
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-foreground">{conv.brand}</h3>
-                  <span className="text-xs text-muted-foreground">{conv.time}</span>
-                </div>
-                <p className="text-sm text-muted-foreground truncate mt-1">
-                  {conv.lastMessage}
+        {conversationsLoading ? (
+          <div className="flex justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gold" />
+          </div>
+        ) : (
+          <AnimatePresence>
+            {filteredConversations.length === 0 ? (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-center py-12"
+              >
+                <MessageCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">
+                  {searchQuery
+                    ? "Aucune conversation trouvée"
+                    : "Aucune conversation pour le moment"}
                 </p>
-              </div>
-              {conv.unread > 0 && (
-                <div className="w-6 h-6 rounded-full bg-gold flex items-center justify-center">
-                  <span className="text-xs font-bold text-primary-foreground">{conv.unread}</span>
-                </div>
-              )}
-            </motion.div>
-          ))}
-        </AnimatePresence>
-
-        {filteredConversations.length === 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center py-12"
-          >
-            <p className="text-muted-foreground">Aucune conversation trouvée</p>
-          </motion.div>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Les marques vous contacteront ici
+                </p>
+              </motion.div>
+            ) : (
+              filteredConversations.map((conv, index) => (
+                <motion.div
+                  key={conv.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  onClick={() => setSelectedConversation(conv)}
+                  className="glass-card p-4 flex items-center gap-4 cursor-pointer hover:border-gold/30 transition-all"
+                >
+                  <div className="relative">
+                    {getAvatarUrl(conv) ? (
+                      <img
+                        src={getAvatarUrl(conv)!}
+                        alt={getDisplayName(conv)}
+                        className="w-14 h-14 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-14 h-14 rounded-full bg-gold/20 flex items-center justify-center">
+                        <span className="text-gold font-bold text-xl">
+                          {getInitials(conv)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-foreground">
+                        {getDisplayName(conv)}
+                      </h3>
+                      <span className="text-xs text-muted-foreground">
+                        {conv.lastMessage
+                          ? formatTime(conv.lastMessage.created_at)
+                          : formatTime(conv.created_at)}
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground truncate mt-1">
+                      {conv.lastMessage?.content || conv.subject || "Nouvelle conversation"}
+                    </p>
+                  </div>
+                  {conv.unreadCount > 0 && (
+                    <div className="w-6 h-6 rounded-full bg-gold flex items-center justify-center">
+                      <span className="text-xs font-bold text-primary-foreground">
+                        {conv.unreadCount}
+                      </span>
+                    </div>
+                  )}
+                </motion.div>
+              ))
+            )}
+          </AnimatePresence>
         )}
       </div>
 
