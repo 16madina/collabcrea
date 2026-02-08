@@ -76,9 +76,9 @@ const SubmitContentSheet = ({
   const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Check file size (max 100MB)
-      if (file.size > 100 * 1024 * 1024) {
-        toast.error("La vidéo ne doit pas dépasser 100 Mo");
+      // Check file size (max 500MB)
+      if (file.size > 500 * 1024 * 1024) {
+        toast.error("La vidéo ne doit pas dépasser 500 Mo");
         return;
       }
       setVideoFile(file);
@@ -320,7 +320,7 @@ const SubmitContentSheet = ({
                 <div className="text-muted-foreground">
                   <Upload className="w-10 h-10 mx-auto mb-2 opacity-50" />
                   <p className="text-sm font-medium">Cliquez pour ajouter une vidéo</p>
-                  <p className="text-xs mt-1">MP4, MOV, AVI • Max 100 Mo</p>
+                  <p className="text-xs mt-1">MP4, MOV, AVI • Max 500 Mo</p>
                 </div>
               </div>
             )}
