@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Star, MapPin, MessageCircle, Flag, User, CreditCard, Image } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Star, MapPin, MessageCircle, Flag, User, CreditCard, Image, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useContactCreator } from "@/hooks/useContactCreator";
 import ReportDialog from "@/components/ReportDialog";
 import PortfolioTab from "@/components/creator/tabs/PortfolioTab";
 
@@ -52,11 +52,11 @@ export interface Creator {
   category: string;
   country: string;
   flag: string;
-  residenceFlag?: string; // Flag for residence country (dual-flag display)
+  residenceFlag?: string;
   image: string;
   rating?: number;
   bio?: string;
-  isVerified?: boolean; // Identity verified
+  isVerified?: boolean;
   socials: CreatorSocials;
   pricing?: CreatorPricing[];
 }
@@ -78,12 +78,23 @@ const defaultPricing: CreatorPricing[] = [
 
 const CreatorDetailSheet = ({ creator, creatorUserId, open, onOpenChange }: CreatorDetailSheetProps) => {
   const { user } = useAuth();
+  const { contactCreator, isContacting } = useContactCreator();
   const [showReportDialog, setShowReportDialog] = useState(false);
 
   if (!creator) return null;
 
   const pricing = creator.pricing || defaultPricing;
   const creatorFullName = `${creator.firstName} ${creator.lastName}`;
+
+  const handleContact = async () => {
+    if (!creatorUserId || creatorUserId.startsWith("static-")) {
+      // For static/demo creators, redirect to auth
+      window.location.href = "/auth?role=brand";
+      return;
+    }
+    
+    await contactCreator(creatorUserId, creatorFullName);
+  };
 
   return (
     <>
@@ -248,12 +259,20 @@ const CreatorDetailSheet = ({ creator, creatorUserId, open, onOpenChange }: Crea
 
           {/* Actions */}
           <div className="pt-4 pb-8 space-y-3">
-            <Link to="/auth?role=brand">
-              <Button variant="gold" size="lg" className="w-full">
+            <Button 
+              variant="gold" 
+              size="lg" 
+              className="w-full"
+              onClick={handleContact}
+              disabled={isContacting}
+            >
+              {isContacting ? (
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+              ) : (
                 <MessageCircle className="w-5 h-5 mr-2" />
-                Contacter {creator.firstName}
-              </Button>
-            </Link>
+              )}
+              Contacter {creator.firstName}
+            </Button>
 
             {/* Report button - only show if logged in and not own profile */}
             {user && creatorUserId && user.id !== creatorUserId && (
