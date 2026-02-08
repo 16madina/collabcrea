@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Search, Megaphone, MessageCircle, User, Briefcase } from "lucide-react";
+import { Home, Search, Megaphone, User, Briefcase, Handshake } from "lucide-react";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 
 interface NavItem {
@@ -8,6 +8,7 @@ interface NavItem {
   label: string;
   path: string;
   isCenter?: boolean;
+  showBadge?: boolean;
 }
 
 interface BottomNavProps {
@@ -25,14 +26,14 @@ const BottomNav = ({ userRole }: BottomNavProps) => {
         { icon: Home, label: "Accueil", path: "/" },
         { icon: Search, label: "Explorer", path: "/explore" },
         { icon: Briefcase, label: "Offres", path: `${basePath}/offers`, isCenter: true },
-        { icon: MessageCircle, label: "Messages", path: `${basePath}/messages` },
+        { icon: Handshake, label: "Collabs", path: `${basePath}/collabs`, showBadge: true },
         { icon: User, label: "Profil", path: `${basePath}/profile` },
       ]
     : [
         { icon: Home, label: "Accueil", path: "/" },
         { icon: Search, label: "Créateurs", path: `${basePath}/marketplace` },
         { icon: Megaphone, label: "Offres", path: `${basePath}/offers`, isCenter: true },
-        { icon: MessageCircle, label: "Messages", path: `${basePath}/messages` },
+        { icon: Handshake, label: "Collabs", path: `${basePath}/collabs`, showBadge: true },
         { icon: User, label: "Profil", path: `${basePath}/profile` },
       ];
 
@@ -61,8 +62,8 @@ const BottomNav = ({ userRole }: BottomNavProps) => {
                         isActive ? "text-gold" : "text-muted-foreground"
                       }`}
                     />
-                    {/* Unread badge for Messages */}
-                    {item.label === "Messages" && unreadMessages > 0 && (
+                    {/* Unread badge for Collabs */}
+                    {item.showBadge && unreadMessages > 0 && (
                       <span className="absolute -top-1 -right-2 min-w-[18px] h-[18px] bg-gold text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center px-1">
                         {unreadMessages > 99 ? "99+" : unreadMessages}
                       </span>
