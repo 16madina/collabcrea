@@ -85,27 +85,33 @@ const Messages = () => {
           participations.map(async (p) => {
             const conv = p.conversations as any;
             
-            // Get other participants with company_name for brands
+            // Get other participants
             const { data: otherParticipants } = await supabase
               .from("conversation_participants")
-              .select(`
-                user_id,
-                profiles!inner (
-                  full_name,
-                  avatar_url,
-                  company_name,
-                  logo_url
-                )
-              `)
+              .select("user_id")
               .eq("conversation_id", conv.id)
               .neq("user_id", user.id)
               .limit(1);
 
             const otherParticipant = otherParticipants?.[0];
-            const profile = otherParticipant?.profiles as any;
-            // Use company_name for brands, full_name for creators
-            const displayName = profile?.company_name || profile?.full_name;
-            const displayAvatar = profile?.logo_url || profile?.avatar_url;
+            let displayName = "Utilisateur";
+            let displayAvatar: string | null = null;
+            let otherUserId = otherParticipant?.user_id || "";
+
+            // Fetch profile separately to avoid join issues
+            if (otherParticipant?.user_id) {
+              const { data: profileData } = await supabase
+                .from("profiles")
+                .select("full_name, avatar_url, company_name, logo_url")
+                .eq("user_id", otherParticipant.user_id)
+                .single();
+
+              if (profileData) {
+                // Use company_name for brands, full_name for creators
+                displayName = profileData.company_name || profileData.full_name || "Utilisateur";
+                displayAvatar = profileData.logo_url || profileData.avatar_url;
+              }
+            }
 
             // Get last message
             const { data: lastMessages } = await supabase
@@ -128,12 +134,11 @@ const Messages = () => {
               subject: conv.subject,
               created_at: conv.created_at,
               updated_at: conv.updated_at,
-              // Use computed displayName and displayAvatar
-              other_participant: profile ? {
-                id: otherParticipant?.user_id || "",
-                full_name: displayName || "Utilisateur",
-                avatar_url: displayAvatar || null,
-              } : null,
+              other_participant: {
+                id: otherUserId,
+                full_name: displayName,
+                avatar_url: displayAvatar,
+              },
               last_message: lastMessages?.[0] || null,
               unread_count: count || 0,
             };
