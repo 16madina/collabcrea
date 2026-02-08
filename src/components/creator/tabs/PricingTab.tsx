@@ -220,7 +220,7 @@ const PricingTab = ({
 
         {/* Edit button - top right */}
         <div className="absolute top-3 right-3 z-20">
-          <div className="bg-background/90 backdrop-blur-sm px-3 py-1.5 rounded-full border border-gold/50 shadow-lg opacity-80 group-hover:opacity-100 transition-opacity">
+          <div className="bg-background/90 backdrop-blur-sm px-3 py-1.5 rounded-full border border-gold/50 shadow-lg opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-200">
             <span className="text-gold font-medium text-xs">✏️ Modifier</span>
           </div>
         </div>

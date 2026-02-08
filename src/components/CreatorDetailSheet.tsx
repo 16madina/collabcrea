@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import ReportDialog from "@/components/ReportDialog";
 import PortfolioTab from "@/components/creator/tabs/PortfolioTab";
 import ContactCreatorSheet from "@/components/brand/ContactCreatorSheet";
+import RateCardDisplay from "@/components/creator/RateCardDisplay";
 
 export interface CreatorSocials {
   youtube?: string;
@@ -228,21 +229,15 @@ const CreatorDetailSheet = ({ creator, creatorUserId, open, onOpenChange }: Crea
             </TabsContent>
 
             {/* Pricing Tab */}
-            <TabsContent value="pricing" className="space-y-2">
-              {pricing.map((item, index) => (
-                <div
-                  key={index}
-                  className="glass rounded-xl p-4 flex items-center justify-between"
-                >
-                  <div className="flex-1">
-                    <p className="font-medium text-foreground">{item.type}</p>
-                    <p className="text-xs text-muted-foreground">{item.description}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-gold">{item.price}</p>
-                  </div>
-                </div>
-              ))}
+            <TabsContent value="pricing" className="pb-4">
+              <RateCardDisplay
+                pricing={pricing.map(p => ({
+                  ...p,
+                  price: typeof p.price === "string" ? parseInt(p.price.replace(/\D/g, "")) || 0 : p.price
+                }))}
+                avatarUrl={creator.image}
+                fullName={`${creator.firstName} ${creator.lastName}`}
+              />
             </TabsContent>
           </Tabs>
 
