@@ -306,7 +306,7 @@ const ReviewContentSheet = ({
               ) : (
                 <MessageSquare className="w-5 h-5 mr-2" />
               )}
-              Modifier
+              Demander une modification
             </Button>
             <Button
               variant="gold"
