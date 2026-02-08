@@ -198,12 +198,27 @@ const Landing = () => {
           animate="animate"
           className="relative z-10 px-6 pt-8 flex flex-col items-center text-center"
         >
-          {/* Logo centré */}
-          <motion.div variants={fadeInUp} className="mb-4">
+          {/* Logo centré avec glow effect */}
+          <motion.div 
+            variants={fadeInUp} 
+            className="mb-4 relative"
+            animate={{
+              filter: [
+                "drop-shadow(0 0 20px rgba(212, 175, 55, 0.3))",
+                "drop-shadow(0 0 40px rgba(212, 175, 55, 0.6))",
+                "drop-shadow(0 0 20px rgba(212, 175, 55, 0.3))"
+              ]
+            }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          >
             <img 
               src={logoCollabCreaFull} 
               alt="CollabCréa" 
-              className="h-32 md:h-40 w-auto mx-auto drop-shadow-2xl"
+              className="h-32 md:h-40 w-auto mx-auto"
             />
           </motion.div>
 
@@ -223,55 +238,60 @@ const Landing = () => {
             </span>
           </motion.div>
 
-          <motion.div variants={fadeInUp} className="flex items-center justify-center gap-4 mb-4 flex-wrap">
-            <Link to="/auth?role=creator">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-gold hover:text-gold/80 text-sm"
-              >
-                <Users className="w-4 h-4 mr-2" />
-                Je suis Créateur
-              </Button>
-            </Link>
-            <Link to="/auth?role=brand">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-gold hover:text-gold/80 text-sm"
-              >
-                <Briefcase className="w-4 h-4 mr-2" />
-                Je suis une Marque
-              </Button>
-            </Link>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowHowItWorks(true)}
-              className="text-gold hover:text-gold/80 text-sm"
-            >
-              <HelpCircle className="w-4 h-4 mr-2" />
-              Comment ça marche ?
-            </Button>
-          </motion.div>
-
-          <motion.div
-            variants={fadeInUp}
-            className="flex justify-between gap-2"
-          >
-            {[
-              { value: "54+", label: "Pays" },
-              { value: "10K+", label: "Créateurs" },
-              { value: "500+", label: "Marques" },
-            ].map((stat) => (
-              <div
-                key={stat.label}
-                className="flex-1 glass rounded-lg p-2 text-center"
-              >
-                <p className="text-sm font-bold text-gold-gradient">{stat.value}</p>
-                <p className="text-[9px] text-muted-foreground">{stat.label}</p>
+          {/* Boutons avec stats en dessous */}
+          <motion.div variants={fadeInUp} className="flex items-stretch justify-center gap-3 mb-6 w-full max-w-md">
+            {/* Je suis Créateur + stat */}
+            <div className="flex-1 flex flex-col items-center">
+              <Link to="/auth?role=creator" className="w-full">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-gold hover:text-gold/80 text-sm w-full"
+                >
+                  <Users className="w-4 h-4 mr-2" />
+                  Je suis Créateur
+                </Button>
+              </Link>
+              <div className="glass rounded-lg px-4 py-2 text-center mt-2 w-full">
+                <p className="text-lg font-bold text-gold-gradient">10K+</p>
+                <p className="text-xs text-muted-foreground">Créateurs</p>
               </div>
-            ))}
+            </div>
+
+            {/* Je suis une Marque + stat */}
+            <div className="flex-1 flex flex-col items-center">
+              <Link to="/auth?role=brand" className="w-full">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-gold hover:text-gold/80 text-sm w-full"
+                >
+                  <Briefcase className="w-4 h-4 mr-2" />
+                  Je suis une Marque
+                </Button>
+              </Link>
+              <div className="glass rounded-lg px-4 py-2 text-center mt-2 w-full">
+                <p className="text-lg font-bold text-gold-gradient">500+</p>
+                <p className="text-xs text-muted-foreground">Marques</p>
+              </div>
+            </div>
+
+            {/* Comment ça marche + stat */}
+            <div className="flex-1 flex flex-col items-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowHowItWorks(true)}
+                className="text-gold hover:text-gold/80 text-sm w-full"
+              >
+                <HelpCircle className="w-4 h-4 mr-2" />
+                Comment ça marche ?
+              </Button>
+              <div className="glass rounded-lg px-4 py-2 text-center mt-2 w-full">
+                <p className="text-lg font-bold text-gold-gradient">54+</p>
+                <p className="text-xs text-muted-foreground">Pays</p>
+              </div>
+            </div>
           </motion.div>
 
           {/* Créateurs populaires */}
