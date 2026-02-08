@@ -52,7 +52,7 @@ const contentTypesByPlatform: Record<string, string[]> = {
 };
 
 // Duration options
-const durationOptions = [
+const durationOptions: { value: string; label: string; excludeFor?: string[] }[] = [
   { value: "none", label: "Sans durée" },
   { value: "24h", label: "24h" },
   { value: "48h", label: "48h" },
@@ -61,6 +61,17 @@ const durationOptions = [
   { value: "2 semaines", label: "2 semaines" },
   { value: "1 mois", label: "1 mois" },
   { value: "illimitée", label: "Illimitée", excludeFor: ["snapchat"] },
+];
+
+// Frequency options
+const frequencyOptions = [
+  { value: "none", label: "Sans fréquence" },
+  { value: "1x/jour", label: "1x par jour" },
+  { value: "2x/jour", label: "2x par jour" },
+  { value: "3x/semaine", label: "3x par semaine" },
+  { value: "1x/semaine", label: "1x par semaine" },
+  { value: "2x/semaine", label: "2x par semaine" },
+  { value: "1x/mois", label: "1x par mois" },
 ];
 
 // Get available duration options based on selected platform
@@ -100,6 +111,8 @@ const PricingEditSheet = ({ isOpen, onClose, initialPricing, onUpdate }: Pricing
   const [selectedContentType, setSelectedContentType] = useState("");
   const [selectedQuantity, setSelectedQuantity] = useState(1);
   const [selectedDuration, setSelectedDuration] = useState("none");
+  const [selectedFrequency, setSelectedFrequency] = useState("none");
+  const [serviceDescription, setServiceDescription] = useState("");
   const [price, setPrice] = useState<number>(0);
 
   // Pack form state
@@ -140,6 +153,11 @@ const PricingEditSheet = ({ isOpen, onClose, initialPricing, onUpdate }: Pricing
       typeStr += ` de ${selectedDuration}`;
     }
     
+    // Frequency
+    if (selectedFrequency && selectedFrequency !== "none") {
+      typeStr += ` (${selectedFrequency})`;
+    }
+    
     // Platform prefix for backend grouping
     const platformPrefix = selectedPlatform.charAt(0).toUpperCase() + selectedPlatform.slice(1);
     
@@ -159,7 +177,7 @@ const PricingEditSheet = ({ isOpen, onClose, initialPricing, onUpdate }: Pricing
     const newItem: PricingItem = {
       type: generateTypeString(),
       price: price,
-      description: "",
+      description: serviceDescription,
     };
 
     setPricing([...pricing, newItem]);
@@ -168,6 +186,8 @@ const PricingEditSheet = ({ isOpen, onClose, initialPricing, onUpdate }: Pricing
     setSelectedContentType("");
     setSelectedQuantity(1);
     setSelectedDuration("none");
+    setSelectedFrequency("none");
+    setServiceDescription("");
     setPrice(0);
 
     toast({
@@ -404,6 +424,55 @@ const PricingEditSheet = ({ isOpen, onClose, initialPricing, onUpdate }: Pricing
                           </SelectContent>
                         </Select>
                       </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Frequency */}
+                <AnimatePresence>
+                  {selectedContentType && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="space-y-2 overflow-hidden"
+                    >
+                      <Label className="text-xs text-muted-foreground">Fréquence de publication</Label>
+                      <Select
+                        value={selectedFrequency}
+                        onValueChange={setSelectedFrequency}
+                      >
+                        <SelectTrigger className="h-9">
+                          <SelectValue placeholder="Optionnel" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {frequencyOptions.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Description */}
+                <AnimatePresence>
+                  {selectedContentType && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="space-y-2 overflow-hidden"
+                    >
+                      <Label className="text-xs text-muted-foreground">Description (optionnel)</Label>
+                      <Textarea
+                        value={serviceDescription}
+                        onChange={(e) => setServiceDescription(e.target.value)}
+                        placeholder="Ex: Contenu lifestyle avec mise en avant du produit"
+                        className="min-h-[60px] text-sm"
+                      />
                     </motion.div>
                   )}
                 </AnimatePresence>
