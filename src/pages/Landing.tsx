@@ -219,15 +219,24 @@ const Landing = () => {
             La plateforme premium de mise en relation entre créateurs africains et marques mondiales.
           </motion.p>
 
-          <motion.div variants={fadeInUp} className="flex flex-col gap-2 mb-4">
+          <motion.div variants={fadeInUp} className="flex items-center justify-center gap-4 mb-4 flex-wrap">
             <Link to="/auth?role=creator">
-              <Button variant="gold" size="default" className="w-full group">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-gold hover:text-gold/80 text-sm"
+              >
+                <Users className="w-4 h-4 mr-2" />
                 Je suis Créateur
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
             <Link to="/auth?role=brand">
-              <Button variant="glass-gold" size="default" className="w-full">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-gold hover:text-gold/80 text-sm"
+              >
+                <Briefcase className="w-4 h-4 mr-2" />
                 Je suis une Marque
               </Button>
             </Link>
@@ -235,7 +244,7 @@ const Landing = () => {
               variant="ghost"
               size="sm"
               onClick={() => setShowHowItWorks(true)}
-              className="text-gold hover:text-gold/80"
+              className="text-gold hover:text-gold/80 text-sm"
             >
               <HelpCircle className="w-4 h-4 mr-2" />
               Comment ça marche ?
