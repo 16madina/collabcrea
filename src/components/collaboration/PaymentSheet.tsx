@@ -42,7 +42,15 @@ const PaymentSheet = ({
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
 
+  const MINIMUM_STRIPE_AMOUNT = 300; // ~50 cents USD in FCFA
+
   const handleStripePayment = async () => {
+    // Check minimum amount for Stripe
+    if (collaboration.agreed_amount < MINIMUM_STRIPE_AMOUNT) {
+      toast.error(`Le montant minimum pour un paiement par carte est de ${MINIMUM_STRIPE_AMOUNT} FCFA`);
+      return;
+    }
+
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("create-collaboration-checkout", {
@@ -52,6 +60,16 @@ const PaymentSheet = ({
       if (error) {
         console.error("Checkout error:", error);
         toast.error("Erreur lors de la création du paiement");
+        return;
+      }
+
+      if (data?.error) {
+        console.error("Checkout error:", data.error);
+        if (data.error.includes("50 cents")) {
+          toast.error(`Le montant minimum pour un paiement par carte est de ${MINIMUM_STRIPE_AMOUNT} FCFA`);
+        } else {
+          toast.error(data.error);
+        }
         return;
       }
 
