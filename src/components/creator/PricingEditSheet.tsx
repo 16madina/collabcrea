@@ -60,7 +60,15 @@ const durationOptions = [
   { value: "1 semaine", label: "1 semaine" },
   { value: "2 semaines", label: "2 semaines" },
   { value: "1 mois", label: "1 mois" },
+  { value: "illimitée", label: "Illimitée", excludeFor: ["snapchat"] },
 ];
+
+// Get available duration options based on selected platform
+const getAvailableDurations = (platform: string) => {
+  return durationOptions.filter(opt => 
+    !opt.excludeFor || !opt.excludeFor.includes(platform)
+  );
+};
 
 // Quantity options
 const quantityOptions = [
@@ -388,7 +396,7 @@ const PricingEditSheet = ({ isOpen, onClose, initialPricing, onUpdate }: Pricing
                             <SelectValue placeholder="Optionnel" />
                           </SelectTrigger>
                           <SelectContent>
-                            {durationOptions.map((opt) => (
+                            {getAvailableDurations(selectedPlatform).map((opt) => (
                               <SelectItem key={opt.value} value={opt.value}>
                                 {opt.label}
                               </SelectItem>
