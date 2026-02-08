@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, X, Play } from "lucide-react";
@@ -20,6 +20,13 @@ const PortfolioMediaViewer = ({
 }: PortfolioMediaViewerProps) => {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
 
+  // Sync currentIndex when initialIndex changes and dialog opens
+  useEffect(() => {
+    if (open) {
+      setCurrentIndex(initialIndex);
+    }
+  }, [initialIndex, open]);
+
   const currentItem = items[currentIndex];
   const hasPrev = currentIndex > 0;
   const hasNext = currentIndex < items.length - 1;
@@ -32,18 +39,10 @@ const PortfolioMediaViewer = ({
     if (hasNext) setCurrentIndex(currentIndex + 1);
   };
 
-  // Reset index when opening with new initialIndex
-  const handleOpenChange = (newOpen: boolean) => {
-    if (newOpen) {
-      setCurrentIndex(initialIndex);
-    }
-    onOpenChange(newOpen);
-  };
-
   if (!currentItem) return null;
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 bg-background/95 backdrop-blur-xl border-none">
         <VisuallyHidden>
           <DialogTitle>Visualiseur de média</DialogTitle>
