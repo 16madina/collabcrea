@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Sparkles, Users, HelpCircle, X, Briefcase, DollarSign, Calendar, MapPin, Send, Shield, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import LandingNav from "@/components/LandingNav";
+import BottomNav from "@/components/BottomNav";
 import CreatorCard from "@/components/CreatorCard";
 import CreatorDetailSheet from "@/components/CreatorDetailSheet";
 import NotificationBell from "@/components/NotificationBell";
@@ -489,7 +489,7 @@ const Landing = () => {
       </footer>
 
       {/* Bottom Navigation */}
-      <LandingNav />
+      <BottomNav />
 
       {/* Creator Detail Sheet */}
       <CreatorDetailSheet

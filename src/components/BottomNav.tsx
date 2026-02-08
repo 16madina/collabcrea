@@ -1,41 +1,66 @@
 import { motion } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Search, Megaphone, User, Briefcase, Handshake } from "lucide-react";
+import { Home, Search, Megaphone, User, Briefcase, Handshake, MessageCircle } from "lucide-react";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
+import { useAuth } from "@/hooks/useAuth";
 
 interface NavItem {
   icon: typeof Home;
   label: string;
   path: string;
-  isCenter?: boolean;
   showBadge?: boolean;
 }
 
 interface BottomNavProps {
-  userRole: "creator" | "brand";
+  userRole?: "creator" | "brand";
 }
 
-const BottomNav = ({ userRole }: BottomNavProps) => {
+const BottomNav = ({ userRole: propUserRole }: BottomNavProps) => {
   const location = useLocation();
   const unreadMessages = useUnreadMessages();
-  const basePath = userRole === "creator" ? "/creator" : "/brand";
+  const { user, role: authRole } = useAuth();
 
-  // Navigation cohérente : 5 onglets fixes
-  const navItems: NavItem[] = userRole === "creator" 
-    ? [
-        { icon: Home, label: "Accueil", path: "/" },
-        { icon: Search, label: "Explorer", path: "/explore" },
-        { icon: Briefcase, label: "Offres", path: `${basePath}/offers`, isCenter: true },
-        { icon: Handshake, label: "Collabs", path: `${basePath}/collabs`, showBadge: true },
-        { icon: User, label: "Profil", path: `${basePath}/profile` },
-      ]
-    : [
-        { icon: Home, label: "Accueil", path: "/" },
-        { icon: Search, label: "Créateurs", path: `${basePath}/marketplace` },
-        { icon: Megaphone, label: "Offres", path: `${basePath}/offers`, isCenter: true },
-        { icon: Handshake, label: "Collabs", path: `${basePath}/collabs`, showBadge: true },
-        { icon: User, label: "Profil", path: `${basePath}/profile` },
-      ];
+  // Determine the effective role: prop > auth > null
+  const effectiveRole = propUserRole || authRole;
+  const isAuthenticated = !!user;
+  const basePath = effectiveRole === "brand" ? "/brand" : "/creator";
+
+  // Guest navigation (not authenticated)
+  const guestNavItems: NavItem[] = [
+    { icon: Home, label: "Accueil", path: "/" },
+    { icon: Search, label: "Explorer", path: "/explore" },
+    { icon: Briefcase, label: "Offres", path: "/auth?tab=offers" },
+    { icon: MessageCircle, label: "Messages", path: "/auth" },
+    { icon: User, label: "Connexion", path: "/auth" },
+  ];
+
+  // Creator navigation (authenticated as creator)
+  const creatorNavItems: NavItem[] = [
+    { icon: Home, label: "Accueil", path: "/" },
+    { icon: Search, label: "Explorer", path: "/explore" },
+    { icon: Briefcase, label: "Offres", path: "/creator/offers" },
+    { icon: Handshake, label: "Collabs", path: "/creator/collabs", showBadge: true },
+    { icon: User, label: "Profil", path: "/creator/profile" },
+  ];
+
+  // Brand navigation (authenticated as brand)
+  const brandNavItems: NavItem[] = [
+    { icon: Home, label: "Accueil", path: "/" },
+    { icon: Search, label: "Créateurs", path: "/brand/marketplace" },
+    { icon: Megaphone, label: "Offres", path: "/brand/offers" },
+    { icon: Handshake, label: "Collabs", path: "/brand/collabs", showBadge: true },
+    { icon: User, label: "Profil", path: "/brand/profile" },
+  ];
+
+  // Select nav items based on authentication state and role
+  let navItems: NavItem[];
+  if (!isAuthenticated) {
+    navItems = guestNavItems;
+  } else if (effectiveRole === "brand") {
+    navItems = brandNavItems;
+  } else {
+    navItems = creatorNavItems;
+  }
 
   return (
     <motion.nav
@@ -47,7 +72,8 @@ const BottomNav = ({ userRole }: BottomNavProps) => {
       <div className="glass-nav safe-bottom">
         <div className="flex items-center justify-around px-2 py-2">
           {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
+            const isActive = location.pathname === item.path || 
+              (item.path !== "/" && location.pathname.startsWith(item.path.split("?")[0]));
             const Icon = item.icon;
 
             return (
