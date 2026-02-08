@@ -158,6 +158,15 @@ const ContactCreatorSheet = ({
         content: proposalMessage,
       });
 
+      // Create notification for the creator
+      await supabase.from("notifications").insert({
+        user_id: creatorId,
+        title: "Nouvelle proposition",
+        message: `Vous avez reçu une proposition pour "${selectedOffer?.title}"`,
+        type: "proposal",
+        created_by: user.id,
+      });
+
       toast.success("Proposition envoyée !");
       onOpenChange(false);
       setMessage("");
