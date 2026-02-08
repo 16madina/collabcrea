@@ -218,10 +218,10 @@ const PricingTab = ({
           <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/50 to-black/70" />
         </div>
 
-        {/* Edit overlay on hover */}
-        <div className="absolute inset-0 bg-gold/10 opacity-0 group-hover:opacity-100 transition-opacity z-20 flex items-center justify-center">
-          <div className="bg-background/90 backdrop-blur-sm px-4 py-2 rounded-full border border-gold/50 shadow-lg">
-            <span className="text-gold font-medium text-sm">✏️ Modifier ma grille</span>
+        {/* Edit button - top right */}
+        <div className="absolute top-3 right-3 z-20">
+          <div className="bg-background/90 backdrop-blur-sm px-3 py-1.5 rounded-full border border-gold/50 shadow-lg opacity-80 group-hover:opacity-100 transition-opacity">
+            <span className="text-gold font-medium text-xs">✏️ Modifier</span>
           </div>
         </div>
 
@@ -295,7 +295,7 @@ const PricingTab = ({
                     </div>
                     
                     {/* Pricing Items */}
-                    <div className="space-y-2 px-4">
+                    <div className="space-y-3 px-4">
                       {items.map((item, index) => (
                         <div 
                           key={index} 
@@ -310,9 +310,11 @@ const PricingTab = ({
                             </span>
                           </div>
                           {item.description && (
-                            <p className="text-white/70 text-xs mt-0.5 italic">
-                              {item.description}
-                            </p>
+                            <div className="mt-1 bg-white/10 backdrop-blur-sm rounded-lg px-2 py-1">
+                              <p className="text-gold-light text-xs font-medium">
+                                {item.description}
+                              </p>
+                            </div>
                           )}
                         </div>
                       ))}
