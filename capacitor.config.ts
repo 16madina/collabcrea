@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.10ffe8ef2a674f9bbb4a3a8eec126aa0',
+  appId: 'com.collabcrea.app',
   appName: 'collabcrea',
   webDir: 'dist',
   server: {
