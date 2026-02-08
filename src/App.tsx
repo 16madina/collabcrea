@@ -13,18 +13,15 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Explore from "./pages/Explore";
 import Contact from "./pages/Contact";
-import Messages from "./pages/Messages";
 import CreatorOffers from "./pages/creator/Offers";
 import CreatorPortfolio from "./pages/creator/Portfolio";
-import CreatorMessages from "./pages/creator/Messages";
 import CreatorProfile from "./pages/creator/Profile";
 import CreatorWallet from "./pages/creator/Wallet";
 import BrandProfile from "./pages/brand/Profile";
-import BrandDashboard from "./pages/brand/Dashboard";
 import BrandMarketplace from "./pages/brand/Marketplace";
 import BrandOffers from "./pages/brand/Offers";
 import CreateOffer from "./pages/brand/CreateOffer";
-import Collaborations from "./pages/Collaborations";
+import CollabsHub from "./pages/CollabsHub";
 import AdminDashboard from "./pages/admin/Dashboard";
 import NotFound from "./pages/NotFound";
 import TermsOfService from "./pages/TermsOfService";
@@ -71,7 +68,6 @@ const AppContent = () => {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/explore" element={<Explore />} />
           <Route path="/contact" element={<Contact />} />
-          <Route path="/messages" element={<Messages />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           
@@ -79,10 +75,10 @@ const AppContent = () => {
           <Route path="/creator/dashboard" element={<Navigate to="/creator/profile" replace />} />
           <Route path="/creator/offers" element={<CreatorOffers />} />
           <Route path="/creator/portfolio" element={<CreatorPortfolio />} />
-          <Route path="/creator/messages" element={<CreatorMessages />} />
+          <Route path="/creator/collabs" element={<CollabsHub />} />
+          <Route path="/creator/messages" element={<Navigate to="/creator/collabs?tab=messages" replace />} />
           <Route path="/creator/profile" element={<CreatorProfile />} />
           <Route path="/creator/wallet" element={<CreatorWallet />} />
-          <Route path="/creator/collaborations" element={<Collaborations />} />
           
           {/* Brand Routes */}
           <Route path="/brand/dashboard" element={<Navigate to="/brand/profile" replace />} />
@@ -90,9 +86,9 @@ const AppContent = () => {
           <Route path="/brand/offers" element={<BrandOffers />} />
           <Route path="/brand/create-offer" element={<CreateOffer />} />
           <Route path="/brand/edit-offer/:offerId" element={<CreateOffer />} />
-          <Route path="/brand/messages" element={<CreatorMessages />} />
+          <Route path="/brand/collabs" element={<CollabsHub />} />
+          <Route path="/brand/messages" element={<Navigate to="/brand/collabs?tab=messages" replace />} />
           <Route path="/brand/profile" element={<BrandProfile />} />
-          <Route path="/brand/collaborations" element={<Collaborations />} />
           
           {/* Admin Routes */}
           <Route path="/admin" element={<AdminDashboard />} />
