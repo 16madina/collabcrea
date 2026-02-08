@@ -16,8 +16,11 @@ import {
   Lock,
   CheckCircle,
   Wallet,
+  ExternalLink,
 } from "lucide-react";
-import { useCollaborations, Collaboration } from "@/hooks/useCollaborations";
+import { Collaboration } from "@/hooks/useCollaborations";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface PaymentSheetProps {
   open: boolean;
@@ -36,20 +39,41 @@ const PaymentSheet = ({
   collaboration,
   onSuccess,
 }: PaymentSheetProps) => {
-  const { simulatePayment } = useCollaborations();
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
 
-  const handlePayment = async () => {
+  const handleStripePayment = async () => {
     setLoading(true);
     try {
-      await simulatePayment(collaboration.id);
-      onOpenChange(false);
-      onSuccess?.();
+      const { data, error } = await supabase.functions.invoke("create-collaboration-checkout", {
+        body: { collaborationId: collaboration.id },
+      });
+
+      if (error) {
+        console.error("Checkout error:", error);
+        toast.error("Erreur lors de la création du paiement");
+        return;
+      }
+
+      if (data?.url) {
+        // Redirect to Stripe checkout
+        window.location.href = data.url;
+      } else {
+        toast.error("URL de paiement non reçue");
+      }
     } catch (error) {
-      console.error(error);
+      console.error("Payment error:", error);
+      toast.error("Erreur lors du paiement");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePayment = async () => {
+    if (paymentMethod === "card") {
+      await handleStripePayment();
+    } else {
+      toast.info("Cette méthode de paiement sera bientôt disponible");
     }
   };
 
@@ -58,9 +82,9 @@ const PaymentSheet = ({
       id: "card",
       name: "Carte bancaire",
       icon: CreditCard,
-      description: "Visa, Mastercard",
-      disabled: true,
-      comingSoon: true,
+      description: "Visa, Mastercard - Paiement sécurisé via Stripe",
+      disabled: false,
+      comingSoon: false,
     },
     {
       id: "mobile",
@@ -69,14 +93,6 @@ const PaymentSheet = ({
       description: "Orange, MTN, Wave",
       disabled: true,
       comingSoon: true,
-    },
-    {
-      id: "simulate",
-      name: "Paiement simulé",
-      icon: CheckCircle,
-      description: "Pour tester le flux",
-      disabled: false,
-      comingSoon: false,
     },
   ];
 
@@ -195,11 +211,18 @@ const PaymentSheet = ({
           >
             {loading ? (
               <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+            ) : paymentMethod === "card" ? (
+              <ExternalLink className="w-5 h-5 mr-2" />
             ) : (
               <Lock className="w-5 h-5 mr-2" />
             )}
-            Payer {formatCurrency(collaboration.agreed_amount)}
+            {paymentMethod === "card" ? "Payer avec Stripe" : "Payer"} {formatCurrency(collaboration.agreed_amount)}
           </Button>
+          {paymentMethod === "card" && (
+            <p className="text-xs text-muted-foreground text-center mt-2">
+              Vous serez redirigé vers la page de paiement sécurisée Stripe
+            </p>
+          )}
         </div>
       </SheetContent>
     </Sheet>
