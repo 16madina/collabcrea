@@ -579,7 +579,7 @@ const CreatorProfile = () => {
         onClose={() => setShowPortfolioSheet(false)}
       />
 
-      <BottomNav userRole="creator" />
+      <BottomNav />
     </div>
   );
 };

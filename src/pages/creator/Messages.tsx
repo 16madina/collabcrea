@@ -313,7 +313,7 @@ const CreatorMessages = () => {
         )}
       </div>
 
-      <BottomNav userRole="creator" />
+      <BottomNav />
     </div>
   );
 };

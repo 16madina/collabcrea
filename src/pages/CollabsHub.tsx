@@ -69,7 +69,7 @@ const CollabsHub = () => {
         </Tabs>
       </div>
 
-      <BottomNav userRole={userRole} />
+      <BottomNav />
     </div>
   );
 };
