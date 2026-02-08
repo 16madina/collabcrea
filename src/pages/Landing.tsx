@@ -295,30 +295,37 @@ const Landing = () => {
                 <Loader2 className="w-6 h-6 text-gold animate-spin" />
               </div>
             ) : (
-              <div className="overflow-hidden -mx-6">
-                <div className="flex animate-marquee gap-3 w-max">
-                  {/* Première série de cartes */}
-                  {allCreators.slice(0, 4).map((creator, index) => (
-                    <div key={`first-${creator.userId}`} className="flex-shrink-0">
-                      <CreatorCard
-                        creator={creator}
-                        index={index}
-                        variant="horizontal"
-                        onClick={() => handleCreatorClick(creator)}
-                      />
-                    </div>
-                  ))}
-                  {/* Duplication pour effet infini */}
-                  {allCreators.slice(0, 4).map((creator, index) => (
-                    <div key={`second-${creator.userId}`} className="flex-shrink-0">
-                      <CreatorCard
-                        creator={creator}
-                        index={index}
-                        variant="horizontal"
-                        onClick={() => handleCreatorClick(creator)}
-                      />
-                    </div>
-                  ))}
+              <div className="relative -mx-6">
+                {/* Fondu gauche */}
+                <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
+                {/* Fondu droite */}
+                <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
+                
+                <div className="overflow-hidden">
+                  <div className="flex animate-marquee gap-3 w-max px-6">
+                    {/* Première série de cartes */}
+                    {allCreators.slice(0, 4).map((creator, index) => (
+                      <div key={`first-${creator.userId}`} className="flex-shrink-0">
+                        <CreatorCard
+                          creator={creator}
+                          index={index}
+                          variant="horizontal"
+                          onClick={() => handleCreatorClick(creator)}
+                        />
+                      </div>
+                    ))}
+                    {/* Duplication pour effet infini */}
+                    {allCreators.slice(0, 4).map((creator, index) => (
+                      <div key={`second-${creator.userId}`} className="flex-shrink-0">
+                        <CreatorCard
+                          creator={creator}
+                          index={index}
+                          variant="horizontal"
+                          onClick={() => handleCreatorClick(creator)}
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
