@@ -812,6 +812,15 @@ export type Database = {
         Returns: boolean
       }
       is_user_verified: { Args: { _user_id: string }; Returns: boolean }
+      send_push_notification: {
+        Args: {
+          p_body: string
+          p_data?: Json
+          p_title: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "creator" | "brand" | "admin"
