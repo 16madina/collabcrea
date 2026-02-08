@@ -550,6 +550,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_initiate_contact: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
