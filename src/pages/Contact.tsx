@@ -4,7 +4,7 @@ import { Send, Mail, MessageCircle, MapPin, Phone } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import LandingNav from "@/components/LandingNav";
+import BottomNav from "@/components/BottomNav";
 import { toast } from "sonner";
 
 const contactInfo = [
@@ -209,7 +209,7 @@ const Contact = () => {
         </motion.div>
       </div>
 
-      <LandingNav />
+      <BottomNav />
     </div>
   );
 };

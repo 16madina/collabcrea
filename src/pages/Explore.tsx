@@ -4,7 +4,7 @@ import { Search, Loader2, BadgeCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import LandingNav from "@/components/LandingNav";
+import BottomNav from "@/components/BottomNav";
 import CreatorCard from "@/components/CreatorCard";
 import CreatorDetailSheet from "@/components/CreatorDetailSheet";
 import type { Creator } from "@/components/CreatorDetailSheet";
@@ -152,7 +152,7 @@ const Explore = () => {
         onOpenChange={setShowCreatorDetail}
       />
 
-      <LandingNav />
+      <BottomNav />
     </div>
   );
 };
