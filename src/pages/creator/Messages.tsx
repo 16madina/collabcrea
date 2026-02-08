@@ -8,6 +8,7 @@ import { useMessages } from "@/hooks/useMessages";
 import { useAuth } from "@/hooks/useAuth";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
+import ProposalCard from "@/components/creator/ProposalCard";
 
 const CreatorMessages = () => {
   const { user } = useAuth();
@@ -130,11 +131,19 @@ const CreatorMessages = () => {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {/* Proposal Card if conversation has an offer */}
+          {selectedConversation.offer_id && (
+            <ProposalCard
+              offerId={selectedConversation.offer_id}
+              conversationId={selectedConversation.id}
+            />
+          )}
+
           {messagesLoading ? (
             <div className="flex justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gold" />
             </div>
-          ) : messages.length === 0 ? (
+          ) : messages.length === 0 && !selectedConversation.offer_id ? (
             <div className="text-center py-8 text-muted-foreground">
               Aucun message pour le moment
             </div>
