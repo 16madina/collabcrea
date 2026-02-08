@@ -196,56 +196,56 @@ const Landing = () => {
           variants={stagger}
           initial="initial"
           animate="animate"
-          className="relative z-10 px-6 pt-8 flex flex-col items-center text-center"
+          className="relative z-10 px-4 sm:px-6 pt-6 sm:pt-8 flex flex-col items-center text-center"
         >
           {/* Logo centré avec glow statique */}
           <motion.div 
             variants={fadeInUp} 
-            className="mb-4 relative"
+            className="mb-3 sm:mb-4 relative"
             style={{
-              filter: "drop-shadow(0 0 30px rgba(212, 175, 55, 0.5))"
+              filter: "drop-shadow(0 0 25px rgba(212, 175, 55, 0.5))"
             }}
           >
             <img 
               src={logoCollabCreaFull} 
               alt="CollabCréa" 
-              className="h-32 md:h-40 w-auto mx-auto"
+              className="h-24 sm:h-32 md:h-40 w-auto mx-auto"
             />
           </motion.div>
 
           {/* Slogan */}
           <motion.h2
             variants={fadeInUp}
-            className="font-display text-xl md:text-2xl font-bold text-foreground leading-tight mb-4 max-w-sm"
+            className="font-display text-lg sm:text-xl md:text-2xl font-bold text-foreground leading-tight mb-3 sm:mb-4 max-w-xs sm:max-w-sm px-2"
           >
             Connectez votre marque aux{" "}
             <span className="text-gold-gradient">voix qui comptent</span>
           </motion.h2>
 
           <motion.div variants={fadeInUp} className="mb-2">
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass text-gold text-xs font-medium">
-              <Sparkles className="w-3 h-3" />
+            <span className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full glass text-gold text-[10px] sm:text-xs font-medium">
+              <Sparkles className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
               Marketplace Africain #1
             </span>
           </motion.div>
 
-          {/* Boutons avec stats en dessous - Optimisé mobile */}
-          <motion.div variants={fadeInUp} className="flex items-stretch justify-center gap-2 mb-4 w-full px-2">
+          {/* Boutons avec stats - Ultra compact mobile */}
+          <motion.div variants={fadeInUp} className="flex items-stretch justify-center gap-1.5 sm:gap-2 mb-3 sm:mb-4 w-full max-w-sm">
             {/* Je suis Créateur + stat */}
             <div className="flex-1 flex flex-col items-center min-w-0">
               <Link to="/auth?role=creator" className="w-full">
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-gold hover:text-gold/80 text-xs sm:text-sm w-full px-1 sm:px-3 h-auto py-2"
+                  className="text-gold hover:text-gold/80 text-[10px] sm:text-xs w-full px-1 h-auto py-1.5 sm:py-2"
                 >
-                  <Users className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 flex-shrink-0" />
+                  <Users className="w-3 h-3 mr-0.5 sm:mr-1 flex-shrink-0" />
                   <span className="truncate">Créateur</span>
                 </Button>
               </Link>
-              <div className="glass rounded-lg px-2 sm:px-3 py-1.5 text-center mt-1.5 w-full">
-                <p className="text-base sm:text-lg font-bold text-gold-gradient">10K+</p>
-                <p className="text-[10px] sm:text-xs text-muted-foreground">Créateurs</p>
+              <div className="glass rounded-md sm:rounded-lg px-1.5 sm:px-2 py-1 sm:py-1.5 text-center mt-1 w-full">
+                <p className="text-sm sm:text-base font-bold text-gold-gradient">10K+</p>
+                <p className="text-[8px] sm:text-[10px] text-muted-foreground">Créateurs</p>
               </div>
             </div>
 
@@ -255,15 +255,15 @@ const Landing = () => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-gold hover:text-gold/80 text-xs sm:text-sm w-full px-1 sm:px-3 h-auto py-2"
+                  className="text-gold hover:text-gold/80 text-[10px] sm:text-xs w-full px-1 h-auto py-1.5 sm:py-2"
                 >
-                  <Briefcase className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 flex-shrink-0" />
+                  <Briefcase className="w-3 h-3 mr-0.5 sm:mr-1 flex-shrink-0" />
                   <span className="truncate">Marque</span>
                 </Button>
               </Link>
-              <div className="glass rounded-lg px-2 sm:px-3 py-1.5 text-center mt-1.5 w-full">
-                <p className="text-base sm:text-lg font-bold text-gold-gradient">500+</p>
-                <p className="text-[10px] sm:text-xs text-muted-foreground">Marques</p>
+              <div className="glass rounded-md sm:rounded-lg px-1.5 sm:px-2 py-1 sm:py-1.5 text-center mt-1 w-full">
+                <p className="text-sm sm:text-base font-bold text-gold-gradient">500+</p>
+                <p className="text-[8px] sm:text-[10px] text-muted-foreground">Marques</p>
               </div>
             </div>
 
@@ -273,36 +273,36 @@ const Landing = () => {
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowHowItWorks(true)}
-                className="text-gold hover:text-gold/80 text-xs sm:text-sm w-full px-1 sm:px-3 h-auto py-2"
+                className="text-gold hover:text-gold/80 text-[10px] sm:text-xs w-full px-1 h-auto py-1.5 sm:py-2"
               >
-                <HelpCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 flex-shrink-0" />
-                <span className="truncate">Comment ?</span>
+                <HelpCircle className="w-3 h-3 mr-0.5 sm:mr-1 flex-shrink-0" />
+                <span className="truncate">Comment?</span>
               </Button>
-              <div className="glass rounded-lg px-2 sm:px-3 py-1.5 text-center mt-1.5 w-full">
-                <p className="text-base sm:text-lg font-bold text-gold-gradient">54+</p>
-                <p className="text-[10px] sm:text-xs text-muted-foreground">Pays</p>
+              <div className="glass rounded-md sm:rounded-lg px-1.5 sm:px-2 py-1 sm:py-1.5 text-center mt-1 w-full">
+                <p className="text-sm sm:text-base font-bold text-gold-gradient">54+</p>
+                <p className="text-[8px] sm:text-[10px] text-muted-foreground">Pays</p>
               </div>
             </div>
           </motion.div>
 
           {/* Créateurs populaires - Défilement infini */}
-          <motion.div variants={fadeInUp} className="mt-6 w-full">
-            <h3 className="font-display text-base font-bold mb-3 text-center">
+          <motion.div variants={fadeInUp} className="mt-4 sm:mt-6 w-full">
+            <h3 className="font-display text-sm sm:text-base font-bold mb-2 sm:mb-3 text-center">
               Créateurs <span className="text-gold-gradient">populaires</span>
             </h3>
             {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-6 h-6 text-gold animate-spin" />
+              <div className="flex items-center justify-center py-6 sm:py-8">
+                <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 text-gold animate-spin" />
               </div>
             ) : (
-              <div className="relative -mx-6">
+              <div className="relative -mx-4 sm:-mx-6">
                 {/* Fondu gauche */}
-                <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
+                <div className="absolute left-0 top-0 bottom-0 w-8 sm:w-12 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
                 {/* Fondu droite */}
-                <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
+                <div className="absolute right-0 top-0 bottom-0 w-8 sm:w-12 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
                 
                 <div className="overflow-hidden">
-                  <div className="flex animate-marquee gap-3 w-max px-6">
+                  <div className="flex animate-marquee gap-2 sm:gap-3 w-max px-4 sm:px-6">
                     {/* Première série de cartes */}
                     {allCreators.slice(0, 4).map((creator, index) => (
                       <div key={`first-${creator.userId}`} className="flex-shrink-0">
@@ -334,34 +334,34 @@ const Landing = () => {
       </section>
 
       {/* Section avec onglets */}
-      <section className="px-6 py-6">
+      <section className="px-4 sm:px-6 py-4 sm:py-6">
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
         >
           {/* Onglets */}
-          <div className="flex gap-2 mb-4">
+          <div className="flex gap-1.5 sm:gap-2 mb-3 sm:mb-4">
             <button
               onClick={() => setActiveTab("creators")}
-              className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold transition-all ${
+              className={`flex-1 py-2 sm:py-3 px-2 sm:px-4 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold transition-all ${
                 activeTab === "creators"
                   ? "bg-gold text-primary-foreground"
                   : "glass text-muted-foreground hover:text-foreground"
               }`}
             >
-              <Users className="w-4 h-4 inline-block mr-2" />
+              <Users className="w-3 h-3 sm:w-4 sm:h-4 inline-block mr-1 sm:mr-2" />
               Nos Créateurs
             </button>
             <button
               onClick={() => setActiveTab("offers")}
-              className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold transition-all ${
+              className={`flex-1 py-2 sm:py-3 px-2 sm:px-4 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold transition-all ${
                 activeTab === "offers"
                   ? "bg-gold text-primary-foreground"
                   : "glass text-muted-foreground hover:text-foreground"
               }`}
             >
-              <Briefcase className="w-4 h-4 inline-block mr-2" />
+              <Briefcase className="w-3 h-3 sm:w-4 sm:h-4 inline-block mr-1 sm:mr-2" />
               Offres
             </button>
           </div>
@@ -375,22 +375,22 @@ const Landing = () => {
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.3 }}
               >
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-display text-lg font-bold">
+                <div className="flex items-center justify-between mb-3 sm:mb-4">
+                  <h3 className="font-display text-base sm:text-lg font-bold">
                     Nos <span className="text-gold-gradient">Créateurs</span>
                   </h3>
-                  <Link to="/explore" className="text-gold text-xs flex items-center gap-1">
-                    Voir tous <ArrowRight className="w-3 h-3" />
+                  <Link to="/explore" className="text-gold text-[10px] sm:text-xs flex items-center gap-0.5 sm:gap-1">
+                    Voir tous <ArrowRight className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                   </Link>
                 </div>
 
                 {/* Grille de cartes créateurs */}
                 {loading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <Loader2 className="w-8 h-8 text-gold animate-spin" />
+                  <div className="flex items-center justify-center py-8 sm:py-12">
+                    <Loader2 className="w-6 h-6 sm:w-8 sm:h-8 text-gold animate-spin" />
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3">
                     {allCreators.map((creator, index) => (
                       <CreatorCard
                         key={creator.userId}
@@ -410,17 +410,17 @@ const Landing = () => {
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.3 }}
               >
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-display text-lg font-bold">
+                <div className="flex items-center justify-between mb-3 sm:mb-4">
+                  <h3 className="font-display text-base sm:text-lg font-bold">
                     Opportunités <span className="text-gold-gradient">disponibles</span>
                   </h3>
-                  <Link to="/auth?role=creator" className="text-gold text-xs flex items-center gap-1">
-                    Postuler <ArrowRight className="w-3 h-3" />
+                  <Link to="/auth?role=creator" className="text-gold text-[10px] sm:text-xs flex items-center gap-0.5 sm:gap-1">
+                    Postuler <ArrowRight className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                   </Link>
                 </div>
 
                 {/* Grille des offres */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-3">
                   {allOffers.map((offer, index) => (
                     <motion.div
                       key={offer.id}
@@ -428,61 +428,61 @@ const Landing = () => {
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true }}
                       transition={{ delay: index * 0.05 }}
-                      className="relative rounded-2xl overflow-hidden"
+                      className="relative rounded-xl sm:rounded-2xl overflow-hidden"
                       style={{
                         background: 'linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--card)) 100%)',
                       }}
                     >
                       <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-gold via-gold/60 to-gold/20" />
                       
-                      <div className="p-4 pl-5">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="w-11 h-11 rounded-lg overflow-hidden shadow-lg flex-shrink-0">
+                      <div className="p-3 sm:p-4 pl-4 sm:pl-5">
+                        <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-lg overflow-hidden shadow-lg flex-shrink-0">
                             <img src={offer.logo} alt={offer.brand} className="w-full h-full object-cover" />
                           </div>
                           <div>
-                            <h4 className="font-semibold text-sm text-gold">
+                            <h4 className="font-semibold text-xs sm:text-sm text-gold">
                               {offer.brand}
                             </h4>
-                            <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                              <MapPin className="w-3 h-3" />
+                            <div className="flex items-center gap-1 text-[9px] sm:text-[11px] text-muted-foreground">
+                              <MapPin className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                               {offer.location}
                             </div>
                           </div>
                         </div>
 
-                        <h3 className="font-display font-bold text-gold-gradient text-base mb-2">
+                        <h3 className="font-display font-bold text-gold-gradient text-sm sm:text-base mb-1.5 sm:mb-2">
                           {offer.title}
                         </h3>
 
-                        <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
+                        <p className="text-[10px] sm:text-xs text-muted-foreground mb-2 sm:mb-3 leading-relaxed line-clamp-2">
                           {offer.description}
                         </p>
 
-                        <div className="flex flex-wrap gap-2 mb-3">
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-gold/10 border border-gold/30 text-gold">
+                        <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-2 sm:mb-3">
+                          <span className="inline-flex items-center gap-1 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium bg-gold/10 border border-gold/30 text-gold">
                             <span>👤</span>
                             {offer.category}
                           </span>
-                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-muted/30 border border-border text-muted-foreground">
+                          <span className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium bg-muted/30 border border-border text-muted-foreground">
                             {offer.contentType}
                           </span>
                         </div>
 
-                        <div className="space-y-1.5 mb-4">
-                          <div className="flex items-center gap-2">
-                            <DollarSign className="w-4 h-4 text-gold" />
-                            <span className="font-semibold text-gold text-sm">{offer.budget}</span>
+                        <div className="flex items-center justify-between mb-2 sm:mb-3">
+                          <div className="flex items-center gap-1.5 sm:gap-2">
+                            <DollarSign className="w-3 h-3 sm:w-4 sm:h-4 text-gold" />
+                            <span className="font-semibold text-gold text-xs sm:text-sm">{offer.budget}</span>
                           </div>
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <Calendar className="w-4 h-4" />
-                            <span className="text-sm">{offer.deadline}</span>
+                          <div className="flex items-center gap-1 sm:gap-2 text-muted-foreground">
+                            <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
+                            <span className="text-[10px] sm:text-sm">{offer.deadline}</span>
                           </div>
                         </div>
 
                         <Link to="/auth?role=creator" className="block">
-                          <button className="w-full py-3 rounded-xl border-2 border-gold/60 text-foreground font-medium flex items-center justify-center gap-2 hover:bg-gold/10 hover:border-gold transition-all">
-                            <Send className="w-4 h-4" />
+                          <button className="w-full py-2 sm:py-3 rounded-lg sm:rounded-xl border-2 border-gold/60 text-foreground text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 sm:gap-2 hover:bg-gold/10 hover:border-gold transition-all">
+                            <Send className="w-3 h-3 sm:w-4 sm:h-4" />
                             Postuler
                           </button>
                         </Link>
@@ -497,22 +497,22 @@ const Landing = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="px-6 py-8 bg-violet-gradient">
+      <section className="px-4 sm:px-6 py-6 sm:py-8 bg-violet-gradient">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
-          className="glass-card p-6 border-gold/30 text-center"
+          className="glass-card p-4 sm:p-6 border-gold/30 text-center"
         >
-          <Sparkles className="w-10 h-10 text-gold mx-auto mb-3" />
-          <h3 className="font-display text-xl font-bold mb-2">
+          <Sparkles className="w-8 h-8 sm:w-10 sm:h-10 text-gold mx-auto mb-2 sm:mb-3" />
+          <h3 className="font-display text-lg sm:text-xl font-bold mb-1.5 sm:mb-2">
             Prêt à <span className="text-gold-gradient">briller</span> ?
           </h3>
-          <p className="text-muted-foreground text-sm mb-4">
+          <p className="text-muted-foreground text-xs sm:text-sm mb-3 sm:mb-4">
             Rejoignez la communauté CollabCréa
           </p>
           <Link to="/auth">
-            <Button variant="gold" size="default" className="w-full">
+            <Button variant="gold" size="default" className="w-full text-sm sm:text-base">
               Commencer maintenant
             </Button>
           </Link>
@@ -520,16 +520,16 @@ const Landing = () => {
       </section>
 
       {/* Footer */}
-      <footer className="px-6 py-6 pb-28 text-center border-t border-border">
+      <footer className="px-4 sm:px-6 py-4 sm:py-6 pb-24 sm:pb-28 text-center border-t border-border">
         <img 
           src={logoCollabCrea} 
           alt="CollabCréa" 
-          className="h-16 w-auto mx-auto mb-4"
+          className="h-12 sm:h-16 w-auto mx-auto mb-3 sm:mb-4"
         />
-        <p className="text-muted-foreground text-[10px] mb-2">
+        <p className="text-muted-foreground text-[9px] sm:text-[10px] mb-1.5 sm:mb-2">
           "Connectez votre marque aux voix qui comptent"
         </p>
-        <p className="text-muted-foreground text-[10px]">
+        <p className="text-muted-foreground text-[9px] sm:text-[10px]">
           © 2026 CollabCréa. Tous droits réservés.
         </p>
       </footer>
