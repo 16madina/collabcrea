@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import ProposalCard from "@/components/creator/ProposalCard";
+import ProposalStatusCard from "@/components/brand/ProposalStatusCard";
 
 interface MessagesTabProps {
   userRole: "creator" | "brand";
@@ -143,9 +144,17 @@ const MessagesTab = ({ userRole }: MessagesTabProps) => {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {/* Proposal Card if conversation has an offer (only for creators) */}
-          {userRole === "creator" && selectedConversation.offer_id && (
+          {/* Proposal Card if conversation has an offer */}
+          {selectedConversation.offer_id && userRole === "creator" && (
             <ProposalCard
+              offerId={selectedConversation.offer_id}
+              conversationId={selectedConversation.id}
+            />
+          )}
+          
+          {/* Proposal Status Card for brands */}
+          {selectedConversation.offer_id && userRole === "brand" && (
+            <ProposalStatusCard
               offerId={selectedConversation.offer_id}
               conversationId={selectedConversation.id}
             />
