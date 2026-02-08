@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import MessagesTab from "@/components/collabs/MessagesTab";
 import CollaborationsTab from "@/components/collabs/CollaborationsTab";
+import { toast } from "sonner";
 
 const CollabsHub = () => {
   const { user } = useAuth();
@@ -20,6 +21,23 @@ const CollabsHub = () => {
   // Determine user role based on URL
   const isCreator = window.location.pathname.includes("/creator");
   const userRole = isCreator ? "creator" : "brand";
+
+  // Handle Stripe payment callback
+  useEffect(() => {
+    const payment = searchParams.get("payment");
+    const collaborationId = searchParams.get("collaboration");
+    
+    if (payment === "success") {
+      toast.success("Paiement effectué avec succès ! Le créateur peut maintenant livrer le contenu.");
+      // Clean up URL params
+      setSearchParams({ tab: "collabs" });
+      setActiveTab("collabs");
+    } else if (payment === "cancelled") {
+      toast.info("Paiement annulé");
+      setSearchParams({ tab: "collabs" });
+      setActiveTab("collabs");
+    }
+  }, [searchParams, setSearchParams]);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
