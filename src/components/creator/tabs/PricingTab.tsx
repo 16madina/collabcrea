@@ -1,6 +1,9 @@
+import { useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Plus, Sparkles } from "lucide-react";
+import { Plus, Sparkles, Download, Share2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import html2canvas from "html2canvas";
 
 interface PricingItem {
   type: string;
@@ -25,10 +28,17 @@ const PricingTab = ({
   avatarUrl, 
   fullName, 
 }: PricingTabProps) => {
+  const { toast } = useToast();
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [isExporting, setIsExporting] = useState(false);
   const hasPricing = pricing && pricing.length > 0;
 
-  // Group pricing by platform
-  const groupedPricing = hasPricing ? pricing.reduce((acc, item) => {
+  // Separate packs from regular items
+  const packs = hasPricing ? pricing.filter(item => item.type.toLowerCase().includes("pack")) : [];
+  const regularItems = hasPricing ? pricing.filter(item => !item.type.toLowerCase().includes("pack")) : [];
+
+  // Group regular pricing by platform
+  const groupedPricing = regularItems.length > 0 ? regularItems.reduce((acc, item) => {
     let platform = "Autres";
     if (item.type.toLowerCase().includes("instagram")) platform = "Instagram";
     else if (item.type.toLowerCase().includes("tiktok")) platform = "TikTok";
@@ -52,14 +62,140 @@ const PricingTab = ({
   // Platform order for display
   const platformOrder = ["Snap", "TikTok", "Instagram", "YouTube", "Autres"];
 
+  // Export rate card as image
+  const exportAsImage = async () => {
+    if (!cardRef.current) return;
+    
+    setIsExporting(true);
+    try {
+      const canvas = await html2canvas(cardRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: null,
+        logging: false,
+      });
+      
+      const link = document.createElement("a");
+      link.download = `rate-card-${fullName || "creator"}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+      
+      toast({
+        title: "Image téléchargée",
+        description: "Votre rate card a été enregistrée",
+      });
+    } catch (error) {
+      console.error("Error exporting image:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de télécharger l'image",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Share rate card
+  const shareRateCard = async () => {
+    if (!cardRef.current) return;
+    
+    setIsExporting(true);
+    try {
+      const canvas = await html2canvas(cardRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: null,
+        logging: false,
+      });
+      
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          throw new Error("Failed to create blob");
+        }
+        
+        const file = new File([blob], `rate-card-${fullName || "creator"}.png`, { type: "image/png" });
+        
+        if (navigator.share && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            title: `Rate Card - ${fullName || "Créateur"}`,
+            text: "Découvrez mes tarifs de création de contenu !",
+            files: [file],
+          });
+        } else {
+          // Fallback: download the image
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.download = `rate-card-${fullName || "creator"}.png`;
+          link.href = url;
+          link.click();
+          URL.revokeObjectURL(url);
+          
+          toast({
+            title: "Image téléchargée",
+            description: "Partagez-la sur vos réseaux sociaux !",
+          });
+        }
+      }, "image/png");
+    } catch (error) {
+      console.error("Error sharing:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de partager",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="p-4"
     >
+      {/* Share/Download Buttons */}
+      {hasPricing && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex gap-2 mb-4"
+        >
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportAsImage}
+            disabled={isExporting}
+            className="flex-1 gap-2"
+          >
+            {isExporting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4" />
+            )}
+            Télécharger
+          </Button>
+          <Button
+            variant="gold"
+            size="sm"
+            onClick={shareRateCard}
+            disabled={isExporting}
+            className="flex-1 gap-2"
+          >
+            {isExporting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Share2 className="w-4 h-4" />
+            )}
+            Partager
+          </Button>
+        </motion.div>
+      )}
+
       {/* Flyer Style Rate Card */}
       <motion.div
+        ref={cardRef}
         onClick={onEditPricing}
         whileHover={{ scale: 1.01 }}
         whileTap={{ scale: 0.99 }}
@@ -73,6 +209,7 @@ const PricingTab = ({
               src={avatarUrl} 
               alt="Background" 
               className="w-full h-full object-cover"
+              crossOrigin="anonymous"
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-violet-deep via-background to-violet" />
@@ -103,6 +240,45 @@ const PricingTab = ({
           {hasPricing ? (
             /* Pricing Content */
             <div className="flex-1 space-y-5">
+              {/* Packs Section */}
+              {packs.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex justify-center">
+                    <div className="px-8 py-2 rounded-full bg-gradient-to-r from-gold to-gold-light shadow-lg">
+                      <span className="text-background font-bold text-sm tracking-wider uppercase">
+                        ⭐ PACKS
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2 px-4">
+                    {packs.map((pack, index) => (
+                      <div 
+                        key={index} 
+                        className="p-3 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <p className="text-white font-bold text-base drop-shadow-md">
+                              {pack.type}
+                            </p>
+                            {pack.description && (
+                              <p className="text-white/70 text-xs mt-1">
+                                {pack.description}
+                              </p>
+                            )}
+                          </div>
+                          <span className="text-gold font-bold text-lg drop-shadow-md ml-3">
+                            {formatPrice(pack.price)}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Regular Platform Pricing */}
               {platformOrder.map((platform) => {
                 const items = groupedPricing[platform];
                 if (!items || items.length === 0) return null;
