@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Star, MapPin, MessageCircle, Flag, User, CreditCard, Image, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { useContactCreator } from "@/hooks/useContactCreator";
+import { useNavigate } from "react-router-dom";
 import ReportDialog from "@/components/ReportDialog";
 import PortfolioTab from "@/components/creator/tabs/PortfolioTab";
+import ContactCreatorSheet from "@/components/brand/ContactCreatorSheet";
 
 // Social media icons
 const YoutubeIcon = ({ className }: { className?: string }) => (
@@ -78,22 +79,29 @@ const defaultPricing: CreatorPricing[] = [
 
 const CreatorDetailSheet = ({ creator, creatorUserId, open, onOpenChange }: CreatorDetailSheetProps) => {
   const { user } = useAuth();
-  const { contactCreator, isContacting } = useContactCreator();
+  const navigate = useNavigate();
   const [showReportDialog, setShowReportDialog] = useState(false);
+  const [showContactSheet, setShowContactSheet] = useState(false);
 
   if (!creator) return null;
 
   const pricing = creator.pricing || defaultPricing;
   const creatorFullName = `${creator.firstName} ${creator.lastName}`;
 
-  const handleContact = async () => {
+  const handleContact = () => {
+    if (!user) {
+      navigate("/auth?role=brand");
+      return;
+    }
+
     if (!creatorUserId || creatorUserId.startsWith("static-")) {
       // For static/demo creators, redirect to auth
-      window.location.href = "/auth?role=brand";
+      navigate("/auth?role=brand");
       return;
     }
     
-    await contactCreator(creatorUserId, creatorFullName);
+    // Open contact sheet with offer selection
+    setShowContactSheet(true);
   };
 
   return (
@@ -264,13 +272,8 @@ const CreatorDetailSheet = ({ creator, creatorUserId, open, onOpenChange }: Crea
               size="lg" 
               className="w-full"
               onClick={handleContact}
-              disabled={isContacting}
             >
-              {isContacting ? (
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              ) : (
-                <MessageCircle className="w-5 h-5 mr-2" />
-              )}
+              <MessageCircle className="w-5 h-5 mr-2" />
               Contacter {creator.firstName}
             </Button>
 
@@ -290,6 +293,16 @@ const CreatorDetailSheet = ({ creator, creatorUserId, open, onOpenChange }: Crea
         </div>
       </SheetContent>
     </Sheet>
+
+    {/* Contact Creator Sheet with Offer Selection */}
+    {creatorUserId && !creatorUserId.startsWith("static-") && (
+      <ContactCreatorSheet
+        open={showContactSheet}
+        onOpenChange={setShowContactSheet}
+        creatorId={creatorUserId}
+        creatorName={creatorFullName}
+      />
+    )}
 
     {/* Report Dialog */}
     <ReportDialog
