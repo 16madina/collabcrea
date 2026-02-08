@@ -500,6 +500,9 @@ const CreatorProfile = () => {
               avatarUrl={profileData?.avatar_url}
               fullName={profileData?.full_name}
               category={profileData?.category}
+              socialAccounts={socialAccounts}
+              email={user?.email}
+              country={profileData?.country}
             />
           )}
           
