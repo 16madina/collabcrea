@@ -517,8 +517,29 @@ const Auth = () => {
     );
   }
 
+  // Determine which background image to show based on mode and step
+  const getCurrentBackground = () => {
+    if (mode === "choice") return authBackground;
+    if (mode === "login") return authLoginBg;
+    return stepBackgrounds[String(step)] || authStep1Bg;
+  };
+
   return (
     <div className="min-h-screen flex flex-col relative">
+      {/* Global background image */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={`bg-${mode}-${step}`}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.6 }}
+          className="fixed inset-0 z-0 overflow-hidden pointer-events-none"
+        >
+          <img src={getCurrentBackground()} alt="" className="w-full h-full object-cover opacity-50" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/75 to-background/40" />
+        </motion.div>
+      </AnimatePresence>
       {/* Header */}
       <motion.header
         initial={{ opacity: 0, y: -20 }}
@@ -551,15 +572,7 @@ const Auth = () => {
               transition={{ duration: 0.4, ease: "easeOut" }}
               className="flex-1 flex flex-col items-center justify-center gap-8 py-12 relative"
             >
-              {/* Background image */}
-              <div className="absolute inset-0 -mx-6 -my-12 overflow-hidden">
-                <img 
-                  src={authBackground} 
-                  alt="" 
-                  className="w-full h-full object-cover opacity-40"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-background/40" />
-              </div>
+              {/* Background handled at parent level */}
               <motion.img 
                 src={logoCollabCrea} 
                 alt="CollabCréa" 
@@ -674,11 +687,7 @@ const LoginForm = ({
     exit={{ opacity: 0, x: -20 }}
     className="flex-1 flex flex-col justify-center relative"
   >
-    {/* Background image */}
-    <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-      <img src={authLoginBg} alt="" className="w-full h-full object-cover opacity-50" />
-      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/50" />
-    </div>
+    {/* Background handled at parent level */}
     <div className="text-center mb-8">
       <h2 className="font-display text-2xl font-bold mb-2">Connexion</h2>
       <p className="text-muted-foreground text-sm">
@@ -801,20 +810,7 @@ const SignupForm = ({
     exit={{ opacity: 0, x: -20 }}
     className="flex-1 flex flex-col relative"
   >
-    {/* Background image per step */}
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={`bg-${step}`}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.5 }}
-        className="fixed inset-0 z-0 overflow-hidden pointer-events-none"
-      >
-        <img src={stepBackgrounds[String(step)]} alt="" className="w-full h-full object-cover opacity-50" />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/50" />
-      </motion.div>
-    </AnimatePresence>
+    {/* Background handled at parent level */}
     {/* Progress indicator - Show 4 steps for creators, 5 for brands */}
     <div className="flex justify-center gap-2 mb-6">
       {(formData.role === "brand" ? [1, 2, 3, 3.5, 4] : [1, 2, 3, 4]).map((s) => {
