@@ -518,12 +518,12 @@ const Auth = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen flex flex-col relative">
       {/* Header */}
       <motion.header
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="px-6 pt-[max(env(safe-area-inset-top),1rem)] pb-2 flex items-center gap-4"
+        className="px-6 pt-[max(env(safe-area-inset-top),1rem)] pb-2 flex items-center gap-4 relative z-10"
       >
         <button
           onClick={handleBack}
@@ -540,7 +540,7 @@ const Auth = () => {
         </Link>
       </motion.header>
 
-      <div className="flex-1 flex flex-col px-6 pb-8 safe-bottom overflow-y-auto">
+      <div className="flex-1 flex flex-col px-6 pb-8 safe-bottom overflow-y-auto relative z-10">
         <AnimatePresence mode="wait">
           {mode === "choice" ? (
             <motion.div
@@ -675,9 +675,9 @@ const LoginForm = ({
     className="flex-1 flex flex-col justify-center relative"
   >
     {/* Background image */}
-    <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-      <img src={authLoginBg} alt="" className="w-full h-full object-cover opacity-40" />
-      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-background/40" />
+    <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+      <img src={authLoginBg} alt="" className="w-full h-full object-cover opacity-50" />
+      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/50" />
     </div>
     <div className="text-center mb-8">
       <h2 className="font-display text-2xl font-bold mb-2">Connexion</h2>
@@ -809,10 +809,10 @@ const SignupForm = ({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.5 }}
-        className="fixed inset-0 -z-10 overflow-hidden pointer-events-none"
+        className="fixed inset-0 z-0 overflow-hidden pointer-events-none"
       >
-        <img src={stepBackgrounds[String(step)]} alt="" className="w-full h-full object-cover opacity-40" />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-background/40" />
+        <img src={stepBackgrounds[String(step)]} alt="" className="w-full h-full object-cover opacity-50" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/50" />
       </motion.div>
     </AnimatePresence>
     {/* Progress indicator - Show 4 steps for creators, 5 for brands */}
