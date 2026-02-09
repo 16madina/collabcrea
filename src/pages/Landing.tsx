@@ -149,13 +149,13 @@ const Landing = () => {
       {/* Hero Section */}
       <section className="relative flex flex-col">
         {/* Background Image with Overlay */}
-        <div className="absolute inset-0 h-[50vh]">
+        <div className="absolute inset-0 h-[60vh]">
           <img
             src={heroImage}
             alt="African content creator"
             className="w-full h-full object-cover object-top"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/40" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
         </div>
 
         {/* Header - Fixed at top with iOS safe area */}
