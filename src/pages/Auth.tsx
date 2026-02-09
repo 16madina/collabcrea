@@ -24,6 +24,20 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import logoCollabCrea from "@/assets/logo-collabcrea.png";
 import authBackground from "@/assets/auth-background.jpg";
+import authStep1Bg from "@/assets/auth-step1-bg.jpg";
+import authStep2Bg from "@/assets/auth-step2-bg.jpg";
+import authStep3Bg from "@/assets/auth-step3-bg.jpg";
+import authStep35Bg from "@/assets/auth-step35-bg.jpg";
+import authStep4Bg from "@/assets/auth-step4-bg.jpg";
+import authLoginBg from "@/assets/auth-login-bg.jpg";
+
+const stepBackgrounds: Record<string, string> = {
+  "1": authStep1Bg,
+  "2": authStep2Bg,
+  "3": authStep3Bg,
+  "3.5": authStep35Bg,
+  "4": authStep4Bg,
+};
 import AvatarUpload from "@/components/auth/AvatarUpload";
 import CountrySelect from "@/components/auth/CountrySelect";
 import PhoneInput from "@/components/auth/PhoneInput";
@@ -658,8 +672,13 @@ const LoginForm = ({
     initial={{ opacity: 0, x: 20 }}
     animate={{ opacity: 1, x: 0 }}
     exit={{ opacity: 0, x: -20 }}
-    className="flex-1 flex flex-col justify-center"
+    className="flex-1 flex flex-col justify-center relative"
   >
+    {/* Background image */}
+    <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+      <img src={authLoginBg} alt="" className="w-full h-full object-cover opacity-20" />
+      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/85 to-background/60" />
+    </div>
     <div className="text-center mb-8">
       <h2 className="font-display text-2xl font-bold mb-2">Connexion</h2>
       <p className="text-muted-foreground text-sm">
@@ -780,8 +799,22 @@ const SignupForm = ({
     initial={{ opacity: 0, x: 20 }}
     animate={{ opacity: 1, x: 0 }}
     exit={{ opacity: 0, x: -20 }}
-    className="flex-1 flex flex-col"
+    className="flex-1 flex flex-col relative"
   >
+    {/* Background image per step */}
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={`bg-${step}`}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.5 }}
+        className="fixed inset-0 -z-10 overflow-hidden pointer-events-none"
+      >
+        <img src={stepBackgrounds[String(step)]} alt="" className="w-full h-full object-cover opacity-20" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/85 to-background/60" />
+      </motion.div>
+    </AnimatePresence>
     {/* Progress indicator - Show 4 steps for creators, 5 for brands */}
     <div className="flex justify-center gap-2 mb-6">
       {(formData.role === "brand" ? [1, 2, 3, 3.5, 4] : [1, 2, 3, 4]).map((s) => {
