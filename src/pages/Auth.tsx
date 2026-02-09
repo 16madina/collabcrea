@@ -30,7 +30,7 @@ import SocialNetworkSelector from "@/components/auth/SocialNetworkSelector";
 import { worldCountries, africanCountries, getPhoneCodeByCountry } from "@/data/countries";
 
 type UserRole = "creator" | "brand";
-type AuthMode = "login" | "signup";
+type AuthMode = "choice" | "login" | "signup";
 
 // Steps: 1=Photo+Names, 2=Countries+Phone, 3=Role+Socials, 3.5=Brand Info (if brand), 4=Credentials
 type SignupStep = 1 | 2 | 3 | 3.5 | 4;
@@ -164,7 +164,7 @@ const Auth = () => {
   const navigate = useNavigate();
   const { user, role: userRole, loading: authLoading, signIn } = useAuth();
   
-  const [mode, setMode] = useState<AuthMode>("signup");
+  const [mode, setMode] = useState<AuthMode>("choice");
   const [step, setStep] = useState<SignupStep>(1);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -315,14 +315,14 @@ const Auth = () => {
   };
 
   const handleBack = () => {
-    if (step > 1) {
+    if (step > 1 && mode === "signup") {
       setStep(getPrevStep(step));
-    } else if (mode === "login") {
-      navigate("/");
-    } else {
-      setMode("login");
+    } else if (mode === "login" || mode === "signup") {
+      setMode("choice");
       setFormData(initialFormData);
       setStep(1);
+    } else {
+      navigate("/");
     }
   };
 
@@ -527,7 +527,41 @@ const Auth = () => {
 
       <div className="flex-1 flex flex-col px-6 pb-8 safe-bottom overflow-y-auto">
         <AnimatePresence mode="wait">
-          {mode === "login" ? (
+          {mode === "choice" ? (
+            <motion.div
+              key="choice"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="flex-1 flex flex-col items-center justify-center gap-8 py-12"
+            >
+              <img 
+                src={logoCollabCrea} 
+                alt="CollabCréa" 
+                className="h-20 md:h-24 w-auto"
+              />
+              <div className="text-center space-y-2">
+                <h1 className="text-2xl font-bold text-foreground">Bienvenue sur CollabCréa</h1>
+                <p className="text-muted-foreground">La plateforme de collaboration créative en Afrique</p>
+              </div>
+              <div className="w-full max-w-sm space-y-4">
+                <Button 
+                  onClick={() => setMode("login")}
+                  className="w-full bg-gold hover:bg-gold/90 text-black font-semibold py-6 text-lg rounded-xl"
+                >
+                  Se connecter
+                </Button>
+                <Button 
+                  onClick={() => setMode("signup")}
+                  variant="outline"
+                  className="w-full border-gold/50 text-gold hover:bg-gold/10 font-semibold py-6 text-lg rounded-xl"
+                >
+                  <Sparkles className="w-5 h-5 mr-2" />
+                  Créer un compte
+                </Button>
+              </div>
+            </motion.div>
+          ) : mode === "login" ? (
             <LoginForm
               key="login"
               email={loginEmail}
