@@ -91,12 +91,12 @@
 
   html {
     -webkit-tap-highlight-color: transparent;
-    font-size: 14px; /* Base mobile */
+    font-size: 16px; /* Base mobile - increased for native iOS/Android readability */
   }
 
   @media (min-width: 640px) {
     html {
-      font-size: 16px; /* Desktop */
+      font-size: 17px; /* Desktop */
     }
   }
 
@@ -129,7 +129,7 @@
   }
 
   p {
-    @apply text-sm sm:text-base;
+    @apply text-base;
   }
 }
 
