@@ -158,19 +158,20 @@ const Landing = () => {
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/40" />
         </div>
 
-        {/* Header */}
+        {/* Header - Fixed at top with iOS safe area */}
         <motion.header
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="relative z-10 px-6 pt-[calc(env(safe-area-inset-top,0px)+1rem)] pb-2"
+          className="fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 bg-background/80 backdrop-blur-md border-b border-border/30"
+          style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.5rem)' }}
         >
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between py-2">
             <Link to="/" className="flex items-center">
               <img 
                 src={logoCollabCrea} 
                 alt="CollabCréa" 
-                className="h-10 md:h-12 w-auto"
+                className="h-8 sm:h-10 md:h-12 w-auto"
               />
             </Link>
             <div className="flex items-center gap-1">
@@ -190,6 +191,9 @@ const Landing = () => {
             </div>
           </div>
         </motion.header>
+
+        {/* Spacer for fixed header */}
+        <div className="h-16 sm:h-20" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }} />
 
         {/* Hero Content */}
         <motion.div
