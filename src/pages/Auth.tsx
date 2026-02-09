@@ -530,21 +530,35 @@ const Auth = () => {
           {mode === "choice" ? (
             <motion.div
               key="choice"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95, y: -20 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
               className="flex-1 flex flex-col items-center justify-center gap-8 py-12"
             >
-              <img 
+              <motion.img 
                 src={logoCollabCrea} 
                 alt="CollabCréa" 
                 className="h-20 md:h-24 w-auto"
+                initial={{ opacity: 0, scale: 0.5, rotate: -10 }}
+                animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                transition={{ duration: 0.6, delay: 0.1, type: "spring", stiffness: 200 }}
               />
-              <div className="text-center space-y-2">
+              <motion.div 
+                className="text-center space-y-2"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.25 }}
+              >
                 <h1 className="text-2xl font-bold text-foreground">Bienvenue sur CollabCréa</h1>
                 <p className="text-muted-foreground">La plateforme de collaboration créative en Afrique</p>
-              </div>
-              <div className="w-full max-w-sm space-y-4">
+              </motion.div>
+              <motion.div 
+                className="w-full max-w-sm space-y-4"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.4 }}
+              >
                 <Button 
                   onClick={() => setMode("login")}
                   className="w-full bg-gold hover:bg-gold/90 text-black font-semibold py-6 text-lg rounded-xl"
@@ -559,7 +573,7 @@ const Auth = () => {
                   <Sparkles className="w-5 h-5 mr-2" />
                   Créer un compte
                 </Button>
-              </div>
+              </motion.div>
             </motion.div>
           ) : mode === "login" ? (
             <LoginForm
