@@ -211,24 +211,22 @@ const MessagesTab = ({ userRole }: MessagesTabProps) => {
         </div>
 
         {/* Message Input */}
-        <div className="safe-bottom px-4 py-3 glass-card rounded-none border-x-0 border-b-0">
+        <div className="sticky bottom-0 left-0 right-0 px-4 py-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] bg-background border-t border-border z-10">
           <div className="flex items-center gap-2">
             <Input
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+              onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
               placeholder="Écrivez votre message..."
-              className="flex-1 h-12 bg-muted/50 border-border focus:border-gold rounded-xl"
+              className="flex-1 h-12 bg-muted/50 border-border focus:border-gold rounded-full px-5"
             />
-            <Button
+            <button
               onClick={handleSendMessage}
-              variant="gold"
-              size="icon"
-              className="h-12 w-12 rounded-xl"
               disabled={!newMessage.trim()}
+              className="w-12 h-12 rounded-full bg-gold flex items-center justify-center shadow-[0_4px_20px_hsl(43_72%_53%_/_0.3)] disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
             >
-              <Send className="w-5 h-5" />
-            </Button>
+              <Send className="w-5 h-5 text-primary-foreground" />
+            </button>
           </div>
         </div>
       </motion.div>
