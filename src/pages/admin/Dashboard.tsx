@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useAuth } from "@/hooks/useAuth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Shield, Bell, FileCheck, BarChart3, LogOut, Flag, Coins } from "lucide-react";
+import { Users, Shield, Bell, FileCheck, BarChart3, LogOut, Flag, Coins, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import AdminUsersTab from "@/components/admin/AdminUsersTab";
 import AdminVerificationTab from "@/components/admin/AdminVerificationTab";
@@ -11,6 +11,7 @@ import AdminNotificationsTab from "@/components/admin/AdminNotificationsTab";
 import AdminStatsTab from "@/components/admin/AdminStatsTab";
 import AdminModerationTab from "@/components/admin/AdminModerationTab";
 import AdminCommissionsTab from "@/components/admin/AdminCommissionsTab";
+import AdminLegalPagesTab from "@/components/admin/AdminLegalPagesTab";
 import logoCollabCrea from "@/assets/logo-collabcrea.png";
 
 const AdminDashboard = () => {
@@ -66,7 +67,7 @@ const AdminDashboard = () => {
       {/* Main Content */}
       <main className="p-4 pb-20">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full grid grid-cols-6 mb-6">
+          <TabsList className="w-full grid grid-cols-7 mb-6">
             <TabsTrigger value="users" className="flex items-center gap-1 text-xs">
               <Users className="w-4 h-4" />
               <span className="hidden sm:inline">Utilisateurs</span>
@@ -82,6 +83,10 @@ const AdminDashboard = () => {
             <TabsTrigger value="commissions" className="flex items-center gap-1 text-xs">
               <Coins className="w-4 h-4" />
               <span className="hidden sm:inline">Commissions</span>
+            </TabsTrigger>
+            <TabsTrigger value="legal" className="flex items-center gap-1 text-xs">
+              <FileText className="w-4 h-4" />
+              <span className="hidden sm:inline">Légal</span>
             </TabsTrigger>
             <TabsTrigger value="notifications" className="flex items-center gap-1 text-xs">
               <Bell className="w-4 h-4" />
@@ -107,6 +112,10 @@ const AdminDashboard = () => {
 
           <TabsContent value="commissions">
             <AdminCommissionsTab />
+          </TabsContent>
+
+          <TabsContent value="legal">
+            <AdminLegalPagesTab />
           </TabsContent>
 
           <TabsContent value="notifications">
