@@ -23,7 +23,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import logoCollabCrea from "@/assets/logo-collabcrea.png";
-import heroCreator from "@/assets/hero-creator.jpg";
+import authBackground from "@/assets/auth-background.jpg";
 import AvatarUpload from "@/components/auth/AvatarUpload";
 import CountrySelect from "@/components/auth/CountrySelect";
 import PhoneInput from "@/components/auth/PhoneInput";
@@ -538,33 +538,33 @@ const Auth = () => {
               className="flex-1 flex flex-col items-center justify-center gap-8 py-12 relative"
             >
               {/* Background image */}
-              <div className="absolute inset-0 -mx-6 -my-12 overflow-hidden rounded-3xl">
+              <div className="absolute inset-0 -mx-6 -my-12 overflow-hidden">
                 <img 
-                  src={heroCreator} 
+                  src={authBackground} 
                   alt="" 
-                  className="w-full h-full object-cover opacity-30"
+                  className="w-full h-full object-cover opacity-20"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/40" />
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/90 to-background/60" />
               </div>
               <motion.img 
                 src={logoCollabCrea} 
                 alt="CollabCréa" 
-                className="h-20 md:h-24 w-auto"
+                className="h-20 md:h-24 w-auto relative z-10 drop-shadow-[0_0_15px_hsla(43,72%,53%,0.5)]"
                 initial={{ opacity: 0, scale: 0.5, rotate: -10 }}
                 animate={{ opacity: 1, scale: 1, rotate: 0 }}
                 transition={{ duration: 0.6, delay: 0.1, type: "spring", stiffness: 200 }}
               />
               <motion.div 
-                className="text-center space-y-2"
+                className="text-center space-y-2 relative z-10"
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: 0.25 }}
               >
-                <h1 className="text-2xl font-bold text-foreground">Bienvenue sur CollabCréa</h1>
-                <p className="text-muted-foreground">La plateforme de collaboration créative en Afrique</p>
+                <h1 className="text-2xl font-bold text-foreground drop-shadow-lg">Bienvenue sur CollabCréa</h1>
+                <p className="text-foreground/80 drop-shadow-md">La plateforme de collaboration créative en Afrique</p>
               </motion.div>
               <motion.div 
-                className="w-full max-w-sm space-y-4"
+                className="w-full max-w-sm space-y-4 relative z-10"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: 0.4 }}
