@@ -81,7 +81,7 @@ const AvatarUpload = ({ value, onChange, error }: AvatarUploadProps) => {
             <button
               type="button"
               onClick={handleRemove}
-              className="absolute top-1 right-1 p-1 bg-background/80 backdrop-blur-sm rounded-full text-muted-foreground hover:text-destructive shadow-md transition-colors"
+              className="absolute -top-1 -right-1 p-1.5 bg-destructive rounded-full text-white shadow-lg z-10 hover:bg-destructive/80 transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
@@ -100,8 +100,8 @@ const AvatarUpload = ({ value, onChange, error }: AvatarUploadProps) => {
           className="hidden"
         />
       </div>
-      <p className="text-muted-foreground text-xs text-center max-w-[200px]">
-        Ajoutez votre vraie photo pour inspirer confiance
+      <p className="text-muted-foreground text-xs text-center max-w-[220px]">
+        Ajoutez votre vraie photo pour vérification
       </p>
       {error && (
         <p className="text-destructive text-xs text-center">{error}</p>
