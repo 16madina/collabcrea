@@ -10,6 +10,16 @@ import {
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
+const CountryFlag = ({ code, className = "" }: { code: string; className?: string }) => (
+  <img
+    src={`https://flagcdn.com/w40/${code.toLowerCase()}.png`}
+    alt={code}
+    className={cn("inline-block rounded-sm object-cover", className)}
+    style={{ width: 24, height: 16 }}
+    loading="lazy"
+  />
+);
+
 interface CountrySelectProps {
   countries: Country[];
   value: string;
@@ -60,7 +70,7 @@ const CountrySelect = ({
         >
           {selectedCountry ? (
             <span className="flex items-center gap-2">
-              {showFlag && <span className="text-xl">{selectedCountry.flag}</span>}
+              {showFlag && <CountryFlag code={selectedCountry.code} />}
               <span>{selectedCountry.name}</span>
               {showPhoneCode && (
                 <span className="text-muted-foreground">
@@ -103,7 +113,7 @@ const CountrySelect = ({
                   value === country.code && "bg-gold/10 text-gold"
                 )}
               >
-                {showFlag && <span className="text-xl">{country.flag}</span>}
+                {showFlag && <CountryFlag code={country.code} />}
                 <span className="flex-1">{country.name}</span>
                 {showPhoneCode && (
                   <span className="text-muted-foreground text-sm">
