@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import PaymentSheet from "@/components/collaboration/PaymentSheet";
+import InAppPaymentSheet from "@/components/collaboration/InAppPaymentSheet";
 import { Collaboration } from "@/hooks/useCollaborations";
 
 interface Offer {
@@ -281,7 +281,7 @@ const ProposalStatusCard = ({ offerId, conversationId, onPaymentSuccess }: Propo
 
       {/* Payment Sheet */}
       {collaborationForPayment && (
-        <PaymentSheet
+        <InAppPaymentSheet
           open={showPaymentSheet}
           onOpenChange={setShowPaymentSheet}
           collaboration={collaborationForPayment}
