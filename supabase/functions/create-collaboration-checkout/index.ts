@@ -121,8 +121,8 @@ serve(async (req) => {
         },
       ],
       mode: "payment",
-      success_url: `${origin}/collabs?payment=success&collaboration=${collaborationId}`,
-      cancel_url: `${origin}/collabs?payment=cancelled&collaboration=${collaborationId}`,
+      success_url: `${origin}/brand/collabs?payment=success&collaboration=${collaborationId}`,
+      cancel_url: `${origin}/brand/collabs?payment=cancelled&collaboration=${collaborationId}`,
       metadata: {
         collaboration_id: collaborationId,
         brand_id: collab.brand_id,
