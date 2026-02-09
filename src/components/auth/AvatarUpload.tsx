@@ -58,14 +58,14 @@ const AvatarUpload = ({ value, onChange, error }: AvatarUploadProps) => {
   };
 
   return (
-    <div className="flex flex-col items-center gap-3">
+    <div className="flex flex-col items-center gap-2">
       <div
         onClick={() => fileInputRef.current?.click()}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         className={cn(
-          "relative w-28 h-28 rounded-full border-2 border-dashed cursor-pointer transition-all duration-200",
+          "relative w-36 h-36 rounded-full border-2 border-dashed cursor-pointer transition-all duration-200",
           "flex items-center justify-center overflow-hidden",
           isDragging ? "border-gold bg-gold/10" : "border-border hover:border-gold/50",
           error && "border-destructive"
@@ -81,14 +81,14 @@ const AvatarUpload = ({ value, onChange, error }: AvatarUploadProps) => {
             <button
               type="button"
               onClick={handleRemove}
-              className="absolute top-0 right-0 p-1.5 bg-destructive rounded-full text-white shadow-md"
+              className="absolute top-1 right-1 p-1 bg-background/80 backdrop-blur-sm rounded-full text-muted-foreground hover:text-destructive shadow-md transition-colors"
             >
-              <X className="w-3 h-3" />
+              <X className="w-4 h-4" />
             </button>
           </>
         ) : (
           <div className="flex flex-col items-center gap-1 text-muted-foreground">
-            <Camera className="w-8 h-8" />
+            <Camera className="w-10 h-10" />
             <span className="text-xs">Photo *</span>
           </div>
         )}
@@ -100,6 +100,9 @@ const AvatarUpload = ({ value, onChange, error }: AvatarUploadProps) => {
           className="hidden"
         />
       </div>
+      <p className="text-muted-foreground text-xs text-center max-w-[200px]">
+        Ajoutez votre vraie photo pour inspirer confiance
+      </p>
       {error && (
         <p className="text-destructive text-xs text-center">{error}</p>
       )}
