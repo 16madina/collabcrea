@@ -19,7 +19,7 @@ import BottomNav from "@/components/BottomNav";
 import { useCollaborations, Collaboration } from "@/hooks/useCollaborations";
 import { useAuth } from "@/hooks/useAuth";
 import SubmitContentSheet from "@/components/collaboration/SubmitContentSheet";
-import PaymentSheet from "@/components/collaboration/PaymentSheet";
+import InAppPaymentSheet from "@/components/collaboration/InAppPaymentSheet";
 import ReviewContentSheet from "@/components/collaboration/ReviewContentSheet";
 import { format, parseISO, differenceInDays, isPast } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -303,7 +303,7 @@ const CollaborationsPage = () => {
       )}
 
       {selectedCollab && sheetType === "payment" && (
-        <PaymentSheet
+        <InAppPaymentSheet
           open={true}
           onOpenChange={() => {
             setSelectedCollab(null);
