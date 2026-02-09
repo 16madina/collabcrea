@@ -163,7 +163,7 @@ const Landing = () => {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="relative z-10 px-6 pt-[max(env(safe-area-inset-top),1rem)] pb-2"
+          className="relative z-10 px-6 pt-[calc(env(safe-area-inset-top,0px)+1rem)] pb-2"
         >
           <div className="flex items-center justify-between">
             <Link to="/" className="flex items-center">
