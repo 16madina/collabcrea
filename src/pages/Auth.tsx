@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import logoCollabCrea from "@/assets/logo-collabcrea.png";
+import heroCreator from "@/assets/hero-creator.jpg";
 import AvatarUpload from "@/components/auth/AvatarUpload";
 import CountrySelect from "@/components/auth/CountrySelect";
 import PhoneInput from "@/components/auth/PhoneInput";
@@ -534,8 +535,17 @@ const Auth = () => {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95, y: -20 }}
               transition={{ duration: 0.4, ease: "easeOut" }}
-              className="flex-1 flex flex-col items-center justify-center gap-8 py-12"
+              className="flex-1 flex flex-col items-center justify-center gap-8 py-12 relative"
             >
+              {/* Background image */}
+              <div className="absolute inset-0 -mx-6 -my-12 overflow-hidden rounded-3xl">
+                <img 
+                  src={heroCreator} 
+                  alt="" 
+                  className="w-full h-full object-cover opacity-30"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/40" />
+              </div>
               <motion.img 
                 src={logoCollabCrea} 
                 alt="CollabCréa" 
