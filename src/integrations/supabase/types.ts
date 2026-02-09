@@ -234,6 +234,36 @@ export type Database = {
           },
         ]
       }
+      legal_pages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          last_updated_by: string | null
+          slug: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          last_updated_by?: string | null
+          slug: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          last_updated_by?: string | null
+          slug?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string
