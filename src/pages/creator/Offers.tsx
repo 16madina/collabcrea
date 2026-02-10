@@ -361,6 +361,8 @@ const CreatorOffers = () => {
                     style: "bg-green-500/20 text-green-400",
                   }}
                   onClick={() => setSelectedOffer(offer)}
+                  showApplyButton={!application}
+                  onApply={() => setSelectedOffer(offer)}
                 />
               );
             })
