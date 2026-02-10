@@ -1,52 +1,49 @@
 
 
-## Remplacer les emojis drapeaux par des images flagcdn.com
+## Fix: Selfie images not displaying in admin verification
 
-### Probleme
-Les emojis drapeaux (ex: `🇬🇭`, `🇸🇳`) s'affichent comme des codes texte ("GH", "SN", "CA-CI") sur Windows et certains navigateurs. La capture d'ecran le confirme clairement.
+### Problem
+The selfie images are not loading because:
+1. The `selfies` storage bucket is **private** (correct for security)
+2. But the URL saved in the database uses the **public** URL format (`/storage/v1/object/public/selfies/...`), which doesn't work for private buckets
+3. The admin panel tries to use this URL directly since it starts with `http`, but the URL returns nothing because the bucket is private
 
 ### Solution
-Utiliser des images de `flagcdn.com` (deja utilise dans le selecteur de pays) au lieu des emojis texte.
 
-### Etapes
+**Two changes needed:**
 
-**1. Ajouter un mapping pays vers code ISO dans les donnees**
+#### 1. Fix the upload code in `FacialVerificationCamera.tsx` (or `IdentityVerificationTab.tsx`)
+- Instead of saving the full public URL in `selfie_url`, save only the **relative storage path** (e.g., `user_id/selfie-0.jpg`)
+- This way the admin panel can generate a proper **signed URL** to access the private file
 
-Creer un utilitaire `src/lib/flags.ts` avec :
-- Un mapping des noms de pays francais vers les codes ISO 2 lettres (ex: "Ghana" -> "gh", "Senegal" -> "sn", "Cote d'Ivoire" -> "ci")
-- Un composant `CountryFlag` reutilisable qui affiche `<img src="https://flagcdn.com/w40/{code}.png" />`
-- Une fonction `getCountryCode(countryName)` pour convertir le nom en code
+#### 2. Fix the display code in `AdminVerificationTab.tsx`
+- Update the `SelfiePreview` component to always generate a signed URL from the relative path
+- Remove the `startsWith("http")` shortcut since all paths should now be relative
+- If a full URL is still found (for existing data), extract the relative path from it and generate a signed URL
 
-**2. Mettre a jour `CreatorCard.tsx`**
+### Technical Details
 
-Remplacer les `<span>` qui affichent `{creator.flag}` et `{creator.residenceFlag}` par le composant `CountryFlag` utilisant le nom du pays pour determiner le drapeau image.
-
-**3. Mettre a jour `CreatorDetailSheet.tsx`**
-
-Meme remplacement pour les drapeaux affiches dans la fiche detail du createur.
-
-**4. Mettre a jour `useCreators.ts`**
-
-La fonction `getFlag()` qui retourne des emojis sera adaptee pour retourner des codes ISO au lieu d'emojis, ou bien le composant `CountryFlag` utilisera directement le champ `country` pour resoudre le drapeau.
-
-**5. Donnees mock (`creators.ts`)**
-
-Le champ `flag` emoji existant ne sera plus utilise pour le rendu visuel — le composant utilisera le champ `country` pour chercher le bon code ISO et afficher l'image correspondante.
-
-### Details techniques
-
-Le composant `CountryFlag` :
-```text
-Props: country (string), size (number, default 20)
-Rendu: <img src="https://flagcdn.com/w40/{isoCode}.png" width={size} />
-Fallback: icone globe si pays inconnu
+**In the upload logic** — change from:
+```typescript
+const { data } = supabase.storage.from("selfies").getPublicUrl(filePath);
+profileUpdate.selfie_url = data.publicUrl;
+```
+To:
+```typescript
+profileUpdate.selfie_url = filePath; // just the path, e.g. "user_id/selfie-0.jpg"
 ```
 
-Mapping couvrant les 54 pays africains + pays de residence (France, Belgique, Canada, etc.) deja presents dans `useCreators.ts`.
+**In `AdminVerificationTab.tsx` SelfiePreview** — always use signed URLs:
+```typescript
+// If it's a full URL from old data, extract the path
+let path = selfiePath;
+if (path.startsWith("http")) {
+  const match = path.match(/selfies\/(.+)$/);
+  if (match) path = match[1];
+}
+const { data } = await supabase.storage
+  .from("selfies")
+  .createSignedUrl(path, 3600);
+```
 
-Les modifications touchent :
-- `src/lib/flags.ts` (nouveau fichier)
-- `src/components/CreatorCard.tsx`
-- `src/components/CreatorDetailSheet.tsx`
-- `src/hooks/useCreators.ts` (optionnel, nettoyage)
-
+**Also fix existing data** — update the database entry for the current user so the already-stored URL is corrected to a relative path.
