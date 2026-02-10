@@ -126,15 +126,16 @@ const SelfiePreview = ({ selfiePath }: { selfiePath: string }) => {
   useEffect(() => {
     const loadImage = async () => {
       try {
-        // If it's already a full URL, use it directly
-        if (selfiePath.startsWith("http")) {
-          setImageUrl(selfiePath);
-        } else {
-          const { data } = await supabase.storage
-            .from("selfies")
-            .createSignedUrl(selfiePath, 3600);
-          setImageUrl(data?.signedUrl || null);
+        // Extract relative path if it's a full URL (legacy data)
+        let path = selfiePath;
+        if (path.startsWith("http")) {
+          const match = path.match(/selfies\/(.+)$/);
+          if (match) path = match[1];
         }
+        const { data } = await supabase.storage
+          .from("selfies")
+          .createSignedUrl(path, 3600);
+        setImageUrl(data?.signedUrl || null);
       } catch (error) {
         console.error("Error loading selfie:", error);
       } finally {
