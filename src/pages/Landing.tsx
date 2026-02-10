@@ -533,6 +533,19 @@ const Landing = () => {
         <p className="text-muted-foreground text-[9px] sm:text-[10px] mb-1.5 sm:mb-2">
           "Connectez votre marque aux voix qui comptent"
         </p>
+        <div className="flex items-center justify-center gap-3 mb-2">
+          <Link to="/terms" className="text-muted-foreground hover:text-gold text-[9px] sm:text-[10px] underline">
+            Conditions d'utilisation
+          </Link>
+          <span className="text-muted-foreground text-[9px]">•</span>
+          <Link to="/privacy" className="text-muted-foreground hover:text-gold text-[9px] sm:text-[10px] underline">
+            Politique de confidentialité
+          </Link>
+          <span className="text-muted-foreground text-[9px]">•</span>
+          <Link to="/child-safety" className="text-muted-foreground hover:text-gold text-[9px] sm:text-[10px] underline">
+            Sécurité enfants
+          </Link>
+        </div>
         <p className="text-muted-foreground text-[9px] sm:text-[10px]">
           © 2026 CollabCréa. Tous droits réservés.
         </p>
