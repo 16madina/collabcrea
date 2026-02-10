@@ -24,6 +24,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import YouTubeConnectButton from "./YouTubeConnectButton";
 import TikTokConnectButton from "./TikTokConnectButton";
+import FacebookConnectButton from "./FacebookConnectButton";
 import { YouTubeIcon, InstagramIcon, TikTokIcon, SnapchatIcon, FacebookIcon } from "@/components/ui/social-icons";
 
 const socialSchema = z.object({
@@ -212,9 +213,15 @@ const SocialEditSheet = ({ isOpen, onClose, initialData, onUpdate }: SocialEditS
                     <FacebookIcon className="w-10 h-10 p-2" size={20} />
                     <div className="flex-1">
                       <FormLabel>Facebook</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ex: 200K" {...field} />
-                      </FormControl>
+                      <div className="flex items-center gap-2">
+                        <FormControl>
+                          <Input placeholder="Ex: 200K" {...field} className="flex-1" />
+                        </FormControl>
+                        <FacebookConnectButton 
+                          currentFollowers={initialData.facebook_followers}
+                          onSyncComplete={onUpdate}
+                        />
+                      </div>
                     </div>
                   </div>
                   <FormMessage />
