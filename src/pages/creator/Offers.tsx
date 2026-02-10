@@ -11,6 +11,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { useApplyToOffer } from "@/hooks/useApplyToOffer";
 import { useNavigate } from "react-router-dom";
 import ReportDialog from "@/components/ReportDialog";
+import logoKariteDor from "@/assets/logo-karite-dor.jpg";
+import logoTechAfrik from "@/assets/logo-techafrik.jpg";
+import logoNestleAfrique from "@/assets/logo-nestle-afrique.jpg";
+import logoNikeAfrique from "@/assets/logo-nike-afrique.jpg";
+import logoLorealAfrique from "@/assets/logo-loreal-afrique.jpg";
+import logoMtn from "@/assets/logo-mtn.jpg";
 
 interface Offer {
   id: string;
@@ -27,6 +33,7 @@ interface Offer {
   status: string;
   created_at: string;
   brand_name?: string;
+  isMock?: boolean;
 }
 
 interface Application {
@@ -42,12 +49,117 @@ const statusFilters: { label: string; value: FilterStatus }[] = [
   { label: "Postulées", value: "applied" },
 ];
 
+const mockOffers: Offer[] = [
+  {
+    id: "mock-1",
+    brand_id: "",
+    title: "Campagne beauté naturelle",
+    description: "Recherche créateurs beauté pour promouvoir notre nouvelle gamme de soins au karité.",
+    category: "Beauté",
+    content_type: "Reel",
+    budget_min: 150000,
+    budget_max: 300000,
+    deadline: "2026-02-28",
+    location: "Côte d'Ivoire",
+    logo_url: logoKariteDor,
+    status: "active",
+    created_at: new Date().toISOString(),
+    brand_name: "Karité d'Or",
+    isMock: true,
+  },
+  {
+    id: "mock-2",
+    brand_id: "",
+    title: "Tech Review Smartphone",
+    description: "Besoin de YouTubers tech pour unboxing et review de notre nouveau smartphone.",
+    category: "Tech",
+    content_type: "Vidéo YouTube",
+    budget_min: 200000,
+    budget_max: 500000,
+    deadline: "2026-02-27",
+    location: "Nigeria",
+    logo_url: logoTechAfrik,
+    status: "active",
+    created_at: new Date().toISOString(),
+    brand_name: "TechAfrik",
+    isMock: true,
+  },
+  {
+    id: "mock-3",
+    brand_id: "",
+    title: "Recettes créatives Nescafé",
+    description: "Partagez des recettes originales avec nos produits café.",
+    category: "Cuisine",
+    content_type: "Reel",
+    budget_min: 400000,
+    budget_max: 800000,
+    deadline: "2026-03-05",
+    location: "Sénégal",
+    logo_url: logoNestleAfrique,
+    status: "active",
+    created_at: new Date().toISOString(),
+    brand_name: "Nestlé Afrique",
+    isMock: true,
+  },
+  {
+    id: "mock-4",
+    brand_id: "",
+    title: "Challenge fitness viral",
+    description: "Lancez un challenge fitness avec nos nouveaux équipements.",
+    category: "Fitness",
+    content_type: "TikTok",
+    budget_min: 800000,
+    budget_max: 1500000,
+    deadline: "2026-03-15",
+    location: "Ghana",
+    logo_url: logoNikeAfrique,
+    status: "active",
+    created_at: new Date().toISOString(),
+    brand_name: "Nike Afrique",
+    isMock: true,
+  },
+  {
+    id: "mock-5",
+    brand_id: "",
+    title: "Tutoriel maquillage",
+    description: "Créez des tutoriels avec notre nouvelle gamme de maquillage.",
+    category: "Beauté",
+    content_type: "Vidéo YouTube",
+    budget_min: 350000,
+    budget_max: 700000,
+    deadline: "2026-03-10",
+    location: "Cameroun",
+    logo_url: logoLorealAfrique,
+    status: "active",
+    created_at: new Date().toISOString(),
+    brand_name: "L'Oréal Afrique",
+    isMock: true,
+  },
+  {
+    id: "mock-6",
+    brand_id: "",
+    title: "Campagne Mobile Money",
+    description: "Promouvoir notre service de paiement mobile auprès des jeunes.",
+    category: "Tech",
+    content_type: "Story",
+    budget_min: 600000,
+    budget_max: 1200000,
+    deadline: "2026-03-20",
+    location: "Côte d'Ivoire",
+    logo_url: logoMtn,
+    status: "active",
+    created_at: new Date().toISOString(),
+    brand_name: "MTN",
+    isMock: true,
+  },
+];
+
 const CreatorOffers = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { applyToOffer, isApplying } = useApplyToOffer();
   
-  const [offers, setOffers] = useState<Offer[]>([]);
+  const [dbOffers, setDbOffers] = useState<Offer[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterStatus>("all");
@@ -67,7 +179,6 @@ const CreatorOffers = () => {
     
     const fetchData = async () => {
       try {
-        // Fetch active offers with brand profiles
         const { data: offersData, error: offersError } = await supabase
           .from("offers")
           .select("*")
@@ -76,23 +187,22 @@ const CreatorOffers = () => {
 
         if (offersError) throw offersError;
 
-        // Get brand names from profiles
         const brandIds = [...new Set(offersData?.map(o => o.brand_id) || [])];
         const { data: profiles } = await supabase
           .from("profiles")
-          .select("user_id, full_name")
+          .select("user_id, full_name, company_name")
           .in("user_id", brandIds);
 
-        const profileMap = new Map(profiles?.map(p => [p.user_id, p.full_name]) || []);
+        const profileMap = new Map(profiles?.map(p => [p.user_id, p.company_name || p.full_name]) || []);
         
         const offersWithBrands = offersData?.map(o => ({
           ...o,
           brand_name: profileMap.get(o.brand_id) || "Marque",
+          isMock: false,
         })) || [];
 
-        setOffers(offersWithBrands);
+        setDbOffers(offersWithBrands);
 
-        // Fetch user's applications
         const { data: appsData } = await supabase
           .from("applications")
           .select("offer_id, status")
@@ -109,11 +219,14 @@ const CreatorOffers = () => {
     fetchData();
   }, [user]);
 
+  // Merge DB offers with mock offers (DB first, then mock to fill)
+  const allOffers = [...dbOffers, ...mockOffers];
+
   const getApplicationStatus = (offerId: string) => {
     return applications.find(a => a.offer_id === offerId);
   };
 
-  const filteredOffers = offers.filter((offer) => {
+  const filteredOffers = allOffers.filter((offer) => {
     const matchesSearch = 
       offer.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       offer.brand_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -128,25 +241,8 @@ const CreatorOffers = () => {
     return matchesSearch && matchesFilter;
   });
 
-  const formatBudget = (min: number, max: number) => {
-    if (min === max) {
-      return `${min.toLocaleString("fr-FR")} FCFA`;
-    }
-    return `${min.toLocaleString("fr-FR")} - ${max.toLocaleString("fr-FR")} FCFA`;
-  };
-
-  const formatDeadline = (deadline: string | null) => {
-    if (!deadline) return null;
-    const date = new Date(deadline);
-    const now = new Date();
-    const diff = Math.ceil((date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    if (diff <= 0) return "Expiré";
-    if (diff === 1) return "1 jour";
-    return `${diff} jours`;
-  };
-
   const handleApply = async () => {
-    if (!selectedOffer) return;
+    if (!selectedOffer || selectedOffer.isMock) return;
     await applyToOffer(selectedOffer.id, selectedOffer.brand_id, applicationMessage);
     setSelectedOffer(null);
     setApplicationMessage("");
@@ -316,20 +412,29 @@ const CreatorOffers = () => {
                 </button>
               </div>
 
-              <h3 className="font-semibold text-lg mb-2">{selectedOffer.title}</h3>
+              <h3 className="font-display font-bold text-gold-gradient text-lg mb-2">{selectedOffer.title}</h3>
 
               <div className="space-y-4 mb-6">
                 <div className="flex items-center gap-3">
                   <DollarSign className="w-5 h-5 text-gold" />
                   <span className="text-lg font-semibold text-gold">
-                    {formatBudget(selectedOffer.budget_min, selectedOffer.budget_max)}
+                    {selectedOffer.budget_min === selectedOffer.budget_max
+                      ? `${selectedOffer.budget_min.toLocaleString("fr-FR")} FCFA`
+                      : `${selectedOffer.budget_min.toLocaleString("fr-FR")} - ${selectedOffer.budget_max.toLocaleString("fr-FR")} FCFA`}
                   </span>
                 </div>
                 {selectedOffer.deadline && (
                   <div className="flex items-center gap-3">
                     <Clock className="w-5 h-5 text-muted-foreground" />
                     <span className="text-muted-foreground">
-                      Deadline: {formatDeadline(selectedOffer.deadline)}
+                      Deadline: {(() => {
+                        const date = new Date(selectedOffer.deadline);
+                        const now = new Date();
+                        const diff = Math.ceil((date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                        if (diff <= 0) return "Expiré";
+                        if (diff === 1) return "1 jour";
+                        return `${diff} jours`;
+                      })()}
                     </span>
                   </div>
                 )}
@@ -346,7 +451,17 @@ const CreatorOffers = () => {
                 <p className="text-muted-foreground">{selectedOffer.description}</p>
               </div>
 
-              {!getApplicationStatus(selectedOffer.id) ? (
+              {selectedOffer.isMock ? (
+                <Button 
+                  variant="gold" 
+                  size="lg" 
+                  className="w-full"
+                  onClick={() => navigate("/auth?role=creator")}
+                >
+                  <Send className="w-5 h-5 mr-2" />
+                  Postuler
+                </Button>
+              ) : !getApplicationStatus(selectedOffer.id) ? (
                 <>
                   <div className="mb-6">
                     <h4 className="font-semibold mb-2">Votre message (optionnel)</h4>
@@ -382,30 +497,32 @@ const CreatorOffers = () => {
                     variant="glass" 
                     size="lg" 
                     className="w-full mt-4"
-                    onClick={() => navigate("/messages")}
+                    onClick={() => navigate("/creator/collabs?tab=messages")}
                   >
                     Voir la conversation
                   </Button>
                 </div>
               )}
 
-              {/* Report button */}
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="w-full mt-4 text-muted-foreground hover:text-destructive"
-                onClick={() => setShowReportDialog(true)}
-              >
-                <Flag className="w-4 h-4 mr-2" />
-                Signaler cette offre
-              </Button>
+              {/* Report button - only for real offers */}
+              {!selectedOffer.isMock && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="w-full mt-4 text-muted-foreground hover:text-destructive"
+                  onClick={() => setShowReportDialog(true)}
+                >
+                  <Flag className="w-4 h-4 mr-2" />
+                  Signaler cette offre
+                </Button>
+              )}
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Report Dialog */}
-      {selectedOffer && (
+      {selectedOffer && !selectedOffer.isMock && (
         <ReportDialog
           open={showReportDialog}
           onOpenChange={setShowReportDialog}
