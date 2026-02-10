@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Loader2, BadgeCheck, SlidersHorizontal } from "lucide-react";
+import { Search, Loader2, BadgeCheck, SlidersHorizontal, X, RotateCcw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -24,21 +24,7 @@ const categories = [
   "Éducation",
 ];
 
-const countryFilters = [
-  { label: "Tous", value: "all" },
-  { label: "🇨🇮 Côte d'Ivoire", value: "Côte d'Ivoire" },
-  { label: "🇳🇬 Nigeria", value: "Nigeria" },
-  { label: "🇸🇳 Sénégal", value: "Sénégal" },
-  { label: "🇬🇭 Ghana", value: "Ghana" },
-  { label: "🇨🇲 Cameroun", value: "Cameroun" },
-  { label: "🇲🇱 Mali", value: "Mali" },
-  { label: "🇬🇳 Guinée", value: "Guinée" },
-  { label: "🇧🇯 Bénin", value: "Bénin" },
-  { label: "🇹🇬 Togo", value: "Togo" },
-  { label: "🇧🇫 Burkina Faso", value: "Burkina Faso" },
-  { label: "🇬🇦 Gabon", value: "Gabon" },
-  { label: "🇨🇩 RDC", value: "RDC" },
-];
+import { africanCountryFilters } from "@/data/africanCountries";
 
 const genderFilters = [
   { label: "Tous", value: "all" },
@@ -132,71 +118,112 @@ const Explore = () => {
         </div>
       </div>
 
-      {/* Filter Panel */}
+      {/* Filter Bottom Sheet */}
       <AnimatePresence>
         {showFilters && (
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm"
+            onClick={() => setShowFilters(false)}
           >
-            <div className="px-6 pt-3 pb-1 space-y-3">
-              {/* Gender */}
-              <div>
-                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Genre</p>
-                <div className="flex flex-wrap gap-2">
-                  {genderFilters.map((filter) => (
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25 }}
+              onClick={(e) => e.stopPropagation()}
+              className="absolute bottom-0 left-0 right-0 glass-card rounded-t-3xl safe-bottom max-h-[70vh] flex flex-col"
+            >
+              <div className="sticky top-0 z-10 pt-4 pb-2 px-6 bg-inherit rounded-t-3xl">
+                <div className="w-12 h-1 bg-muted rounded-full mx-auto mb-3" />
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-display font-bold text-lg">Filtres</h3>
+                  <div className="flex gap-2">
                     <button
-                      key={filter.value}
-                      onClick={() => setActiveGender(filter.value)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                        activeGender === filter.value
-                          ? "bg-gold text-primary-foreground"
-                          : "glass text-muted-foreground"
-                      }`}
+                      onClick={() => {
+                        setActiveCountry("all");
+                        setActiveGender("all");
+                        setOnlyVerified(false);
+                      }}
+                      className="text-xs text-muted-foreground flex items-center gap-1 px-3 py-1.5 rounded-full glass"
                     >
-                      {filter.label}
+                      <RotateCcw className="w-3 h-3" />
+                      Réinitialiser
                     </button>
-                  ))}
+                    <button onClick={() => setShowFilters(false)}>
+                      <X className="w-5 h-5 text-muted-foreground" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div className="overflow-y-auto flex-1 px-6 pb-6 space-y-4">
+                {/* Gender */}
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Genre</p>
+                  <div className="flex flex-wrap gap-2">
+                    {genderFilters.map((filter) => (
+                      <button
+                        key={filter.value}
+                        onClick={() => setActiveGender(filter.value)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                          activeGender === filter.value
+                            ? "bg-gold text-primary-foreground"
+                            : "glass text-muted-foreground"
+                        }`}
+                      >
+                        {filter.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Country */}
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Pays</p>
+                  <div className="flex flex-wrap gap-2">
+                    {africanCountryFilters.map((filter) => (
+                      <button
+                        key={filter.value}
+                        onClick={() => setActiveCountry(filter.value)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                          activeCountry === filter.value
+                            ? "bg-gold/20 text-gold border border-gold/40"
+                            : "glass text-muted-foreground border border-transparent"
+                        }`}
+                      >
+                        {filter.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Verified */}
+                <div className="flex items-center gap-2 pb-2">
+                  <Switch
+                    id="verified-filter"
+                    checked={onlyVerified}
+                    onCheckedChange={setOnlyVerified}
+                    className="data-[state=checked]:bg-gold"
+                  />
+                  <Label htmlFor="verified-filter" className="text-xs flex items-center gap-1 cursor-pointer">
+                    <BadgeCheck className="w-4 h-4 text-gold" />
+                    Vérifiés uniquement
+                  </Label>
                 </div>
               </div>
 
-              {/* Country */}
-              <div>
-                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Pays</p>
-                <div className="flex flex-wrap gap-2">
-                  {countryFilters.map((filter) => (
-                    <button
-                      key={filter.value}
-                      onClick={() => setActiveCountry(filter.value)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                        activeCountry === filter.value
-                          ? "bg-gold/20 text-gold border border-gold/40"
-                          : "glass text-muted-foreground border border-transparent"
-                      }`}
-                    >
-                      {filter.label}
-                    </button>
-                  ))}
-                </div>
+              {/* Apply button */}
+              <div className="px-6 py-3 border-t border-border">
+                <button
+                  onClick={() => setShowFilters(false)}
+                  className="w-full py-3 rounded-xl bg-gold text-primary-foreground font-semibold"
+                >
+                  Appliquer les filtres
+                </button>
               </div>
-
-              {/* Verified */}
-              <div className="flex items-center gap-2 pb-2">
-                <Switch
-                  id="verified-filter"
-                  checked={onlyVerified}
-                  onCheckedChange={setOnlyVerified}
-                  className="data-[state=checked]:bg-gold"
-                />
-                <Label htmlFor="verified-filter" className="text-xs flex items-center gap-1 cursor-pointer">
-                  <BadgeCheck className="w-4 h-4 text-gold" />
-                  Vérifiés uniquement
-                </Label>
-              </div>
-            </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
