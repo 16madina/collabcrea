@@ -42,11 +42,24 @@ interface Application {
 }
 
 type FilterStatus = "all" | "new" | "applied";
+type FilterCategory = "all" | "Beauté" | "Tech" | "Cuisine" | "Fitness" | "Mode" | "Lifestyle" | "Musique" | "Humour";
 
 const statusFilters: { label: string; value: FilterStatus }[] = [
   { label: "Toutes", value: "all" },
   { label: "Nouvelles", value: "new" },
   { label: "Postulées", value: "applied" },
+];
+
+const categoryFilters: { label: string; value: FilterCategory }[] = [
+  { label: "Toutes", value: "all" },
+  { label: "Beauté", value: "Beauté" },
+  { label: "Tech", value: "Tech" },
+  { label: "Cuisine", value: "Cuisine" },
+  { label: "Fitness", value: "Fitness" },
+  { label: "Mode", value: "Mode" },
+  { label: "Lifestyle", value: "Lifestyle" },
+  { label: "Musique", value: "Musique" },
+  { label: "Humour", value: "Humour" },
 ];
 
 const mockOffers: Offer[] = [
@@ -163,6 +176,7 @@ const CreatorOffers = () => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterStatus>("all");
+  const [activeCategory, setActiveCategory] = useState<FilterCategory>("all");
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
   const [applicationMessage, setApplicationMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -237,8 +251,12 @@ const CreatorOffers = () => {
       activeFilter === "all" ||
       (activeFilter === "new" && !application) ||
       (activeFilter === "applied" && application);
+
+    const matchesCategory =
+      activeCategory === "all" ||
+      offer.category === activeCategory;
     
-    return matchesSearch && matchesFilter;
+    return matchesSearch && matchesFilter && matchesCategory;
   });
 
   const handleApply = async () => {
@@ -331,6 +349,28 @@ const CreatorOffers = () => {
             </button>
           ))}
         </motion.div>
+
+        {/* Category filters */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.15 }}
+          className="flex gap-2 overflow-x-auto no-scrollbar pb-2 mt-2"
+        >
+          {categoryFilters.map((filter) => (
+            <button
+              key={filter.value}
+              onClick={() => setActiveCategory(filter.value)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
+                activeCategory === filter.value
+                  ? "bg-gold/20 text-gold border border-gold/40"
+                  : "glass text-muted-foreground border border-transparent"
+              }`}
+            >
+              {filter.label}
+            </button>
+          ))}
+        </motion.div>
       </div>
 
       {/* Offers List */}
@@ -386,9 +426,12 @@ const CreatorOffers = () => {
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 25 }}
               onClick={(e) => e.stopPropagation()}
-              className="absolute bottom-0 left-0 right-0 glass-card rounded-t-3xl p-6 safe-bottom max-h-[85vh] overflow-y-auto"
+              className="absolute bottom-0 left-0 right-0 glass-card rounded-t-3xl safe-bottom max-h-[85vh] flex flex-col"
             >
-              <div className="w-12 h-1 bg-muted rounded-full mx-auto mb-6" />
+              <div className="sticky top-0 z-10 pt-4 pb-2 px-6 bg-inherit rounded-t-3xl">
+                <div className="w-12 h-1 bg-muted rounded-full mx-auto mb-4" />
+              </div>
+              <div className="overflow-y-auto flex-1 px-6 pb-6">
               
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-4">
@@ -518,6 +561,7 @@ const CreatorOffers = () => {
                   Signaler cette offre
                 </Button>
               )}
+              </div>
             </motion.div>
           </motion.div>
         )}
