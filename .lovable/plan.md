@@ -1,85 +1,52 @@
 
-# Plan : Unifier la Navigation de l'Application
 
-## Problème Identifié
-L'application utilise deux barres de navigation distinctes :
-- `LandingNav.tsx` : pages publiques (onglets "Messages, Connexion")
-- `BottomNav.tsx` : pages authentifiées (onglets "Collabs, Profil")
+## Remplacer les emojis drapeaux par des images flagcdn.com
 
-Cela crée une confusion où l'utilisateur a l'impression d'utiliser deux applications différentes.
+### Probleme
+Les emojis drapeaux (ex: `🇬🇭`, `🇸🇳`) s'affichent comme des codes texte ("GH", "SN", "CA-CI") sur Windows et certains navigateurs. La capture d'ecran le confirme clairement.
 
-## Solution Proposée
-Unifier la navigation en utilisant un **seul composant intelligent** qui adapte ses onglets selon le contexte (connecté ou non).
+### Solution
+Utiliser des images de `flagcdn.com` (deja utilise dans le selecteur de pays) au lieu des emojis texte.
 
-## Architecture Technique
+### Etapes
 
-### 1. Supprimer LandingNav et utiliser uniquement BottomNav
-Le composant `BottomNav` sera modifié pour gérer trois états :
-- **Non connecté** : "Accueil, Explorer, Offres, Messages, Connexion"
-- **Connecté (Créateur)** : "Accueil, Explorer, Offres, Collabs, Profil"
-- **Connecté (Marque)** : "Accueil, Créateurs, Offres, Collabs, Profil"
+**1. Ajouter un mapping pays vers code ISO dans les donnees**
 
-### 2. Modifications de fichiers
+Creer un utilitaire `src/lib/flags.ts` avec :
+- Un mapping des noms de pays francais vers les codes ISO 2 lettres (ex: "Ghana" -> "gh", "Senegal" -> "sn", "Cote d'Ivoire" -> "ci")
+- Un composant `CountryFlag` reutilisable qui affiche `<img src="https://flagcdn.com/w40/{code}.png" />`
+- Une fonction `getCountryCode(countryName)` pour convertir le nom en code
 
-**Fichier : `src/components/BottomNav.tsx`**
-- Ajouter la détection de l'état d'authentification via `useAuth()`
-- Rendre le prop `userRole` optionnel
-- Créer trois configurations de navigation :
-  - `guestNavItems` : pour visiteurs non connectés
-  - `creatorNavItems` : pour créateurs connectés
-  - `brandNavItems` : pour marques connectées
-- Conserver le badge des messages non lus sur "Collabs" pour les utilisateurs connectés
+**2. Mettre a jour `CreatorCard.tsx`**
 
-**Fichier : `src/pages/Landing.tsx`**
-- Remplacer `<LandingNav />` par `<BottomNav />` sans props (mode invité)
+Remplacer les `<span>` qui affichent `{creator.flag}` et `{creator.residenceFlag}` par le composant `CountryFlag` utilisant le nom du pays pour determiner le drapeau image.
 
-**Fichier : `src/pages/Explore.tsx`**
-- Remplacer `<LandingNav />` par `<BottomNav />` sans props (mode invité)
+**3. Mettre a jour `CreatorDetailSheet.tsx`**
 
-**Fichier : `src/components/LandingNav.tsx`**
-- Supprimer ce fichier (obsolète)
+Meme remplacement pour les drapeaux affiches dans la fiche detail du createur.
 
-### 3. Logique de sélection des onglets
+**4. Mettre a jour `useCreators.ts`**
 
+La fonction `getFlag()` qui retourne des emojis sera adaptee pour retourner des codes ISO au lieu d'emojis, ou bien le composant `CountryFlag` utilisera directement le champ `country` pour resoudre le drapeau.
+
+**5. Donnees mock (`creators.ts`)**
+
+Le champ `flag` emoji existant ne sera plus utilise pour le rendu visuel — le composant utilisera le champ `country` pour chercher le bon code ISO et afficher l'image correspondante.
+
+### Details techniques
+
+Le composant `CountryFlag` :
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│                    BottomNav                                │
-├─────────────────────────────────────────────────────────────┤
-│  useAuth() → user, role                                     │
-│                                                             │
-│  if (!user) → guestNavItems                                 │
-│    [Accueil, Explorer, Offres, Messages, Connexion]         │
-│                                                             │
-│  if (role === "creator") → creatorNavItems                  │
-│    [Accueil, Explorer, Offres, Collabs*, Profil]            │
-│                                                             │
-│  if (role === "brand") → brandNavItems                      │
-│    [Accueil, Créateurs, Offres, Collabs*, Profil]           │
-│                                                             │
-│  * = avec badge messages non lus                            │
-└─────────────────────────────────────────────────────────────┘
+Props: country (string), size (number, default 20)
+Rendu: <img src="https://flagcdn.com/w40/{isoCode}.png" width={size} />
+Fallback: icone globe si pays inconnu
 ```
 
-### 4. Cohérence des icônes et libellés
+Mapping couvrant les 54 pays africains + pays de residence (France, Belgique, Canada, etc.) deja presents dans `useCreators.ts`.
 
-| Position | Invité | Créateur | Marque |
-|----------|--------|----------|--------|
-| 1 | Accueil (Home) | Accueil (Home) | Accueil (Home) |
-| 2 | Explorer (Search) | Explorer (Search) | Créateurs (Search) |
-| 3 | Offres (Briefcase) | Offres (Briefcase) | Offres (Megaphone) |
-| 4 | Messages (MessageCircle) | Collabs (Handshake) | Collabs (Handshake) |
-| 5 | Connexion (User) | Profil (User) | Profil (User) |
+Les modifications touchent :
+- `src/lib/flags.ts` (nouveau fichier)
+- `src/components/CreatorCard.tsx`
+- `src/components/CreatorDetailSheet.tsx`
+- `src/hooks/useCreators.ts` (optionnel, nettoyage)
 
-### 5. Gestion des routes
-
-Pour les utilisateurs non connectés qui cliquent sur "Messages" :
-- Rediriger vers `/auth` avec un message invitant à se connecter
-
-Pour les utilisateurs connectés :
-- Les routes adaptées automatiquement selon le rôle (`/creator/*` ou `/brand/*`)
-
-## Résultat Attendu
-- Une seule barre de navigation cohérente sur toutes les pages
-- Transition fluide entre les états connecté/déconnecté
-- Plus de confusion pour l'utilisateur
-- Les onglets 1 (Accueil) et 5 (Connexion/Profil) restent constants visuellement
