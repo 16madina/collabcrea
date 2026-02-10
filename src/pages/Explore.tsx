@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { CountryFlag } from "@/lib/flags";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Loader2, BadgeCheck, SlidersHorizontal, X, RotateCcw } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -190,7 +191,10 @@ const Explore = () => {
                     <SelectContent className="max-h-[280px] bg-background z-[60]">
                       {africanCountryFilters.map((filter) => (
                         <SelectItem key={filter.value} value={filter.value}>
-                          {filter.label}
+                          <span className="flex items-center gap-2">
+                            {filter.value !== "all" && <CountryFlag country={filter.value} size={16} />}
+                            {filter.label}
+                          </span>
                         </SelectItem>
                       ))}
                     </SelectContent>
