@@ -53,6 +53,30 @@ export const useCollaborations = () => {
     }
   }, [user]);
 
+  // Subscribe to realtime collaboration updates
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel(`collaborations:${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "collaborations",
+        },
+        () => {
+          fetchCollaborations();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
   const fetchCollaborations = async () => {
     if (!user) return;
 
