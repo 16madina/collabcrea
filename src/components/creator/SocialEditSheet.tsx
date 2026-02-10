@@ -24,13 +24,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import YouTubeConnectButton from "./YouTubeConnectButton";
 import TikTokConnectButton from "./TikTokConnectButton";
-import { YouTubeIcon, InstagramIcon, TikTokIcon, SnapchatIcon } from "@/components/ui/social-icons";
+import { YouTubeIcon, InstagramIcon, TikTokIcon, SnapchatIcon, FacebookIcon } from "@/components/ui/social-icons";
 
 const socialSchema = z.object({
   youtube_followers: z.string().optional(),
   instagram_followers: z.string().optional(),
   tiktok_followers: z.string().optional(),
   snapchat_followers: z.string().optional(),
+  facebook_followers: z.string().optional(),
 });
 
 type SocialFormData = z.infer<typeof socialSchema>;
@@ -43,6 +44,7 @@ interface SocialEditSheetProps {
     instagram_followers: string | null;
     tiktok_followers: string | null;
     snapchat_followers: string | null;
+    facebook_followers: string | null;
   };
   onUpdate: () => void;
 }
@@ -59,6 +61,7 @@ const SocialEditSheet = ({ isOpen, onClose, initialData, onUpdate }: SocialEditS
       instagram_followers: initialData.instagram_followers || "",
       tiktok_followers: initialData.tiktok_followers || "",
       snapchat_followers: initialData.snapchat_followers || "",
+      facebook_followers: initialData.facebook_followers || "",
     },
   });
 
@@ -75,6 +78,7 @@ const SocialEditSheet = ({ isOpen, onClose, initialData, onUpdate }: SocialEditS
           instagram_followers: data.instagram_followers || null,
           tiktok_followers: data.tiktok_followers || null,
           snapchat_followers: data.snapchat_followers || null,
+          facebook_followers: data.facebook_followers || null,
         })
         .eq("user_id", user.id);
 
@@ -191,6 +195,25 @@ const SocialEditSheet = ({ isOpen, onClose, initialData, onUpdate }: SocialEditS
                       <FormLabel>Snapchat</FormLabel>
                       <FormControl>
                         <Input placeholder="Ex: 100K" {...field} />
+                      </FormControl>
+                    </div>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="facebook_followers"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center gap-3">
+                    <FacebookIcon className="w-10 h-10 p-2" size={20} />
+                    <div className="flex-1">
+                      <FormLabel>Facebook</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Ex: 200K" {...field} />
                       </FormControl>
                     </div>
                   </div>

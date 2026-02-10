@@ -2,7 +2,8 @@ import {
   FaInstagram, 
   FaYoutube, 
   FaTiktok, 
-  FaSnapchatGhost 
+  FaSnapchatGhost,
+  FaFacebookF
 } from 'react-icons/fa';
 
 interface SocialIconProps {
@@ -45,6 +46,14 @@ export const SnapchatIcon = ({ className, size = 20 }: SocialIconProps) => (
   </div>
 );
 
+export const FacebookIcon = ({ className, size = 20 }: SocialIconProps) => (
+  <div 
+    className={`flex items-center justify-center rounded-lg bg-[#1877F2] ${className}`}
+  >
+    <FaFacebookF color="white" size={size} />
+  </div>
+);
+
 // Inline versions without background container - just the icon with brand colors
 export const InstagramIconInline = ({ className, size = 16 }: SocialIconProps) => (
   <FaInstagram 
@@ -79,6 +88,8 @@ export const getSocialIcon = (platform: string, size: number = 20, containerClas
       return <TikTokIcon className={containerClass} size={size} />;
     case 'snapchat':
       return <SnapchatIcon className={containerClass} size={size} />;
+    case 'facebook':
+      return <FacebookIcon className={containerClass} size={size} />;
     default:
       return null;
   }
@@ -94,6 +105,8 @@ export const getSocialIconInline = (platform: string, size: number = 16, classNa
       return <FaTiktok size={size} className={className} color="#ffffff" />;
     case 'snapchat':
       return <FaSnapchatGhost size={size} className={className} color="#FFFC00" />;
+    case 'facebook':
+      return <FaFacebookF size={size} className={className} color="#1877F2" />;
     default:
       return null;
   }

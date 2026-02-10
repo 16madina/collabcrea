@@ -471,6 +471,7 @@ export type Database = {
           country: string | null
           created_at: string
           email_verified: boolean | null
+          facebook_followers: string | null
           followers: string | null
           full_name: string
           id: string
@@ -504,6 +505,7 @@ export type Database = {
           country?: string | null
           created_at?: string
           email_verified?: boolean | null
+          facebook_followers?: string | null
           followers?: string | null
           full_name: string
           id?: string
@@ -537,6 +539,7 @@ export type Database = {
           country?: string | null
           created_at?: string
           email_verified?: boolean | null
+          facebook_followers?: string | null
           followers?: string | null
           full_name?: string
           id?: string
