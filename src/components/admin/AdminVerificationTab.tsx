@@ -606,26 +606,28 @@ const AdminVerificationTab = () => {
                       : "Comparaison photo de profil / Document"}
                   </h4>
                   {selectedUser.identity_method === "selfie" && selectedUser.selfie_url ? (
-                    <div className="flex items-start gap-3">
-                      {/* Profile photo */}
-                      <div className="space-y-1 flex-shrink-0">
-                        <p className="text-[10px] text-muted-foreground text-center">Profil</p>
-                        <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted border border-border">
-                          {selectedUser.avatar_url ? (
-                            <img src={selectedUser.avatar_url} alt="Profil" className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="flex items-center justify-center h-full">
-                              <User className="w-6 h-6 text-muted-foreground opacity-50" />
-                            </div>
-                          )}
+                    <div className="space-y-3">
+                      {/* Side by side: profile photo + selfie carousel, same height */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <p className="text-[10px] text-muted-foreground text-center">Photo de profil</p>
+                          <div className="aspect-[4/3] max-h-40 rounded-xl overflow-hidden bg-muted border border-border">
+                            {selectedUser.avatar_url ? (
+                              <img src={selectedUser.avatar_url} alt="Profil" className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="flex items-center justify-center h-full">
+                                <User className="w-8 h-8 text-muted-foreground opacity-50" />
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      {/* Selfie carousel */}
-                      <div className="flex-1">
-                        <SelfiePreview
-                          selfiePath={selectedUser.selfie_url}
-                          onFullscreen={(urls, index) => setFullscreenSelfie({ urls, index })}
-                        />
+                        <div className="space-y-1">
+                          <p className="text-[10px] text-muted-foreground text-center">Selfie</p>
+                          <SelfiePreview
+                            selfiePath={selectedUser.selfie_url}
+                            onFullscreen={(urls, index) => setFullscreenSelfie({ urls, index })}
+                          />
+                        </div>
                       </div>
                     </div>
                   ) : (
