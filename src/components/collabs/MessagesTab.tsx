@@ -95,12 +95,8 @@ const MessagesTab = ({ userRole }: MessagesTabProps) => {
   // Chat View
   if (selectedConversation) {
     return (
-      <motion.div
-        key="chat-view"
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 bg-background flex flex-col"
+      <div
+        className="fixed inset-0 z-[60] bg-background flex flex-col"
       >
         {/* Chat Header */}
         <div className="px-4 pt-[max(env(safe-area-inset-top),0.75rem)] pb-3 glass-nav border-b border-border">
@@ -229,7 +225,7 @@ const MessagesTab = ({ userRole }: MessagesTabProps) => {
             </button>
           </div>
         </div>
-      </motion.div>
+      </div>
     );
   }
 
