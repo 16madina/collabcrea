@@ -4,6 +4,7 @@ import { Search, Loader2, BadgeCheck, SlidersHorizontal, X, RotateCcw } from "lu
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import BottomNav from "@/components/BottomNav";
 import CreatorCard from "@/components/CreatorCard";
 import CreatorDetailSheet from "@/components/CreatorDetailSheet";
@@ -118,47 +119,47 @@ const Explore = () => {
         </div>
       </div>
 
-      {/* Filter Bottom Sheet */}
+      {/* Filter Side Panel */}
       <AnimatePresence>
         {showFilters && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm"
+            className="fixed inset-0 z-50 bg-background/60 backdrop-blur-sm"
             onClick={() => setShowFilters(false)}
           >
             <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 25 }}
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
-              className="absolute bottom-0 left-0 right-0 glass-card rounded-t-3xl safe-bottom max-h-[70vh] flex flex-col"
+              className="absolute top-0 right-0 bottom-0 w-[85%] max-w-[340px] bg-background border-l border-border shadow-2xl flex flex-col"
             >
-              <div className="sticky top-0 z-10 pt-4 pb-2 px-6 bg-inherit rounded-t-3xl">
-                <div className="w-12 h-1 bg-muted rounded-full mx-auto mb-3" />
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-display font-bold text-lg">Filtres</h3>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => {
-                        setActiveCountry("all");
-                        setActiveGender("all");
-                        setOnlyVerified(false);
-                      }}
-                      className="text-xs text-muted-foreground flex items-center gap-1 px-3 py-1.5 rounded-full glass"
-                    >
-                      <RotateCcw className="w-3 h-3" />
-                      Réinitialiser
-                    </button>
-                    <button onClick={() => setShowFilters(false)}>
-                      <X className="w-5 h-5 text-muted-foreground" />
-                    </button>
-                  </div>
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+                <h3 className="font-display font-bold text-lg">Filtres</h3>
+                <div className="flex gap-2 items-center">
+                  <button
+                    onClick={() => {
+                      setActiveCountry("all");
+                      setActiveGender("all");
+                      setOnlyVerified(false);
+                    }}
+                    className="text-xs text-muted-foreground flex items-center gap-1 px-3 py-1.5 rounded-full glass"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    Réinitialiser
+                  </button>
+                  <button onClick={() => setShowFilters(false)}>
+                    <X className="w-5 h-5 text-muted-foreground" />
+                  </button>
                 </div>
               </div>
-              <div className="overflow-y-auto flex-1 px-6 pb-6 space-y-4">
+
+              {/* Scrollable content */}
+              <div className="flex-1 overflow-y-auto px-5 py-5 space-y-6">
                 {/* Gender */}
                 <div>
                   <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Genre</p>
@@ -167,7 +168,7 @@ const Explore = () => {
                       <button
                         key={filter.value}
                         onClick={() => setActiveGender(filter.value)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                        className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                           activeGender === filter.value
                             ? "bg-gold text-primary-foreground"
                             : "glass text-muted-foreground"
@@ -179,35 +180,32 @@ const Explore = () => {
                   </div>
                 </div>
 
-                {/* Country */}
+                {/* Country Select */}
                 <div>
                   <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Pays</p>
-                  <div className="flex flex-wrap gap-2">
-                    {africanCountryFilters.map((filter) => (
-                      <button
-                        key={filter.value}
-                        onClick={() => setActiveCountry(filter.value)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                          activeCountry === filter.value
-                            ? "bg-gold/20 text-gold border border-gold/40"
-                            : "glass text-muted-foreground border border-transparent"
-                        }`}
-                      >
-                        {filter.label}
-                      </button>
-                    ))}
-                  </div>
+                  <Select value={activeCountry} onValueChange={setActiveCountry}>
+                    <SelectTrigger className="w-full h-12 rounded-xl bg-muted/50 border-border">
+                      <SelectValue placeholder="Tous les pays" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[280px] bg-background z-[60]">
+                      {africanCountryFilters.map((filter) => (
+                        <SelectItem key={filter.value} value={filter.value}>
+                          {filter.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {/* Verified */}
-                <div className="flex items-center gap-2 pb-2">
+                <div className="flex items-center gap-3">
                   <Switch
                     id="verified-filter"
                     checked={onlyVerified}
                     onCheckedChange={setOnlyVerified}
                     className="data-[state=checked]:bg-gold"
                   />
-                  <Label htmlFor="verified-filter" className="text-xs flex items-center gap-1 cursor-pointer">
+                  <Label htmlFor="verified-filter" className="text-sm flex items-center gap-1.5 cursor-pointer">
                     <BadgeCheck className="w-4 h-4 text-gold" />
                     Vérifiés uniquement
                   </Label>
@@ -215,7 +213,7 @@ const Explore = () => {
               </div>
 
               {/* Apply button */}
-              <div className="px-6 py-3 border-t border-border">
+              <div className="px-5 py-4 border-t border-border">
                 <button
                   onClick={() => setShowFilters(false)}
                   className="w-full py-3 rounded-xl bg-gold text-primary-foreground font-semibold"
