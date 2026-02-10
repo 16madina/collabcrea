@@ -448,7 +448,24 @@ const Auth = () => {
         }
 
         toast.success("Compte créé avec succès !", {
-          description: "Bienvenue sur CollabCréa !",
+          description: "Un email de vérification vous a été envoyé.",
+        });
+
+        // Send verification email automatically
+        const baseUrl = "https://collabcrea.com";
+        const redirectTo = formData.role === "brand" 
+          ? `${baseUrl}/brand/profile?email_verified=1`
+          : `${baseUrl}/creator/profile?email_verified=1`;
+
+        supabase.functions.invoke("send-auth-email", {
+          body: {
+            type: "signup",
+            email: formData.email,
+            redirectTo,
+            userName: formData.firstName,
+          },
+        }).then(({ error }) => {
+          if (error) console.error("Error sending verification email:", error);
         });
 
         // Reset form
