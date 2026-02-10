@@ -7,6 +7,7 @@ import { useTikTokSync } from "@/hooks/useTikTokSync";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { CheckCircle, X } from "lucide-react";
+import VerificationBanner from "@/components/VerificationBanner";
 import BottomNav from "@/components/BottomNav";
 import ProfileEditForm from "@/components/creator/ProfileEditForm";
 import ProfileHeader from "@/components/creator/ProfileHeader";
@@ -368,6 +369,21 @@ const CreatorProfile = () => {
         onEditAvatar={() => setShowAvatarSheet(true)}
         onEditBanner={() => setShowBannerSheet(true)}
       />
+
+      {/* Verification Banner */}
+      {profileData && !isFullyVerified && (
+        <div className="px-4 py-3">
+          <VerificationBanner
+            status={{
+              email_verified: profileData.email_verified,
+              identity_verified: profileData.identity_verified,
+              identity_submitted_at: profileData.identity_submitted_at,
+            }}
+            showActions={true}
+            userRole="creator"
+          />
+        </div>
+      )}
 
       {/* Portfolio Button - Prominent CTA */}
       <div className="px-4 py-3">

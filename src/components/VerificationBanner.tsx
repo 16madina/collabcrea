@@ -146,6 +146,21 @@ const VerificationBanner = ({ status, showActions = true, userRole = "creator" }
         </div>
       </div>
 
+      {/* Reminder: verification email sent */}
+      {!status.email_verified && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="mt-3 bg-gold/10 border border-gold/20 rounded-lg p-3 flex items-start gap-2"
+        >
+          <Mail className="w-4 h-4 text-gold mt-0.5 shrink-0" />
+          <p className="text-xs text-gold">
+            Un email de vérification a été envoyé à votre adresse. Vérifiez votre boîte de réception (et les spams) puis cliquez sur le lien pour confirmer.
+          </p>
+        </motion.div>
+      )}
+
         {showActions && (
         <div className="mt-4 flex gap-2">
           {!status.email_verified && (
@@ -159,7 +174,7 @@ const VerificationBanner = ({ status, showActions = true, userRole = "creator" }
               ) : (
                 <Mail className="w-4 h-4" />
               )}
-              {isSendingEmail ? "Envoi en cours..." : "Vérifier email"}
+              {isSendingEmail ? "Envoi en cours..." : "Renvoyer l'email"}
             </button>
           )}
           {!status.identity_submitted_at && (
