@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { CountryFlag } from "@/lib/flags";
 import { motion, AnimatePresence } from "framer-motion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Clock, MapPin, DollarSign, X, Loader2, Send, Flag, SlidersHorizontal, RotateCcw } from "lucide-react";
@@ -474,7 +475,10 @@ const CreatorOffers = () => {
                     <SelectContent className="max-h-[280px] bg-background z-[60]">
                       {africanCountryFilters.map((filter) => (
                         <SelectItem key={filter.value} value={filter.value}>
-                          {filter.label}
+                          <span className="flex items-center gap-2">
+                            {filter.value !== "all" && <CountryFlag country={filter.value} size={16} />}
+                            {filter.label}
+                          </span>
                         </SelectItem>
                       ))}
                     </SelectContent>

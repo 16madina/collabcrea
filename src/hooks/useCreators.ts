@@ -105,8 +105,9 @@ function mapProfileToCreator(profile: ProfileWithRole): Creator & { userId: stri
     country: profile.country || "Afrique",
     flag: getFlag(profile.country),
     residenceFlag: residenceFlag !== getFlag(profile.country) ? residenceFlag : undefined,
+    residenceCountry: profile.residence_country && profile.residence_country !== profile.country ? profile.residence_country : undefined,
     image: profile.avatar_url || "/placeholder.svg",
-    rating: undefined, // Could be calculated from reviews later
+    rating: undefined,
     bio: profile.bio || undefined,
     isVerified: profile.identity_verified === true,
     socials: {

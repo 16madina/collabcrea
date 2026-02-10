@@ -3,6 +3,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Star, MapPin, MessageCircle, Flag, User, CreditCard, Image } from "lucide-react";
+import { CountryFlag } from "@/lib/flags";
 import { FaYoutube, FaInstagram, FaTiktok, FaSnapchatGhost } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -31,6 +32,7 @@ export interface Creator {
   country: string;
   flag: string;
   residenceFlag?: string;
+  residenceCountry?: string;
   image: string;
   rating?: number;
   bio?: string;
@@ -117,8 +119,12 @@ const CreatorDetailSheet = ({ creator, creatorUserId, open, onOpenChange }: Crea
               {creator.firstName} {creator.lastName}
             </h2>
             <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-              <span>
-                {creator.residenceFlag ? `${creator.residenceFlag}-${creator.flag}` : creator.flag}
+              <span className="flex items-center gap-0.5">
+                {creator.residenceFlag ? (
+                  <><CountryFlag country={creator.residenceCountry} size={18} /><span className="text-xs">-</span><CountryFlag country={creator.country} size={18} /></>
+                ) : (
+                  <CountryFlag country={creator.country} size={18} />
+                )}
               </span>
               <MapPin className="w-3 h-3" />
               <span>{creator.country}</span>

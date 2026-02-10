@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Star, BadgeCheck } from "lucide-react";
 import { FaYoutube, FaInstagram, FaTiktok, FaSnapchatGhost } from "react-icons/fa";
 import type { Creator } from "./CreatorDetailSheet";
+import { CountryFlag } from "@/lib/flags";
 
 interface CreatorCardProps {
   creator: Creator;
@@ -46,8 +47,12 @@ const CreatorCard = ({ creator, index = 0, variant = "grid", onClick }: CreatorC
         <div className="p-3">
           {/* Pays avec double drapeau si disponible */}
           <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-            <span>
-              {creator.residenceFlag ? `${creator.residenceFlag}-${creator.flag}` : creator.flag}
+            <span className="flex items-center gap-0.5">
+              {creator.residenceFlag ? (
+                <><CountryFlag country={creator.residenceCountry} size={16} /><span className="text-muted-foreground text-xs">-</span><CountryFlag country={creator.country} size={16} /></>
+              ) : (
+                <CountryFlag country={creator.country} size={16} />
+              )}
             </span>
             <span>{creator.country}</span>
           </div>
@@ -123,8 +128,12 @@ const CreatorCard = ({ creator, index = 0, variant = "grid", onClick }: CreatorC
         {/* Pays + Bouton Voir profil sur la même ligne */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-            <span>
-              {creator.residenceFlag ? `${creator.residenceFlag}-${creator.flag}` : creator.flag}
+            <span className="flex items-center gap-0.5">
+              {creator.residenceFlag ? (
+                <><CountryFlag country={creator.residenceCountry} size={16} /><span className="text-muted-foreground text-xs">-</span><CountryFlag country={creator.country} size={16} /></>
+              ) : (
+                <CountryFlag country={creator.country} size={16} />
+              )}
             </span>
             <span>{creator.country}</span>
           </div>
