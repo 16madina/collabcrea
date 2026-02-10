@@ -26,6 +26,21 @@ export const useApplyToOffer = () => {
       return { success: false, error: "Not authenticated" };
     }
 
+    // Check creator identity verification
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("identity_verified")
+      .eq("user_id", user.id)
+      .single();
+
+    if (!profile?.identity_verified) {
+      toast.error("Vous devez vérifier votre identité avant de postuler", {
+        description: "Rendez-vous dans votre profil pour compléter la vérification.",
+        action: { label: "Vérifier", onClick: () => navigate("/creator/profile") },
+      });
+      return { success: false, error: "Identity not verified" };
+    }
+
     setIsApplying(true);
 
     try {
