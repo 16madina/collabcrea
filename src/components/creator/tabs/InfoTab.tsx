@@ -161,7 +161,13 @@ const InfoTab = ({
 
       {/* Social Networks */}
       <div className="space-y-3">
-        <h3 className="font-display font-semibold text-foreground italic">Réseaux sociaux</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="font-display font-semibold text-foreground italic">Réseaux sociaux</h3>
+          <Button variant="ghost" size="sm" onClick={onEditSocial} className="text-gold">
+            <Edit3 className="w-4 h-4 mr-1" />
+            Modifier
+          </Button>
+        </div>
         
         {socialAccounts.length > 0 ? (
           <div className="grid grid-cols-2 gap-3">
