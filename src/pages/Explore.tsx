@@ -20,6 +20,8 @@ const categories = [
   "Humour",
   "Lifestyle",
   "Musique",
+  "Business",
+  "Éducation",
 ];
 
 const countryFilters = [
@@ -29,12 +31,26 @@ const countryFilters = [
   { label: "🇸🇳 Sénégal", value: "Sénégal" },
   { label: "🇬🇭 Ghana", value: "Ghana" },
   { label: "🇨🇲 Cameroun", value: "Cameroun" },
+  { label: "🇲🇱 Mali", value: "Mali" },
+  { label: "🇬🇳 Guinée", value: "Guinée" },
+  { label: "🇧🇯 Bénin", value: "Bénin" },
+  { label: "🇹🇬 Togo", value: "Togo" },
+  { label: "🇧🇫 Burkina Faso", value: "Burkina Faso" },
+  { label: "🇬🇦 Gabon", value: "Gabon" },
+  { label: "🇨🇩 RDC", value: "RDC" },
+];
+
+const genderFilters = [
+  { label: "Tous", value: "all" },
+  { label: "Homme", value: "Homme" },
+  { label: "Femme", value: "Femme" },
 ];
 
 const Explore = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("Tous");
   const [activeCountry, setActiveCountry] = useState("all");
+  const [activeGender, setActiveGender] = useState("all");
   const [onlyVerified, setOnlyVerified] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCreator, setSelectedCreator] = useState<(Creator & { userId: string }) | null>(null);
@@ -86,7 +102,7 @@ const Explore = () => {
             <button
               onClick={() => setShowFilters(!showFilters)}
               className={`h-12 w-12 rounded-xl flex items-center justify-center transition-all ${
-                (activeCategory !== "Tous" || activeCountry !== "all" || onlyVerified)
+                (activeCountry !== "all" || activeGender !== "all" || onlyVerified)
                   ? "bg-gold text-primary-foreground"
                   : "glass text-muted-foreground"
               }`}
@@ -95,6 +111,25 @@ const Explore = () => {
             </button>
           </div>
         </motion.div>
+      </div>
+
+      {/* Inline Category Pills */}
+      <div className="px-6 mt-3">
+        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+          {categories.map((category) => (
+            <button
+              key={category}
+              onClick={() => setActiveCategory(category)}
+              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                activeCategory === category
+                  ? "bg-gold text-primary-foreground"
+                  : "glass text-muted-foreground"
+              }`}
+            >
+              {category}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Filter Panel */}
@@ -108,21 +143,21 @@ const Explore = () => {
             className="overflow-hidden"
           >
             <div className="px-6 pt-3 pb-1 space-y-3">
-              {/* Category */}
+              {/* Gender */}
               <div>
-                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Catégorie</p>
+                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Genre</p>
                 <div className="flex flex-wrap gap-2">
-                  {categories.map((category) => (
+                  {genderFilters.map((filter) => (
                     <button
-                      key={category}
-                      onClick={() => setActiveCategory(category)}
+                      key={filter.value}
+                      onClick={() => setActiveGender(filter.value)}
                       className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                        activeCategory === category
+                        activeGender === filter.value
                           ? "bg-gold text-primary-foreground"
                           : "glass text-muted-foreground"
                       }`}
                     >
-                      {category}
+                      {filter.label}
                     </button>
                   ))}
                 </div>
@@ -149,7 +184,7 @@ const Explore = () => {
               </div>
 
               {/* Verified */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 pb-2">
                 <Switch
                   id="verified-filter"
                   checked={onlyVerified}

@@ -42,7 +42,7 @@ interface Application {
 }
 
 type FilterStatus = "all" | "new" | "applied";
-type FilterCategory = "all" | "Beauté" | "Tech" | "Cuisine" | "Fitness" | "Mode" | "Lifestyle" | "Musique" | "Humour";
+type FilterCategory = "all" | "Beauté" | "Tech" | "Cuisine" | "Fitness" | "Mode" | "Lifestyle" | "Musique" | "Humour" | "Business" | "Éducation";
 
 const statusFilters: { label: string; value: FilterStatus }[] = [
   { label: "Toutes", value: "all" },
@@ -60,6 +60,8 @@ const categoryFilters: { label: string; value: FilterCategory }[] = [
   { label: "Lifestyle", value: "Lifestyle" },
   { label: "Musique", value: "Musique" },
   { label: "Humour", value: "Humour" },
+  { label: "Business", value: "Business" },
+  { label: "Éducation", value: "Éducation" },
 ];
 
 const countryFilters = [
@@ -69,6 +71,23 @@ const countryFilters = [
   { label: "🇸🇳 Sénégal", value: "Sénégal" },
   { label: "🇬🇭 Ghana", value: "Ghana" },
   { label: "🇨🇲 Cameroun", value: "Cameroun" },
+  { label: "🇲🇱 Mali", value: "Mali" },
+  { label: "🇬🇳 Guinée", value: "Guinée" },
+  { label: "🇧🇯 Bénin", value: "Bénin" },
+  { label: "🇹🇬 Togo", value: "Togo" },
+  { label: "🇧🇫 Burkina Faso", value: "Burkina Faso" },
+  { label: "🇬🇦 Gabon", value: "Gabon" },
+  { label: "🇨🇩 RDC", value: "RDC" },
+];
+
+const contentTypeFilters = [
+  { label: "Tous", value: "all" },
+  { label: "Reel", value: "Reel" },
+  { label: "TikTok", value: "TikTok" },
+  { label: "Vidéo YouTube", value: "Vidéo YouTube" },
+  { label: "Story", value: "Story" },
+  { label: "Podcast", value: "Podcast" },
+  { label: "Post", value: "Post" },
 ];
 
 const mockOffers: Offer[] = [
@@ -187,6 +206,7 @@ const CreatorOffers = () => {
   const [activeFilter, setActiveFilter] = useState<FilterStatus>("all");
   const [activeCategory, setActiveCategory] = useState<FilterCategory>("all");
   const [activeCountry, setActiveCountry] = useState("all");
+  const [activeContentType, setActiveContentType] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
   const [applicationMessage, setApplicationMessage] = useState("");
@@ -270,8 +290,12 @@ const CreatorOffers = () => {
     const matchesCountry =
       activeCountry === "all" ||
       (offer.location && offer.location.toLowerCase().includes(activeCountry.toLowerCase()));
+
+    const matchesContentType =
+      activeContentType === "all" ||
+      offer.content_type.toLowerCase().includes(activeContentType.toLowerCase());
     
-    return matchesSearch && matchesFilter && matchesCategory && matchesCountry;
+    return matchesSearch && matchesFilter && matchesCategory && matchesCountry && matchesContentType;
   });
 
   const handleApply = async () => {
@@ -342,7 +366,7 @@ const CreatorOffers = () => {
             <button
               onClick={() => setShowFilters(!showFilters)}
               className={`h-12 w-12 rounded-xl flex items-center justify-center transition-all ${
-                (activeFilter !== "all" || activeCategory !== "all" || activeCountry !== "all")
+                (activeFilter !== "all" || activeCountry !== "all" || activeContentType !== "all")
                   ? "bg-gold text-primary-foreground"
                   : "glass text-muted-foreground"
               }`}
@@ -351,6 +375,25 @@ const CreatorOffers = () => {
             </button>
           </div>
         </motion.div>
+      </div>
+
+      {/* Inline Category Pills */}
+      <div className="px-6 mt-3">
+        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+          {categoryFilters.map((filter) => (
+            <button
+              key={filter.value}
+              onClick={() => setActiveCategory(filter.value)}
+              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                activeCategory === filter.value
+                  ? "bg-gold text-primary-foreground"
+                  : "glass text-muted-foreground"
+              }`}
+            >
+              {filter.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Filter Panel */}
@@ -384,16 +427,16 @@ const CreatorOffers = () => {
                 </div>
               </div>
 
-              {/* Category */}
+              {/* Content Type */}
               <div>
-                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Catégorie</p>
+                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Type de contenu</p>
                 <div className="flex flex-wrap gap-2">
-                  {categoryFilters.map((filter) => (
+                  {contentTypeFilters.map((filter) => (
                     <button
                       key={filter.value}
-                      onClick={() => setActiveCategory(filter.value)}
+                      onClick={() => setActiveContentType(filter.value)}
                       className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                        activeCategory === filter.value
+                        activeContentType === filter.value
                           ? "bg-gold/20 text-gold border border-gold/40"
                           : "glass text-muted-foreground border border-transparent"
                       }`}
