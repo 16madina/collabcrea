@@ -26,6 +26,7 @@ import AdminDashboard from "./pages/admin/Dashboard";
 import NotFound from "./pages/NotFound";
 import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import ChildSafety from "./pages/ChildSafety";
 
 const queryClient = new QueryClient();
 
@@ -70,6 +71,7 @@ const AppContent = () => {
           <Route path="/contact" element={<Contact />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/child-safety" element={<ChildSafety />} />
           
           {/* Creator Routes */}
           <Route path="/creator/dashboard" element={<Navigate to="/creator/profile" replace />} />
