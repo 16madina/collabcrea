@@ -13,6 +13,8 @@ interface Profile {
   category: string | null;
   country: string | null;
   followers: string | null;
+  identity_verified: boolean | null;
+  email_verified: boolean | null;
 }
 
 interface AuthContextType {

@@ -94,6 +94,20 @@ const ContactCreatorSheet = ({
       return;
     }
 
+    // Check brand email verification
+    const { data: brandProfile } = await supabase
+      .from("profiles")
+      .select("email_verified")
+      .eq("user_id", user.id)
+      .single();
+
+    if (!brandProfile?.email_verified) {
+      toast.error("Vous devez vérifier votre email avant de contacter un créateur", {
+        description: "Vérifiez votre boîte mail pour confirmer votre adresse.",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {

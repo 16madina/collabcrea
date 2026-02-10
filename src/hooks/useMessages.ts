@@ -63,6 +63,30 @@ export const useMessages = (conversationId: string | null) => {
     if (!conversationId || !user || !content.trim()) return false;
 
     try {
+      // Check user verification before sending
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("identity_verified, email_verified")
+        .eq("user_id", user.id)
+        .single();
+
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id);
+
+      const userRole = roles?.find(r => r.role === "creator" || r.role === "brand")?.role;
+
+      if (userRole === "creator" && !profile?.identity_verified) {
+        setError("Vous devez vérifier votre identité pour envoyer des messages.");
+        return false;
+      }
+
+      if (userRole === "brand" && !profile?.email_verified) {
+        setError("Vous devez vérifier votre email pour envoyer des messages.");
+        return false;
+      }
+
       const { error: sendError } = await supabase.from("messages").insert({
         conversation_id: conversationId,
         sender_id: user.id,
