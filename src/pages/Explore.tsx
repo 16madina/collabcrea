@@ -22,9 +22,19 @@ const categories = [
   "Musique",
 ];
 
+const countryFilters = [
+  { label: "Tous", value: "all" },
+  { label: "🇨🇮 Côte d'Ivoire", value: "Côte d'Ivoire" },
+  { label: "🇳🇬 Nigeria", value: "Nigeria" },
+  { label: "🇸🇳 Sénégal", value: "Sénégal" },
+  { label: "🇬🇭 Ghana", value: "Ghana" },
+  { label: "🇨🇲 Cameroun", value: "Cameroun" },
+];
+
 const Explore = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("Tous");
+  const [activeCountry, setActiveCountry] = useState("all");
   const [onlyVerified, setOnlyVerified] = useState(false);
   const [selectedCreator, setSelectedCreator] = useState<(Creator & { userId: string }) | null>(null);
   const [showCreatorDetail, setShowCreatorDetail] = useState(false);
@@ -39,7 +49,9 @@ const Explore = () => {
     const matchesCategory =
       activeCategory === "Tous" || creator.category === activeCategory;
     const matchesVerified = !onlyVerified || creator.isVerified === true;
-    return matchesSearch && matchesCategory && matchesVerified;
+    const matchesCountry =
+      activeCountry === "all" || creator.country === activeCountry;
+    return matchesSearch && matchesCategory && matchesVerified && matchesCountry;
   });
 
   const handleCreatorClick = (creator: Creator & { userId: string }) => {
@@ -91,6 +103,28 @@ const Explore = () => {
               }`}
             >
               {category}
+            </button>
+          ))}
+        </motion.div>
+
+        {/* Country Filter */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.15 }}
+          className="flex gap-2 overflow-x-auto no-scrollbar pb-2 mt-2"
+        >
+          {countryFilters.map((filter) => (
+            <button
+              key={filter.value}
+              onClick={() => setActiveCountry(filter.value)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
+                activeCountry === filter.value
+                  ? "bg-gold/20 text-gold border border-gold/40"
+                  : "glass text-muted-foreground border border-transparent"
+              }`}
+            >
+              {filter.label}
             </button>
           ))}
         </motion.div>
