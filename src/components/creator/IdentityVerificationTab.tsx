@@ -17,6 +17,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import FacialVerificationCamera from "./FacialVerificationCamera";
 
 interface IdentityVerificationTabProps {
   identityVerified: boolean;
@@ -41,6 +42,7 @@ const IdentityVerificationTab = ({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selectedMethod, setSelectedMethod] = useState<VerificationMethod>(null);
+  const [showCamera, setShowCamera] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleResendVerificationEmail = async () => {
@@ -169,6 +171,50 @@ const IdentityVerificationTab = ({
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  // Handle camera captures (multiple blobs from facial verification)
+  const handleCameraComplete = async (captures: Blob[]) => {
+    if (!user) return;
+    setShowCamera(false);
+    setUploading(true);
+
+    try {
+      // Upload each capture
+      const uploadedUrls: string[] = [];
+      for (let i = 0; i < captures.length; i++) {
+        const fileName = `${user.id}/selfie-${i}.jpg`;
+        const { error: uploadError } = await supabase.storage
+          .from("selfies")
+          .upload(fileName, captures[i], { upsert: true, contentType: "image/jpeg" });
+        if (uploadError) throw uploadError;
+
+        const { data: urlData } = supabase.storage
+          .from("selfies")
+          .getPublicUrl(fileName);
+        uploadedUrls.push(urlData.publicUrl);
+      }
+
+      // Store the first (front-facing) selfie as main selfie_url
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({
+          selfie_url: uploadedUrls[0],
+          identity_submitted_at: new Date().toISOString(),
+          identity_method: "selfie",
+        })
+        .eq("user_id", user.id);
+      if (updateError) throw updateError;
+
+      toast.success("Vérification faciale soumise ! Un administrateur examinera vos photos.");
+      setSelectedMethod(null);
+      onUpdate();
+    } catch (error) {
+      console.error("Error uploading selfies:", error);
+      toast.error("Erreur lors de l'envoi des photos");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   // Already verified
   if (identityVerified) {
     return (
@@ -261,7 +307,14 @@ const IdentityVerificationTab = ({
       {/* Method Selection or Upload */}
       <AnimatePresence mode="wait">
         {!selectedMethod ? (
-          <MethodSelector key="selector" onSelect={setSelectedMethod} />
+          <MethodSelector key="selector" onSelect={(method) => {
+            if (method === "selfie") {
+              setSelectedMethod("selfie");
+              setShowCamera(true);
+            } else {
+              setSelectedMethod(method);
+            }
+          }} />
         ) : selectedMethod === "document" ? (
           <DocumentUpload
             key="document"
@@ -274,20 +327,59 @@ const IdentityVerificationTab = ({
             onClear={clearSelection}
             onBack={() => { setSelectedMethod(null); clearSelection(); }}
           />
+        ) : uploading ? (
+          <motion.div
+            key="uploading-selfie"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="glass-card p-8 flex flex-col items-center gap-4"
+          >
+            <Loader2 className="w-10 h-10 text-gold animate-spin" />
+            <p className="font-semibold">Envoi des photos en cours...</p>
+            <p className="text-xs text-muted-foreground">Veuillez patienter</p>
+          </motion.div>
         ) : (
-          <SelfieUpload
-            key="selfie"
-            selectedFile={selectedFile}
-            previewUrl={previewUrl}
-            uploading={uploading}
-            fileInputRef={fileInputRef}
-            onFileSelect={handleFileSelect}
-            onUpload={handleUpload}
-            onClear={clearSelection}
-            onBack={() => { setSelectedMethod(null); clearSelection(); }}
-          />
+          <motion.div
+            key="selfie-info"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-4"
+          >
+            <button
+              onClick={() => { setSelectedMethod(null); }}
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Changer de méthode
+            </button>
+            <div className="glass-card p-6 text-center space-y-4">
+              <Camera className="w-12 h-12 text-gold mx-auto" />
+              <p className="font-semibold">Vérification faciale</p>
+              <p className="text-sm text-muted-foreground">
+                La caméra va s'ouvrir pour capturer votre visage sous différents angles.
+              </p>
+              <button
+                onClick={() => setShowCamera(true)}
+                className="btn-gold px-6 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 mx-auto"
+              >
+                <Camera className="w-5 h-5" />
+                Ouvrir la caméra
+              </button>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Camera overlay */}
+      {showCamera && (
+        <FacialVerificationCamera
+          onComplete={handleCameraComplete}
+          onCancel={() => {
+            setShowCamera(false);
+            setSelectedMethod(null);
+          }}
+        />
+      )}
 
       {/* Security notice */}
       <div className="flex items-start gap-2 text-xs text-muted-foreground">
@@ -400,66 +492,7 @@ const DocumentUpload = ({
   </motion.div>
 );
 
-// Selfie upload sub-component
-const SelfieUpload = ({
-  selectedFile, previewUrl, uploading, fileInputRef,
-  onFileSelect, onUpload, onClear, onBack,
-}: {
-  selectedFile: File | null;
-  previewUrl: string | null;
-  uploading: boolean;
-  fileInputRef: React.RefObject<HTMLInputElement>;
-  onFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onUpload: () => void;
-  onClear: () => void;
-  onBack: () => void;
-}) => (
-  <motion.div
-    initial={{ opacity: 0, x: 20 }}
-    animate={{ opacity: 1, x: 0 }}
-    exit={{ opacity: 0, x: -20 }}
-    className="space-y-4"
-  >
-    <button onClick={onBack} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-      <ArrowLeft className="w-4 h-4" />
-      Changer de méthode
-    </button>
 
-    <div className="glass-card p-4 flex items-start gap-3 bg-gold/5 border border-gold/20">
-      <Camera className="w-5 h-5 text-gold mt-0.5" />
-      <div>
-        <p className="font-semibold text-sm">Comment ça marche ?</p>
-        <ol className="text-xs text-muted-foreground mt-1 space-y-1 list-decimal list-inside">
-          <li>Prenez un selfie clair de votre visage</li>
-          <li>Assurez-vous que votre photo de profil est bien visible</li>
-          <li>Un administrateur comparera les deux photos</li>
-          <li>Vous serez notifié une fois la vérification terminée</li>
-        </ol>
-      </div>
-    </div>
-
-    <h4 className="font-semibold">Prenez ou téléversez un selfie</h4>
-    <input
-      ref={fileInputRef}
-      type="file"
-      accept="image/jpeg,image/png,image/webp"
-      capture="user"
-      onChange={onFileSelect}
-      className="hidden"
-    />
-    <FileUploadArea
-      selectedFile={selectedFile}
-      previewUrl={previewUrl}
-      uploading={uploading}
-      fileInputRef={fileInputRef}
-      onUpload={onUpload}
-      onClear={onClear}
-      label="Soumettre le selfie"
-      hint="JPG, PNG ou WEBP (max 10 Mo)"
-      icon={<Camera className="w-7 h-7 text-gold" />}
-    />
-  </motion.div>
-);
 
 // Shared file upload area
 const FileUploadArea = ({
