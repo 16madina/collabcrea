@@ -118,51 +118,96 @@ const IdentityDocumentPreview = ({
   );
 };
 
-// Component to preview selfie with loading state
-const SelfiePreview = ({ selfiePath }: { selfiePath: string }) => {
+// Helper to extract user_id from selfie path
+const extractUserIdFromSelfiePath = (selfiePath: string): string | null => {
+  let path = selfiePath;
+  if (path.startsWith("http")) {
+    const match = path.match(/selfies\/(.+)$/);
+    if (match) path = match[1];
+  }
+  // path is like "user_id/selfie-0.jpg" → extract user_id
+  const parts = path.split("/");
+  return parts.length >= 2 ? parts[0] : null;
+};
+
+// Single selfie thumbnail
+const SelfieThumbnail = ({ path, label }: { path: string; label: string }) => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadImage = async () => {
       try {
-        // Extract relative path if it's a full URL (legacy data)
-        let path = selfiePath;
-        if (path.startsWith("http")) {
-          const match = path.match(/selfies\/(.+)$/);
-          if (match) path = match[1];
+        let resolvedPath = path;
+        if (resolvedPath.startsWith("http")) {
+          const match = resolvedPath.match(/selfies\/(.+)$/);
+          if (match) resolvedPath = match[1];
         }
         const { data } = await supabase.storage
           .from("selfies")
-          .createSignedUrl(path, 3600);
+          .createSignedUrl(resolvedPath, 3600);
         setImageUrl(data?.signedUrl || null);
-      } catch (error) {
-        console.error("Error loading selfie:", error);
+      } catch {
+        // silently fail
       } finally {
         setLoading(false);
       }
     };
     loadImage();
-  }, [selfiePath]);
+  }, [path]);
 
   if (loading) {
     return (
-      <div className="aspect-square rounded-xl bg-muted flex items-center justify-center border-2 border-border">
-        <div className="animate-pulse text-muted-foreground">Chargement...</div>
+      <div className="space-y-1">
+        <div className="aspect-square rounded-lg bg-muted flex items-center justify-center border border-border">
+          <div className="animate-pulse text-muted-foreground text-[10px]">...</div>
+        </div>
+        <p className="text-[10px] text-muted-foreground text-center">{label}</p>
       </div>
     );
   }
 
   return (
-    <div className="aspect-square rounded-xl overflow-hidden bg-muted border-2 border-border">
-      {imageUrl ? (
-        <img src={imageUrl} alt="Selfie" className="w-full h-full object-cover" />
-      ) : (
-        <div className="text-center text-muted-foreground p-4 flex flex-col items-center justify-center h-full">
+    <div className="space-y-1">
+      <div className="aspect-square rounded-lg overflow-hidden bg-muted border border-border">
+        {imageUrl ? (
+          <img src={imageUrl} alt={label} className="w-full h-full object-cover" />
+        ) : (
+          <div className="flex items-center justify-center h-full">
+            <User className="w-5 h-5 text-muted-foreground opacity-40" />
+          </div>
+        )}
+      </div>
+      <p className="text-[10px] text-muted-foreground text-center">{label}</p>
+    </div>
+  );
+};
+
+// Component to preview all 4 selfie captures in a grid
+const SelfiePreview = ({ selfiePath }: { selfiePath: string }) => {
+  const userId = extractUserIdFromSelfiePath(selfiePath);
+  const labels = ["Face", "Gauche", "Droite", "Sourire"];
+
+  if (!userId) {
+    return (
+      <div className="aspect-square rounded-xl bg-muted flex items-center justify-center border-2 border-border">
+        <div className="text-center text-muted-foreground p-4">
           <User className="w-12 h-12 mx-auto mb-2 opacity-50" />
           <p className="text-xs">Selfie non disponible</p>
         </div>
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      {labels.map((label, i) => (
+        <SelfieThumbnail
+          key={i}
+          path={`${userId}/selfie-${i}.jpg`}
+          label={label}
+        />
+      ))}
     </div>
   );
 };
@@ -466,43 +511,51 @@ const AdminVerificationTab = () => {
                       ? "Comparaison photo de profil / Selfie"
                       : "Comparaison photo de profil / Document"}
                   </h4>
-                  <div className="grid grid-cols-2 gap-3">
-                    {/* Profile Photo */}
-                    <div className="space-y-2">
-                      <p className="text-xs text-muted-foreground text-center">Photo de profil</p>
-                      <div className="aspect-square rounded-xl overflow-hidden bg-muted flex items-center justify-center border-2 border-border">
-                        {selectedUser.avatar_url ? (
-                          <img
-                            src={selectedUser.avatar_url}
-                            alt="Photo de profil"
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="text-center text-muted-foreground p-4">
-                            <User className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                            <p className="text-xs">Pas de photo</p>
-                          </div>
-                        )}
+                  {selectedUser.identity_method === "selfie" && selectedUser.selfie_url ? (
+                    <div className="space-y-3">
+                      {/* Profile photo */}
+                      <div className="space-y-1">
+                        <p className="text-xs text-muted-foreground">Photo de profil</p>
+                        <div className="w-20 h-20 rounded-xl overflow-hidden bg-muted border-2 border-border">
+                          {selectedUser.avatar_url ? (
+                            <img src={selectedUser.avatar_url} alt="Profil" className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="flex items-center justify-center h-full">
+                              <User className="w-8 h-8 text-muted-foreground opacity-50" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      {/* 4 selfie captures */}
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-2">Captures de vérification</p>
+                        <SelfiePreview selfiePath={selectedUser.selfie_url} />
                       </div>
                     </div>
-
-                    {/* Selfie or Identity Document */}
-                    <div className="space-y-2">
-                      <p className="text-xs text-muted-foreground text-center">
-                        {selectedUser.identity_method === "selfie" ? "Selfie" : "Document d'identité"}
-                      </p>
-                      {selectedUser.identity_method === "selfie" && selectedUser.selfie_url ? (
-                        <SelfiePreview 
-                          selfiePath={selectedUser.selfie_url}
-                        />
-                      ) : (
-                        <IdentityDocumentPreview 
+                  ) : (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <p className="text-xs text-muted-foreground text-center">Photo de profil</p>
+                        <div className="aspect-square rounded-xl overflow-hidden bg-muted flex items-center justify-center border-2 border-border">
+                          {selectedUser.avatar_url ? (
+                            <img src={selectedUser.avatar_url} alt="Photo de profil" className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="text-center text-muted-foreground p-4">
+                              <User className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                              <p className="text-xs">Pas de photo</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-xs text-muted-foreground text-center">Document d'identité</p>
+                        <IdentityDocumentPreview
                           documentPath={selectedUser.identity_document_url}
                           onOpenDocument={() => selectedUser.identity_document_url && openDocument(selectedUser.identity_document_url)}
                         />
-                      )}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* Open document full size - only for document method */}
