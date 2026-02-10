@@ -59,7 +59,7 @@ const ProfileHeader = ({
         body: {
           type: "signup",
           email: user.email,
-          redirectTo: `${window.location.origin}/creator/profile`,
+          redirectTo: `${window.location.origin}/creator/profile?email_verified=1`,
           userName: fullName || undefined,
         },
       });

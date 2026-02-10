@@ -78,10 +78,6 @@ const BrandProfile = () => {
 
       if (error) throw error;
 
-      // Check if auth session shows email is verified
-      const authEmailVerified = Boolean((user as any)?.email_confirmed_at || (user as any)?.confirmed_at);
-      const combinedEmailVerified = (data.email_verified ?? false) || authEmailVerified;
-
       setProfileData({
         company_name: data.company_name || data.full_name,
         company_description: data.company_description,
@@ -92,23 +88,11 @@ const BrandProfile = () => {
         avatar_url: data.avatar_url,
         banner_url: data.banner_url,
         created_at: data.created_at,
-        email_verified: combinedEmailVerified,
+        email_verified: data.email_verified ?? false,
         identity_verified: data.identity_verified || false,
         identity_document_url: data.identity_document_url,
         identity_submitted_at: data.identity_submitted_at,
       });
-
-      // Keep DB flag in sync when the auth email is already verified
-      if (authEmailVerified && !data.email_verified) {
-        supabase
-          .from("profiles")
-          .update({ email_verified: true })
-          .eq("user_id", user.id)
-          .then(
-            () => undefined,
-            () => undefined,
-          );
-      }
     } catch (error) {
       console.error("Error fetching profile:", error);
     } finally {
@@ -164,33 +148,25 @@ const BrandProfile = () => {
     fetchOffers();
   }, [user]);
 
-  // Listen for email verification event (when user clicks the verification link)
+  // Detect email verification via URL parameter (user clicked verification link)
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      // Trigger on USER_UPDATED or SIGNED_IN events (user clicked verification link)
-      if ((event === 'USER_UPDATED' || event === 'SIGNED_IN') && session?.user) {
-        // Check multiple indicators of email verification
-        const authUser = session.user as any;
-        const emailVerified = 
-          authUser?.email_confirmed_at || 
-          authUser?.confirmed_at || 
-          authUser?.user_metadata?.email_verified === true;
-        
-        if (!emailVerified) return;
-        
-        // Check if database has different status
+    const checkEmailVerificationParam = async () => {
+      if (!user) return;
+      
+      const emailVerifiedParam = searchParams.get("email_verified");
+      if (emailVerifiedParam === "1") {
+        // User came from verification link - update DB
         const { data: dbProfile } = await supabase
           .from("profiles")
           .select("email_verified, company_name, full_name")
-          .eq("user_id", session.user.id)
+          .eq("user_id", user.id)
           .single();
         
         if (dbProfile && !dbProfile.email_verified) {
-          // Email was just verified via link! Update profile
           await supabase
             .from("profiles")
             .update({ email_verified: true })
-            .eq("user_id", session.user.id);
+            .eq("user_id", user.id);
           
           // Show confirmation banner
           if (!emailConfirmationShown.current) {
@@ -204,7 +180,7 @@ const BrandProfile = () => {
             try {
               await supabase.functions.invoke("send-welcome-email", {
                 body: {
-                  email: session.user.email,
+                  email: user.email,
                   userName: brandName,
                   userRole: "brand",
                 },
@@ -217,52 +193,18 @@ const BrandProfile = () => {
           
           fetchProfile();
         }
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  // Check on initial load if email was just verified (user coming from verification link)
-  useEffect(() => {
-    const checkEmailVerification = async () => {
-      if (!user || emailConfirmationShown.current) return;
-      
-      const authUser = user as any;
-      const authEmailVerified = authUser?.email_confirmed_at || authUser?.confirmed_at;
-      
-      if (authEmailVerified) {
-        // Check if the verification happened recently (within last 2 minutes)
-        const verifiedAt = new Date(authEmailVerified);
-        const now = new Date();
-        const timeDiff = now.getTime() - verifiedAt.getTime();
-        const twoMinutes = 2 * 60 * 1000;
         
-        if (timeDiff < twoMinutes) {
-          // Check if DB wasn't updated yet
-          const { data: dbProfile } = await supabase
-            .from("profiles")
-            .select("email_verified")
-            .eq("user_id", user.id)
-            .single();
-          
-          if (dbProfile && !dbProfile.email_verified) {
-            // Update DB and show confirmation
-            await supabase
-              .from("profiles")
-              .update({ email_verified: true })
-              .eq("user_id", user.id);
-            
-            emailConfirmationShown.current = true;
-            setShowEmailConfirmation(true);
-            fetchProfile();
-          }
-        }
+        // Clean URL parameter
+        setSearchParams((prev) => {
+          const next = new URLSearchParams(prev);
+          next.delete("email_verified");
+          return next;
+        });
       }
     };
     
-    checkEmailVerification();
-  }, [user]);
+    checkEmailVerificationParam();
+  }, [user, searchParams]);
 
   useEffect(() => {
     const tab = searchParams.get("tab") as BrandProfileTabType;

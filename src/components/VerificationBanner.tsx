@@ -34,8 +34,8 @@ const VerificationBanner = ({ status, showActions = true, userRole = "creator" }
       // Use the official domain for redirect
       const baseUrl = "https://collabcrea.com";
       const redirectTo = userRole === "brand" 
-        ? `${baseUrl}/brand/profile`
-        : `${baseUrl}/creator/profile`;
+        ? `${baseUrl}/brand/profile?email_verified=1`
+        : `${baseUrl}/creator/profile?email_verified=1`;
 
       const { data, error } = await supabase.functions.invoke("send-auth-email", {
         body: {
