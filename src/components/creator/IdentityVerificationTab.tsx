@@ -137,14 +137,10 @@ const IdentityVerificationTab = ({
           .upload(fileName, selectedFile, { upsert: true });
         if (uploadError) throw uploadError;
 
-        const { data: urlData } = supabase.storage
-          .from("selfies")
-          .getPublicUrl(fileName);
-
         const { error: updateError } = await supabase
           .from("profiles")
           .update({
-            selfie_url: urlData.publicUrl,
+            selfie_url: fileName,
             identity_submitted_at: new Date().toISOString(),
             identity_method: "selfie",
           })
@@ -179,7 +175,7 @@ const IdentityVerificationTab = ({
 
     try {
       // Upload each capture
-      const uploadedUrls: string[] = [];
+      const uploadedPaths: string[] = [];
       for (let i = 0; i < captures.length; i++) {
         const fileName = `${user.id}/selfie-${i}.jpg`;
         const { error: uploadError } = await supabase.storage
@@ -187,17 +183,14 @@ const IdentityVerificationTab = ({
           .upload(fileName, captures[i], { upsert: true, contentType: "image/jpeg" });
         if (uploadError) throw uploadError;
 
-        const { data: urlData } = supabase.storage
-          .from("selfies")
-          .getPublicUrl(fileName);
-        uploadedUrls.push(urlData.publicUrl);
+        uploadedPaths.push(fileName);
       }
 
-      // Store the first (front-facing) selfie as main selfie_url
+      // Store the first (front-facing) selfie path as main selfie_url
       const { error: updateError } = await supabase
         .from("profiles")
         .update({
-          selfie_url: uploadedUrls[0],
+          selfie_url: uploadedPaths[0],
           identity_submitted_at: new Date().toISOString(),
           identity_method: "selfie",
         })
