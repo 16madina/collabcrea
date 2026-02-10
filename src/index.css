@@ -12,56 +12,56 @@
     --gold: 43 72% 53%;
     --gold-light: 43 72% 65%;
     --gold-dark: 43 72% 40%;
-    --violet: 270 52% 23%;
-    --violet-deep: 270 60% 15%;
-    --violet-light: 270 45% 35%;
+    --violet: 270 40% 23%;
+    --violet-deep: 270 45% 15%;
+    --violet-light: 270 35% 35%;
     
     /* Semantic Tokens */
-    --background: 270 60% 8%;
+    --background: 270 40% 9%;
     --foreground: 43 30% 95%;
 
-    --card: 270 50% 12%;
+    --card: 270 35% 13%;
     --card-foreground: 43 30% 95%;
 
-    --popover: 270 50% 12%;
+    --popover: 270 35% 13%;
     --popover-foreground: 43 30% 95%;
 
     --primary: 43 72% 53%;
-    --primary-foreground: 270 60% 10%;
+    --primary-foreground: 270 40% 10%;
 
-    --secondary: 270 45% 25%;
+    --secondary: 270 35% 25%;
     --secondary-foreground: 43 30% 95%;
 
-    --muted: 270 30% 20%;
+    --muted: 270 25% 21%;
     --muted-foreground: 270 15% 60%;
 
     --accent: 43 72% 53%;
-    --accent-foreground: 270 60% 10%;
+    --accent-foreground: 270 40% 10%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 270 30% 25%;
-    --input: 270 30% 20%;
+    --border: 270 25% 26%;
+    --input: 270 25% 21%;
     --ring: 43 72% 53%;
 
     --radius: 1rem;
 
     /* Glass Effects */
-    --glass-bg: 270 50% 15% / 0.6;
+    --glass-bg: 270 35% 15% / 0.6;
     --glass-border: 43 72% 53% / 0.2;
     --glass-blur: 20px;
     
     /* Gradients */
     --gradient-gold: linear-gradient(135deg, hsl(43 72% 53%), hsl(43 72% 65%), hsl(43 72% 53%));
-    --gradient-violet: linear-gradient(180deg, hsl(270 60% 15%), hsl(270 60% 8%));
+    --gradient-violet: linear-gradient(180deg, hsl(270 45% 15%), hsl(270 40% 9%));
     --gradient-gold-shine: linear-gradient(90deg, transparent, hsl(43 72% 70% / 0.3), transparent);
-    --gradient-hero: radial-gradient(ellipse at 50% 0%, hsl(270 45% 25% / 0.5) 0%, transparent 70%);
+    --gradient-hero: radial-gradient(ellipse at 50% 0%, hsl(270 35% 25% / 0.5) 0%, transparent 70%);
     
     /* Shadows */
     --shadow-gold: 0 4px 30px hsl(43 72% 53% / 0.3);
-    --shadow-card: 0 8px 32px hsl(270 60% 5% / 0.5);
-    --shadow-elevated: 0 20px 60px hsl(270 60% 5% / 0.7);
+    --shadow-card: 0 8px 32px hsl(270 40% 5% / 0.5);
+    --shadow-elevated: 0 20px 60px hsl(270 40% 5% / 0.7);
     
     /* Safe Areas for Mobile */
     --safe-area-top: env(safe-area-inset-top, 0px);
