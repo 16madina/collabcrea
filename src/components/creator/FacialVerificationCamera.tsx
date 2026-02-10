@@ -209,54 +209,84 @@ const FacialVerificationCamera = ({ onComplete, onCancel }: FacialVerificationCa
           style={{ transform: "scaleX(-1)" }}
         />
 
-        {/* Face oval guide overlay */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+      {/* Face oval guide overlay - full screen mask */}
+        <div className="absolute inset-0 pointer-events-none">
           <svg
-            viewBox="0 0 300 400"
-            className="w-64 h-80"
-            style={{ filter: "drop-shadow(0 0 20px rgba(0,0,0,0.3))" }}
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+            className="w-full h-full"
           >
-            {/* Dark overlay with oval cutout */}
             <defs>
               <mask id="faceMask">
-                <rect width="300" height="400" fill="white" />
-                <ellipse cx="150" cy="185" rx="110" ry="145" fill="black" />
+                <rect width="100" height="100" fill="white" />
+                <ellipse cx="50" cy="42" rx="22" ry="28" fill="black" />
               </mask>
             </defs>
             <rect
-              width="300"
-              height="400"
-              fill="rgba(0,0,0,0.5)"
+              width="100"
+              height="100"
+              fill="rgba(0,0,0,0.55)"
               mask="url(#faceMask)"
             />
-            {/* Oval border */}
-            <ellipse
-              cx="150"
-              cy="185"
-              rx="110"
-              ry="145"
-              fill="none"
-              stroke={
-                completed
-                  ? "#22c55e"
-                  : isCapturing && countdown === 0
-                  ? "#22c55e"
-                  : "#d4a843"
-              }
-              strokeWidth="3"
-              strokeDasharray={completed || (isCapturing && countdown === 0) ? "0" : "8 4"}
-            >
-              {!completed && (
-                <animate
-                  attributeName="stroke-dashoffset"
-                  from="0"
-                  to="24"
-                  dur="1s"
-                  repeatCount="indefinite"
-                />
-              )}
-            </ellipse>
           </svg>
+        </div>
+        {/* Oval border overlay */}
+        <div className="absolute inset-0 flex items-center pointer-events-none" style={{ justifyContent: 'center', paddingBottom: '16%' }}>
+          <div className="relative" style={{ width: '56%', aspectRatio: '0.78' }}>
+            <svg viewBox="0 0 200 256" className="w-full h-full">
+              <ellipse
+                cx="100"
+                cy="128"
+                rx="96"
+                ry="124"
+                fill="none"
+                stroke={
+                  completed
+                    ? "hsl(142, 71%, 45%)"
+                    : isCapturing && countdown === 0
+                    ? "hsl(142, 71%, 45%)"
+                    : "hsl(38, 65%, 48%)"
+                }
+                strokeWidth="2.5"
+                strokeDasharray={completed || (isCapturing && countdown === 0) ? "0" : "10 5"}
+              >
+                {!completed && (
+                  <animate
+                    attributeName="stroke-dashoffset"
+                    from="0"
+                    to="30"
+                    dur="1.5s"
+                    repeatCount="indefinite"
+                  />
+                )}
+              </ellipse>
+              {/* Glow effect */}
+              <ellipse
+                cx="100"
+                cy="128"
+                rx="96"
+                ry="124"
+                fill="none"
+                stroke={
+                  completed
+                    ? "hsl(142, 71%, 45%)"
+                    : "hsl(38, 65%, 48%)"
+                }
+                strokeWidth="1"
+                opacity="0.3"
+                filter="url(#glow)"
+              />
+              <defs>
+                <filter id="glow">
+                  <feGaussianBlur stdDeviation="4" result="blur" />
+                  <feMerge>
+                    <feMergeNode in="blur" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+              </defs>
+            </svg>
+          </div>
         </div>
 
         {/* Countdown overlay */}
@@ -291,7 +321,7 @@ const FacialVerificationCamera = ({ onComplete, onCancel }: FacialVerificationCa
       </div>
 
       {/* Bottom section */}
-      <div className="bg-gradient-to-t from-black via-black/90 to-transparent p-6 pb-10 space-y-4">
+      <div className="bg-gradient-to-t from-black via-black/90 to-transparent p-6 space-y-4" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 5rem)' }}>
         {/* Progress dots */}
         <div className="flex items-center justify-center gap-3">
           {STEPS.map((step, i) => (
