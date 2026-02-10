@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
-import { MapPin, DollarSign, Calendar, Send, Clock } from "lucide-react";
+import { MapPin, DollarSign, Calendar, Send, Clock, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface OfferCardProps {
   offer: {
@@ -28,6 +29,8 @@ interface OfferCardProps {
   onClick?: () => void;
   showApplyButton?: boolean;
   onApply?: () => void;
+  applyDisabled?: boolean;
+  applyDisabledTooltip?: string;
 }
 
 const OfferCard = ({
@@ -37,6 +40,8 @@ const OfferCard = ({
   onClick,
   showApplyButton = false,
   onApply,
+  applyDisabled = false,
+  applyDisabledTooltip,
 }: OfferCardProps) => {
   const brandName = offer.brand_name || offer.brand || "Marque";
   const logoUrl = offer.logo_url || offer.logo;
@@ -160,17 +165,39 @@ const OfferCard = ({
 
         {/* Apply button */}
         {showApplyButton && (
-          <Button
-            variant="outline"
-            className="w-full border-2 border-gold/60 text-foreground hover:bg-gold/10 hover:border-gold"
-            onClick={(e) => {
-              e.stopPropagation();
-              onApply?.();
-            }}
-          >
-            <Send className="w-4 h-4 mr-2" />
-            Postuler
-          </Button>
+          applyDisabled && applyDisabledTooltip ? (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <Button
+                      variant="outline"
+                      className="w-full border-2 border-border text-muted-foreground opacity-50 cursor-not-allowed"
+                      disabled
+                    >
+                      <ShieldAlert className="w-4 h-4 mr-2" />
+                      Postuler
+                    </Button>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[250px] text-center">
+                  <p>{applyDisabledTooltip}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          ) : (
+            <Button
+              variant="outline"
+              className="w-full border-2 border-gold/60 text-foreground hover:bg-gold/10 hover:border-gold"
+              onClick={(e) => {
+                e.stopPropagation();
+                onApply?.();
+              }}
+            >
+              <Send className="w-4 h-4 mr-2" />
+              Postuler
+            </Button>
+          )
         )}
       </div>
     </motion.div>

@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Star, MapPin, MessageCircle, Flag, User, CreditCard, Image } from "lucide-react";
+import { Star, MapPin, MessageCircle, Flag, User, CreditCard, Image, ShieldAlert } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { CountryFlag } from "@/lib/flags";
 import { FaYoutube, FaInstagram, FaTiktok, FaSnapchatGhost } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
@@ -57,10 +58,12 @@ const defaultPricing: CreatorPricing[] = [
 ];
 
 const CreatorDetailSheet = ({ creator, creatorUserId, open, onOpenChange }: CreatorDetailSheetProps) => {
-  const { user } = useAuth();
+  const { user, profile, role } = useAuth();
   const navigate = useNavigate();
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [showContactSheet, setShowContactSheet] = useState(false);
+
+  const isBrandVerified = role === "brand" && profile?.email_verified === true;
 
   if (!creator) return null;
 
@@ -249,15 +252,38 @@ const CreatorDetailSheet = ({ creator, creatorUserId, open, onOpenChange }: Crea
 
           {/* Actions */}
           <div className="pt-4 pb-8 space-y-3">
-            <Button 
-              variant="gold" 
-              size="lg" 
-              className="w-full"
-              onClick={handleContact}
-            >
-              <MessageCircle className="w-5 h-5 mr-2" />
-              Contacter {creator.firstName}
-            </Button>
+            {user && role === "brand" && !isBrandVerified ? (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div>
+                      <Button 
+                        variant="gold" 
+                        size="lg" 
+                        className="w-full opacity-50 cursor-not-allowed"
+                        disabled
+                      >
+                        <ShieldAlert className="w-5 h-5 mr-2" />
+                        Contacter {creator.firstName}
+                      </Button>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-[250px] text-center">
+                    <p>Vérifiez votre email pour contacter des créateurs</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ) : (
+              <Button 
+                variant="gold" 
+                size="lg" 
+                className="w-full"
+                onClick={handleContact}
+              >
+                <MessageCircle className="w-5 h-5 mr-2" />
+                Contacter {creator.firstName}
+              </Button>
+            )}
 
             {/* Report button - only show if logged in and not own profile */}
             {user && creatorUserId && user.id !== creatorUserId && (

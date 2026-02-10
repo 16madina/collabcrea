@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 import { CountryFlag } from "@/lib/flags";
 import { motion, AnimatePresence } from "framer-motion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Clock, MapPin, DollarSign, X, Loader2, Send, Flag, SlidersHorizontal, RotateCcw } from "lucide-react";
+import { Search, Clock, MapPin, DollarSign, X, Loader2, Send, Flag, SlidersHorizontal, RotateCcw, ShieldAlert } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import BottomNav from "@/components/BottomNav";
 import OfferCard from "@/components/OfferCard";
 import { supabase } from "@/integrations/supabase/client";
@@ -184,9 +185,10 @@ const mockOffers: Offer[] = [
 ];
 
 const CreatorOffers = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { applyToOffer, isApplying } = useApplyToOffer();
+  const isCreatorVerified = profile?.identity_verified === true;
   
   const [dbOffers, setDbOffers] = useState<Offer[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
@@ -530,6 +532,8 @@ const CreatorOffers = () => {
                   onClick={() => setSelectedOffer(offer)}
                   showApplyButton={!application}
                   onApply={() => setSelectedOffer(offer)}
+                  applyDisabled={!isCreatorVerified}
+                  applyDisabledTooltip="Vérifiez votre identité pour postuler aux offres"
                 />
               );
             })
@@ -645,20 +649,43 @@ const CreatorOffers = () => {
                     />
                   </div>
 
-                  <Button 
-                    variant="gold" 
-                    size="lg" 
-                    className="w-full"
-                    onClick={handleApply}
-                    disabled={isApplying}
-                  >
-                    {isApplying ? (
-                      <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                    ) : (
-                      <Send className="w-5 h-5 mr-2" />
-                    )}
-                    Postuler
-                  </Button>
+                  {!isCreatorVerified ? (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div>
+                            <Button 
+                              variant="gold" 
+                              size="lg" 
+                              className="w-full opacity-50 cursor-not-allowed"
+                              disabled
+                            >
+                              <ShieldAlert className="w-5 h-5 mr-2" />
+                              Postuler
+                            </Button>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-[250px] text-center">
+                          <p>Vérifiez votre identité pour postuler aux offres</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ) : (
+                    <Button 
+                      variant="gold" 
+                      size="lg" 
+                      className="w-full"
+                      onClick={handleApply}
+                      disabled={isApplying}
+                    >
+                      {isApplying ? (
+                        <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                      ) : (
+                        <Send className="w-5 h-5 mr-2" />
+                      )}
+                      Postuler
+                    </Button>
+                  )}
                 </>
               ) : (
                 <div className="text-center py-4">
