@@ -43,6 +43,7 @@ interface ProfileData {
   instagram_followers: string | null;
   tiktok_followers: string | null;
   snapchat_followers: string | null;
+  facebook_followers: string | null;
   pricing: PricingItem[] | null;
   email_verified: boolean;
   identity_verified: boolean;
@@ -102,6 +103,7 @@ const CreatorProfile = () => {
         instagram_followers: data.instagram_followers,
         tiktok_followers: data.tiktok_followers,
         snapchat_followers: data.snapchat_followers,
+        facebook_followers: data.facebook_followers,
         pricing: data.pricing as unknown as PricingItem[] | null,
         email_verified: data.email_verified ?? false,
         identity_verified: data.identity_verified ?? false,
@@ -277,6 +279,9 @@ const CreatorProfile = () => {
     }
     if (profileData.snapchat_followers) {
       accounts.push({ platform: "Snapchat", followers: profileData.snapchat_followers });
+    }
+    if (profileData.facebook_followers) {
+      accounts.push({ platform: "Facebook", followers: profileData.facebook_followers });
     }
     return accounts;
   };
@@ -502,6 +507,7 @@ const CreatorProfile = () => {
           instagram_followers: profileData?.instagram_followers || null,
           tiktok_followers: profileData?.tiktok_followers || null,
           snapchat_followers: profileData?.snapchat_followers || null,
+          facebook_followers: profileData?.facebook_followers || null,
         }}
         onUpdate={fetchProfile}
       />

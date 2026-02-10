@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Edit3, MapPin, Globe, Calendar } from "lucide-react";
-import { FaYoutube, FaInstagram, FaTiktok, FaSnapchatGhost } from "react-icons/fa";
+import { FaYoutube, FaInstagram, FaTiktok, FaSnapchatGhost, FaFacebookF } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
 
 interface SocialAccount {
@@ -64,6 +64,12 @@ const InfoTab = ({
         return (
           <div className="w-10 h-10 rounded-xl bg-[#FFFC00] flex items-center justify-center">
             <FaSnapchatGhost className="w-5 h-5 text-black" />
+          </div>
+        );
+      case "facebook":
+        return (
+          <div className="w-10 h-10 rounded-xl bg-[#1877F2] flex items-center justify-center">
+            <FaFacebookF className="w-5 h-5 text-white" />
           </div>
         );
       default:
