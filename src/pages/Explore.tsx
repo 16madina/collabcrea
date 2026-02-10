@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
-import { Search, Loader2, BadgeCheck } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Search, Loader2, BadgeCheck, SlidersHorizontal } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -36,6 +36,7 @@ const Explore = () => {
   const [activeCategory, setActiveCategory] = useState("Tous");
   const [activeCountry, setActiveCountry] = useState("all");
   const [onlyVerified, setOnlyVerified] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [selectedCreator, setSelectedCreator] = useState<(Creator & { userId: string }) | null>(null);
   const [showCreatorDetail, setShowCreatorDetail] = useState(false);
   
@@ -72,82 +73,104 @@ const Explore = () => {
           </h1>
 
           {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Rechercher un créateur..."
-              className="pl-12 h-12 bg-muted/50 border-border focus:border-gold rounded-xl"
-            />
+          <div className="relative flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Rechercher un créateur..."
+                className="pl-12 h-12 bg-muted/50 border-border focus:border-gold rounded-xl"
+              />
+            </div>
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`h-12 w-12 rounded-xl flex items-center justify-center transition-all ${
+                (activeCategory !== "Tous" || activeCountry !== "all" || onlyVerified)
+                  ? "bg-gold text-primary-foreground"
+                  : "glass text-muted-foreground"
+              }`}
+            >
+              <SlidersHorizontal className="w-5 h-5" />
+            </button>
           </div>
         </motion.div>
       </div>
 
-      {/* Categories Filter */}
-      <div className="px-6 mt-4">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.1 }}
-          className="flex gap-2 overflow-x-auto no-scrollbar pb-2"
-        >
-          {categories.map((category) => (
-            <button
-              key={category}
-              onClick={() => setActiveCategory(category)}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                activeCategory === category
-                  ? "bg-gold text-primary-foreground"
-                  : "glass text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {category}
-            </button>
-          ))}
-        </motion.div>
+      {/* Filter Panel */}
+      <AnimatePresence>
+        {showFilters && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="px-6 pt-3 pb-1 space-y-3">
+              {/* Category */}
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Catégorie</p>
+                <div className="flex flex-wrap gap-2">
+                  {categories.map((category) => (
+                    <button
+                      key={category}
+                      onClick={() => setActiveCategory(category)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                        activeCategory === category
+                          ? "bg-gold text-primary-foreground"
+                          : "glass text-muted-foreground"
+                      }`}
+                    >
+                      {category}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-        {/* Country Filter */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.15 }}
-          className="flex gap-2 overflow-x-auto no-scrollbar pb-2 mt-2"
-        >
-          {countryFilters.map((filter) => (
-            <button
-              key={filter.value}
-              onClick={() => setActiveCountry(filter.value)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
-                activeCountry === filter.value
-                  ? "bg-gold/20 text-gold border border-gold/40"
-                  : "glass text-muted-foreground border border-transparent"
-              }`}
-            >
-              {filter.label}
-            </button>
-          ))}
-        </motion.div>
-      </div>
+              {/* Country */}
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Pays</p>
+                <div className="flex flex-wrap gap-2">
+                  {countryFilters.map((filter) => (
+                    <button
+                      key={filter.value}
+                      onClick={() => setActiveCountry(filter.value)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                        activeCountry === filter.value
+                          ? "bg-gold/20 text-gold border border-gold/40"
+                          : "glass text-muted-foreground border border-transparent"
+                      }`}
+                    >
+                      {filter.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-      {/* Verified Filter + Results Count */}
-      <div className="px-6 mt-4 flex items-center justify-between">
+              {/* Verified */}
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="verified-filter"
+                  checked={onlyVerified}
+                  onCheckedChange={setOnlyVerified}
+                  className="data-[state=checked]:bg-gold"
+                />
+                <Label htmlFor="verified-filter" className="text-xs flex items-center gap-1 cursor-pointer">
+                  <BadgeCheck className="w-4 h-4 text-gold" />
+                  Vérifiés uniquement
+                </Label>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Results Count */}
+      <div className="px-6 mt-4 flex items-center">
         <p className="text-sm text-muted-foreground">
           {filteredCreators.length} créateur{filteredCreators.length > 1 ? "s" : ""} trouvé{filteredCreators.length > 1 ? "s" : ""}
         </p>
-        
-        <div className="flex items-center gap-2">
-          <Switch
-            id="verified-filter"
-            checked={onlyVerified}
-            onCheckedChange={setOnlyVerified}
-            className="data-[state=checked]:bg-blue-500"
-          />
-          <Label htmlFor="verified-filter" className="text-xs flex items-center gap-1 cursor-pointer">
-            <BadgeCheck className="w-4 h-4 text-blue-500" />
-            Vérifiés
-          </Label>
-        </div>
       </div>
 
       {/* Creators Grid */}

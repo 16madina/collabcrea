@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Clock, MapPin, DollarSign, X, Loader2, Send, Flag } from "lucide-react";
+import { Search, Clock, MapPin, DollarSign, X, Loader2, Send, Flag, SlidersHorizontal } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -187,6 +187,7 @@ const CreatorOffers = () => {
   const [activeFilter, setActiveFilter] = useState<FilterStatus>("all");
   const [activeCategory, setActiveCategory] = useState<FilterCategory>("all");
   const [activeCountry, setActiveCountry] = useState("all");
+  const [showFilters, setShowFilters] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
   const [applicationMessage, setApplicationMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -328,86 +329,104 @@ const CreatorOffers = () => {
             Offres
           </h1>
 
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Rechercher une offre..."
-              className="pl-12 h-12 bg-muted/50 border-border focus:border-gold rounded-xl"
-            />
-          </div>
-        </motion.div>
-      </div>
-
-      {/* Filters */}
-      <div className="px-6 mt-4">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.1 }}
-          className="flex gap-2 overflow-x-auto no-scrollbar pb-2"
-        >
-          {statusFilters.map((filter) => (
+          <div className="relative flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Rechercher une offre..."
+                className="pl-12 h-12 bg-muted/50 border-border focus:border-gold rounded-xl"
+              />
+            </div>
             <button
-              key={filter.value}
-              onClick={() => setActiveFilter(filter.value)}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                activeFilter === filter.value
+              onClick={() => setShowFilters(!showFilters)}
+              className={`h-12 w-12 rounded-xl flex items-center justify-center transition-all ${
+                (activeFilter !== "all" || activeCategory !== "all" || activeCountry !== "all")
                   ? "bg-gold text-primary-foreground"
                   : "glass text-muted-foreground"
               }`}
             >
-              {filter.label}
+              <SlidersHorizontal className="w-5 h-5" />
             </button>
-          ))}
-        </motion.div>
-
-        {/* Category filters */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.15 }}
-          className="flex gap-2 overflow-x-auto no-scrollbar pb-2 mt-2"
-        >
-          {categoryFilters.map((filter) => (
-            <button
-              key={filter.value}
-              onClick={() => setActiveCategory(filter.value)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
-                activeCategory === filter.value
-                  ? "bg-gold/20 text-gold border border-gold/40"
-                  : "glass text-muted-foreground border border-transparent"
-              }`}
-            >
-              {filter.label}
-            </button>
-          ))}
-        </motion.div>
-
-        {/* Country filters */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="flex gap-2 overflow-x-auto no-scrollbar pb-2 mt-2"
-        >
-          {countryFilters.map((filter) => (
-            <button
-              key={filter.value}
-              onClick={() => setActiveCountry(filter.value)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
-                activeCountry === filter.value
-                  ? "bg-gold/20 text-gold border border-gold/40"
-                  : "glass text-muted-foreground border border-transparent"
-              }`}
-            >
-              {filter.label}
-            </button>
-          ))}
+          </div>
         </motion.div>
       </div>
+
+      {/* Filter Panel */}
+      <AnimatePresence>
+        {showFilters && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="px-6 pt-3 pb-1 space-y-3">
+              {/* Status */}
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Statut</p>
+                <div className="flex flex-wrap gap-2">
+                  {statusFilters.map((filter) => (
+                    <button
+                      key={filter.value}
+                      onClick={() => setActiveFilter(filter.value)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                        activeFilter === filter.value
+                          ? "bg-gold text-primary-foreground"
+                          : "glass text-muted-foreground"
+                      }`}
+                    >
+                      {filter.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Category */}
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Catégorie</p>
+                <div className="flex flex-wrap gap-2">
+                  {categoryFilters.map((filter) => (
+                    <button
+                      key={filter.value}
+                      onClick={() => setActiveCategory(filter.value)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                        activeCategory === filter.value
+                          ? "bg-gold/20 text-gold border border-gold/40"
+                          : "glass text-muted-foreground border border-transparent"
+                      }`}
+                    >
+                      {filter.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Country */}
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Pays</p>
+                <div className="flex flex-wrap gap-2">
+                  {countryFilters.map((filter) => (
+                    <button
+                      key={filter.value}
+                      onClick={() => setActiveCountry(filter.value)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                        activeCountry === filter.value
+                          ? "bg-gold/20 text-gold border border-gold/40"
+                          : "glass text-muted-foreground border border-transparent"
+                      }`}
+                    >
+                      {filter.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Offers List */}
       <div className="px-6 mt-6 space-y-4">
