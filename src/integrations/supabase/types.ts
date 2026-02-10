@@ -475,6 +475,7 @@ export type Database = {
           full_name: string
           id: string
           identity_document_url: string | null
+          identity_method: string | null
           identity_submitted_at: string | null
           identity_verified: boolean | null
           instagram_followers: string | null
@@ -483,6 +484,7 @@ export type Database = {
           pricing: Json | null
           residence_country: string | null
           sector: string | null
+          selfie_url: string | null
           snapchat_followers: string | null
           tiktok_followers: string | null
           updated_at: string
@@ -506,6 +508,7 @@ export type Database = {
           full_name: string
           id?: string
           identity_document_url?: string | null
+          identity_method?: string | null
           identity_submitted_at?: string | null
           identity_verified?: boolean | null
           instagram_followers?: string | null
@@ -514,6 +517,7 @@ export type Database = {
           pricing?: Json | null
           residence_country?: string | null
           sector?: string | null
+          selfie_url?: string | null
           snapchat_followers?: string | null
           tiktok_followers?: string | null
           updated_at?: string
@@ -537,6 +541,7 @@ export type Database = {
           full_name?: string
           id?: string
           identity_document_url?: string | null
+          identity_method?: string | null
           identity_submitted_at?: string | null
           identity_verified?: boolean | null
           instagram_followers?: string | null
@@ -545,6 +550,7 @@ export type Database = {
           pricing?: Json | null
           residence_country?: string | null
           sector?: string | null
+          selfie_url?: string | null
           snapchat_followers?: string | null
           tiktok_followers?: string | null
           updated_at?: string
