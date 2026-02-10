@@ -204,7 +204,7 @@ const SelfiePreview = ({ selfiePath, onFullscreen }: { selfiePath: string; onFul
 
   return (
     <div className="space-y-1">
-      <div className="relative w-full aspect-[4/3] max-h-40 rounded-xl overflow-hidden bg-muted border border-border">
+      <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-muted border border-border">
         {loadingAll ? (
           <div className="flex items-center justify-center h-full">
             <div className="animate-pulse text-muted-foreground text-xs">Chargement...</div>
@@ -611,7 +611,7 @@ const AdminVerificationTab = () => {
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1">
                           <p className="text-[10px] text-muted-foreground text-center">Photo de profil</p>
-                          <div className="aspect-[4/3] max-h-40 rounded-xl overflow-hidden bg-muted border border-border">
+                          <div className="aspect-square rounded-xl overflow-hidden bg-muted border border-border">
                             {selectedUser.avatar_url ? (
                               <img src={selectedUser.avatar_url} alt="Profil" className="w-full h-full object-cover" />
                             ) : (
