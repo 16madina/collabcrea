@@ -62,6 +62,15 @@ const categoryFilters: { label: string; value: FilterCategory }[] = [
   { label: "Humour", value: "Humour" },
 ];
 
+const countryFilters = [
+  { label: "Tous", value: "all" },
+  { label: "🇨🇮 Côte d'Ivoire", value: "Côte d'Ivoire" },
+  { label: "🇳🇬 Nigeria", value: "Nigeria" },
+  { label: "🇸🇳 Sénégal", value: "Sénégal" },
+  { label: "🇬🇭 Ghana", value: "Ghana" },
+  { label: "🇨🇲 Cameroun", value: "Cameroun" },
+];
+
 const mockOffers: Offer[] = [
   {
     id: "mock-1",
@@ -177,6 +186,7 @@ const CreatorOffers = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterStatus>("all");
   const [activeCategory, setActiveCategory] = useState<FilterCategory>("all");
+  const [activeCountry, setActiveCountry] = useState("all");
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
   const [applicationMessage, setApplicationMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -255,8 +265,12 @@ const CreatorOffers = () => {
     const matchesCategory =
       activeCategory === "all" ||
       offer.category === activeCategory;
+
+    const matchesCountry =
+      activeCountry === "all" ||
+      (offer.location && offer.location.toLowerCase().includes(activeCountry.toLowerCase()));
     
-    return matchesSearch && matchesFilter && matchesCategory;
+    return matchesSearch && matchesFilter && matchesCategory && matchesCountry;
   });
 
   const handleApply = async () => {
@@ -363,6 +377,28 @@ const CreatorOffers = () => {
               onClick={() => setActiveCategory(filter.value)}
               className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
                 activeCategory === filter.value
+                  ? "bg-gold/20 text-gold border border-gold/40"
+                  : "glass text-muted-foreground border border-transparent"
+              }`}
+            >
+              {filter.label}
+            </button>
+          ))}
+        </motion.div>
+
+        {/* Country filters */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="flex gap-2 overflow-x-auto no-scrollbar pb-2 mt-2"
+        >
+          {countryFilters.map((filter) => (
+            <button
+              key={filter.value}
+              onClick={() => setActiveCountry(filter.value)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
+                activeCountry === filter.value
                   ? "bg-gold/20 text-gold border border-gold/40"
                   : "glass text-muted-foreground border border-transparent"
               }`}
