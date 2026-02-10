@@ -30,6 +30,10 @@ import {
   Clock,
   User,
   ExternalLink,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  Maximize2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -130,13 +134,13 @@ const extractUserIdFromSelfiePath = (selfiePath: string): string | null => {
   return parts.length >= 2 ? parts[0] : null;
 };
 
-// Single selfie thumbnail
-const SelfieThumbnail = ({ path, label }: { path: string; label: string }) => {
+// Single selfie image loader hook
+const useSignedSelfieUrl = (path: string) => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadImage = async () => {
+    const load = async () => {
       try {
         let resolvedPath = path;
         if (resolvedPath.startsWith("http")) {
@@ -153,61 +157,150 @@ const SelfieThumbnail = ({ path, label }: { path: string; label: string }) => {
         setLoading(false);
       }
     };
-    loadImage();
+    load();
   }, [path]);
 
-  if (loading) {
+  return { imageUrl, loading };
+};
+
+// Selfie carousel with arrows + fullscreen
+const SelfiePreview = ({ selfiePath, onFullscreen }: { selfiePath: string; onFullscreen?: (urls: string[], index: number) => void }) => {
+  const userId = extractUserIdFromSelfiePath(selfiePath);
+  const labels = ["Face", "Gauche", "Droite", "Sourire"];
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [urls, setUrls] = useState<(string | null)[]>([null, null, null, null]);
+  const [loadingAll, setLoadingAll] = useState(true);
+
+  useEffect(() => {
+    if (!userId) return;
+    const loadAll = async () => {
+      const results = await Promise.all(
+        labels.map(async (_, i) => {
+          try {
+            const { data } = await supabase.storage
+              .from("selfies")
+              .createSignedUrl(`${userId}/selfie-${i}.jpg`, 3600);
+            return data?.signedUrl || null;
+          } catch {
+            return null;
+          }
+        })
+      );
+      setUrls(results);
+      setLoadingAll(false);
+    };
+    loadAll();
+  }, [userId]);
+
+  if (!userId) {
     return (
-      <div className="space-y-1">
-        <div className="aspect-square rounded-lg bg-muted flex items-center justify-center border border-border">
-          <div className="animate-pulse text-muted-foreground text-[10px]">...</div>
-        </div>
-        <p className="text-[10px] text-muted-foreground text-center">{label}</p>
+      <div className="h-32 rounded-xl bg-muted flex items-center justify-center border border-border">
+        <p className="text-xs text-muted-foreground">Selfie non disponible</p>
       </div>
     );
   }
 
+  const currentUrl = urls[currentIndex];
+
   return (
     <div className="space-y-1">
-      <div className="aspect-square rounded-lg overflow-hidden bg-muted border border-border">
-        {imageUrl ? (
-          <img src={imageUrl} alt={label} className="w-full h-full object-cover" />
+      <div className="relative w-full aspect-[4/3] max-h-40 rounded-xl overflow-hidden bg-muted border border-border">
+        {loadingAll ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="animate-pulse text-muted-foreground text-xs">Chargement...</div>
+          </div>
+        ) : currentUrl ? (
+          <img
+            src={currentUrl}
+            alt={labels[currentIndex]}
+            className="w-full h-full object-cover cursor-pointer"
+            onClick={() => onFullscreen?.(urls.filter(Boolean) as string[], currentIndex)}
+          />
         ) : (
           <div className="flex items-center justify-center h-full">
-            <User className="w-5 h-5 text-muted-foreground opacity-40" />
+            <User className="w-8 h-8 text-muted-foreground opacity-40" />
           </div>
         )}
+
+        {/* Navigation arrows */}
+        {!loadingAll && (
+          <>
+            <button
+              onClick={() => setCurrentIndex((prev) => (prev - 1 + 4) % 4)}
+              className="absolute left-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-background/70 flex items-center justify-center hover:bg-background/90 transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setCurrentIndex((prev) => (prev + 1) % 4)}
+              className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-background/70 flex items-center justify-center hover:bg-background/90 transition-colors"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+            {/* Fullscreen button */}
+            <button
+              onClick={() => onFullscreen?.(urls.filter(Boolean) as string[], currentIndex)}
+              className="absolute top-1 right-1 w-6 h-6 rounded-full bg-background/70 flex items-center justify-center hover:bg-background/90 transition-colors"
+            >
+              <Maximize2 className="w-3 h-3" />
+            </button>
+          </>
+        )}
       </div>
-      <p className="text-[10px] text-muted-foreground text-center">{label}</p>
+      {/* Label + dots */}
+      <div className="flex items-center justify-center gap-2">
+        <p className="text-[10px] text-muted-foreground">{labels[currentIndex]}</p>
+        <div className="flex gap-1">
+          {labels.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrentIndex(i)}
+              className={`w-1.5 h-1.5 rounded-full transition-colors ${i === currentIndex ? "bg-gold" : "bg-muted-foreground/30"}`}
+            />
+          ))}
+        </div>
+      </div>
     </div>
   );
 };
 
-// Component to preview all 4 selfie captures in a grid
-const SelfiePreview = ({ selfiePath }: { selfiePath: string }) => {
-  const userId = extractUserIdFromSelfiePath(selfiePath);
+// Fullscreen selfie viewer overlay
+const SelfieFullscreen = ({ urls, initialIndex, onClose }: { urls: string[]; initialIndex: number; onClose: () => void }) => {
+  const [index, setIndex] = useState(initialIndex);
   const labels = ["Face", "Gauche", "Droite", "Sourire"];
 
-  if (!userId) {
-    return (
-      <div className="aspect-square rounded-xl bg-muted flex items-center justify-center border-2 border-border">
-        <div className="text-center text-muted-foreground p-4">
-          <User className="w-12 h-12 mx-auto mb-2 opacity-50" />
-          <p className="text-xs">Selfie non disponible</p>
+  return (
+    <div className="fixed inset-0 z-[100] bg-background/95 flex flex-col items-center justify-center" onClick={onClose}>
+      <div className="relative w-full max-w-md px-4" onClick={(e) => e.stopPropagation()}>
+        <button onClick={onClose} className="absolute -top-10 right-4 w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+          <X className="w-5 h-5" />
+        </button>
+        <div className="relative rounded-2xl overflow-hidden bg-muted border border-border">
+          <img src={urls[index]} alt={labels[index]} className="w-full aspect-square object-cover" />
+          <button
+            onClick={() => setIndex((prev) => (prev - 1 + urls.length) % urls.length)}
+            className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-background/70 flex items-center justify-center"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => setIndex((prev) => (prev + 1) % urls.length)}
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-background/70 flex items-center justify-center"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </div>
+        <p className="text-center text-sm text-muted-foreground mt-3">{labels[index]} — {index + 1}/{urls.length}</p>
+        <div className="flex justify-center gap-2 mt-2">
+          {urls.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setIndex(i)}
+              className={`w-2 h-2 rounded-full transition-colors ${i === index ? "bg-gold" : "bg-muted-foreground/30"}`}
+            />
+          ))}
         </div>
       </div>
-    );
-  }
-
-  return (
-    <div className="grid grid-cols-2 gap-2">
-      {labels.map((label, i) => (
-        <SelfieThumbnail
-          key={i}
-          path={`${userId}/selfie-${i}.jpg`}
-          label={label}
-        />
-      ))}
     </div>
   );
 };
@@ -220,6 +313,7 @@ const AdminVerificationTab = () => {
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [fullscreenSelfie, setFullscreenSelfie] = useState<{ urls: string[]; index: number } | null>(null);
   const { toast } = useToast();
   const { user: currentUser } = useAuth();
 
@@ -512,24 +606,26 @@ const AdminVerificationTab = () => {
                       : "Comparaison photo de profil / Document"}
                   </h4>
                   {selectedUser.identity_method === "selfie" && selectedUser.selfie_url ? (
-                    <div className="space-y-3">
+                    <div className="flex items-start gap-3">
                       {/* Profile photo */}
-                      <div className="space-y-1">
-                        <p className="text-xs text-muted-foreground">Photo de profil</p>
-                        <div className="w-20 h-20 rounded-xl overflow-hidden bg-muted border-2 border-border">
+                      <div className="space-y-1 flex-shrink-0">
+                        <p className="text-[10px] text-muted-foreground text-center">Profil</p>
+                        <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted border border-border">
                           {selectedUser.avatar_url ? (
                             <img src={selectedUser.avatar_url} alt="Profil" className="w-full h-full object-cover" />
                           ) : (
                             <div className="flex items-center justify-center h-full">
-                              <User className="w-8 h-8 text-muted-foreground opacity-50" />
+                              <User className="w-6 h-6 text-muted-foreground opacity-50" />
                             </div>
                           )}
                         </div>
                       </div>
-                      {/* 4 selfie captures */}
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-2">Captures de vérification</p>
-                        <SelfiePreview selfiePath={selectedUser.selfie_url} />
+                      {/* Selfie carousel */}
+                      <div className="flex-1">
+                        <SelfiePreview
+                          selfiePath={selectedUser.selfie_url}
+                          onFullscreen={(urls, index) => setFullscreenSelfie({ urls, index })}
+                        />
                       </div>
                     </div>
                   ) : (
@@ -622,6 +718,15 @@ const AdminVerificationTab = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Fullscreen selfie viewer */}
+      {fullscreenSelfie && (
+        <SelfieFullscreen
+          urls={fullscreenSelfie.urls}
+          initialIndex={fullscreenSelfie.index}
+          onClose={() => setFullscreenSelfie(null)}
+        />
+      )}
     </div>
   );
 };
