@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Camera, Upload, CheckCircle, XCircle, Clock, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +31,7 @@ interface SocialVerificationSheetProps {
   isOpen: boolean;
   onClose: () => void;
   onUpdate: () => void;
+  defaultPlatform?: string;
 }
 
 const PLATFORMS = [
@@ -43,18 +44,24 @@ const PLATFORMS = [
 
 type VerificationStatus = "idle" | "uploading" | "analyzing" | "verified" | "rejected" | "pending_admin";
 
-const SocialVerificationSheet = ({ isOpen, onClose, onUpdate }: SocialVerificationSheetProps) => {
+const SocialVerificationSheet = ({ isOpen, onClose, onUpdate, defaultPlatform }: SocialVerificationSheetProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [platform, setPlatform] = useState<string>("");
+  const [platform, setPlatform] = useState<string>(defaultPlatform || "");
   const [pageName, setPageName] = useState("");
   const [claimedFollowers, setClaimedFollowers] = useState("");
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const [status, setStatus] = useState<VerificationStatus>("idle");
   const [resultMessage, setResultMessage] = useState("");
+
+  useEffect(() => {
+    if (isOpen && defaultPlatform) {
+      setPlatform(defaultPlatform);
+    }
+  }, [isOpen, defaultPlatform]);
 
   const resetForm = () => {
     setPlatform("");
