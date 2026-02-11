@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Share2, Camera } from "lucide-react";
+import { Share2, Camera, CheckCircle, Clock, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -56,10 +56,54 @@ const SocialEditSheet = ({ isOpen, onClose, initialData, onUpdate }: SocialEditS
   const [isLoading, setIsLoading] = useState(false);
   const [showVerificationSheet, setShowVerificationSheet] = useState(false);
   const [verificationPlatform, setVerificationPlatform] = useState<string>("");
+  const [verificationStatuses, setVerificationStatuses] = useState<Record<string, string>>({});
+
+  // Fetch latest verification status for each platform
+  useEffect(() => {
+    if (!user || !isOpen) return;
+    const fetchStatuses = async () => {
+      const { data } = await supabase
+        .from("social_verifications")
+        .select("platform, status")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+      if (data) {
+        const statuses: Record<string, string> = {};
+        data.forEach((v) => {
+          if (!statuses[v.platform]) statuses[v.platform] = v.status;
+        });
+        setVerificationStatuses(statuses);
+      }
+    };
+    fetchStatuses();
+  }, [user, isOpen]);
 
   const openVerification = (platform: string) => {
     setVerificationPlatform(platform);
     setShowVerificationSheet(true);
+  };
+
+  const getVerifyButton = (platform: string) => {
+    const status = verificationStatuses[platform];
+    if (status === "verified") {
+      return (
+        <Button type="button" variant="outline" size="sm" className="shrink-0 gap-1 text-green-600 border-green-300">
+          <CheckCircle className="w-4 h-4" /> Vérifié
+        </Button>
+      );
+    }
+    if (status === "pending_admin" || status === "pending") {
+      return (
+        <Button type="button" variant="outline" size="sm" className="shrink-0 gap-1 text-yellow-600 border-yellow-300" disabled>
+          <Clock className="w-4 h-4" /> En cours
+        </Button>
+      );
+    }
+    return (
+      <Button type="button" variant="outline" size="sm" className="shrink-0 gap-1" onClick={() => openVerification(platform)}>
+        <Camera className="w-4 h-4" /> Vérifier
+      </Button>
+    );
   };
 
   const form = useForm<SocialFormData>({
@@ -162,9 +206,7 @@ const SocialEditSheet = ({ isOpen, onClose, initialData, onUpdate }: SocialEditS
                         <FormControl>
                           <Input placeholder="Ex: 250K" {...field} className="flex-1" />
                         </FormControl>
-                        <Button type="button" variant="outline" size="sm" className="shrink-0 gap-1" onClick={() => openVerification("instagram")}>
-                          <Camera className="w-4 h-4" /> Vérifier
-                        </Button>
+                        {getVerifyButton("instagram")}
                       </div>
                     </div>
                   </div>
@@ -211,9 +253,7 @@ const SocialEditSheet = ({ isOpen, onClose, initialData, onUpdate }: SocialEditS
                         <FormControl>
                           <Input placeholder="Ex: 100K" {...field} className="flex-1" />
                         </FormControl>
-                        <Button type="button" variant="outline" size="sm" className="shrink-0 gap-1" onClick={() => openVerification("snapchat")}>
-                          <Camera className="w-4 h-4" /> Vérifier
-                        </Button>
+                        {getVerifyButton("snapchat")}
                       </div>
                     </div>
                   </div>
@@ -235,9 +275,7 @@ const SocialEditSheet = ({ isOpen, onClose, initialData, onUpdate }: SocialEditS
                         <FormControl>
                           <Input placeholder="Ex: 200K" {...field} className="flex-1" />
                         </FormControl>
-                        <Button type="button" variant="outline" size="sm" className="shrink-0 gap-1" onClick={() => openVerification("facebook")}>
-                          <Camera className="w-4 h-4" /> Vérifier
-                        </Button>
+                        {getVerifyButton("facebook")}
                       </div>
                     </div>
                   </div>
