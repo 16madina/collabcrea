@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Share2 } from "lucide-react";
+import { Share2, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -24,7 +24,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import YouTubeConnectButton from "./YouTubeConnectButton";
 import TikTokConnectButton from "./TikTokConnectButton";
-import FacebookConnectButton from "./FacebookConnectButton";
+import SocialVerificationSheet from "./SocialVerificationSheet";
 import { YouTubeIcon, InstagramIcon, TikTokIcon, SnapchatIcon, FacebookIcon } from "@/components/ui/social-icons";
 
 const socialSchema = z.object({
@@ -54,6 +54,7 @@ const SocialEditSheet = ({ isOpen, onClose, initialData, onUpdate }: SocialEditS
   const { user } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [showVerificationSheet, setShowVerificationSheet] = useState(false);
 
   const form = useForm<SocialFormData>({
     resolver: zodResolver(socialSchema),
@@ -105,6 +106,7 @@ const SocialEditSheet = ({ isOpen, onClose, initialData, onUpdate }: SocialEditS
   };
 
   return (
+    <>
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <SheetContent side="bottom" className="h-[75vh] rounded-t-3xl">
         <SheetHeader className="text-left pb-4">
@@ -213,21 +215,38 @@ const SocialEditSheet = ({ isOpen, onClose, initialData, onUpdate }: SocialEditS
                     <FacebookIcon className="w-10 h-10 p-2" size={20} />
                     <div className="flex-1">
                       <FormLabel>Facebook</FormLabel>
-                      <div className="flex items-center gap-2">
-                        <FormControl>
-                          <Input placeholder="Ex: 200K" {...field} className="flex-1" />
-                        </FormControl>
-                        <FacebookConnectButton 
-                          currentFollowers={initialData.facebook_followers}
-                          onSyncComplete={onUpdate}
-                        />
-                      </div>
+                      <FormControl>
+                        <Input placeholder="Ex: 200K" {...field} />
+                      </FormControl>
                     </div>
                   </div>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            {/* AI Verification CTA */}
+            <div className="p-4 rounded-2xl bg-gold/10 border border-gold/30">
+              <div className="flex items-start gap-3">
+                <Camera className="w-5 h-5 text-gold shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Vérifier avec une capture d'écran</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    L'IA analysera votre capture pour valider automatiquement vos abonnés
+                  </p>
+                  <Button
+                    type="button"
+                    variant="gold"
+                    size="sm"
+                    className="mt-2"
+                    onClick={() => setShowVerificationSheet(true)}
+                  >
+                    <Camera className="w-4 h-4 mr-1" />
+                    Vérifier un réseau
+                  </Button>
+                </div>
+              </div>
+            </div>
 
             {/* Footer */}
             <div className="pt-4">
@@ -244,6 +263,13 @@ const SocialEditSheet = ({ isOpen, onClose, initialData, onUpdate }: SocialEditS
         </Form>
       </SheetContent>
     </Sheet>
+
+    <SocialVerificationSheet
+      isOpen={showVerificationSheet}
+      onClose={() => setShowVerificationSheet(false)}
+      onUpdate={onUpdate}
+    />
+    </>
   );
 };
 

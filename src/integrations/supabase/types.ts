@@ -641,6 +641,63 @@ export type Database = {
         }
         Relationships: []
       }
+      social_verifications: {
+        Row: {
+          admin_notes: string | null
+          ai_confidence: number | null
+          ai_extracted_followers: string | null
+          ai_extracted_name: string | null
+          ai_reason: string | null
+          claimed_followers: string
+          created_at: string
+          id: string
+          page_name: string
+          platform: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          screenshot_url: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          ai_confidence?: number | null
+          ai_extracted_followers?: string | null
+          ai_extracted_name?: string | null
+          ai_reason?: string | null
+          claimed_followers: string
+          created_at?: string
+          id?: string
+          page_name: string
+          platform: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          screenshot_url: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          ai_confidence?: number | null
+          ai_extracted_followers?: string | null
+          ai_extracted_name?: string | null
+          ai_reason?: string | null
+          claimed_followers?: string
+          created_at?: string
+          id?: string
+          page_name?: string
+          platform?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          screenshot_url?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           amount: number
