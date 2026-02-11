@@ -55,6 +55,12 @@ const SocialEditSheet = ({ isOpen, onClose, initialData, onUpdate }: SocialEditS
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showVerificationSheet, setShowVerificationSheet] = useState(false);
+  const [verificationPlatform, setVerificationPlatform] = useState<string>("");
+
+  const openVerification = (platform: string) => {
+    setVerificationPlatform(platform);
+    setShowVerificationSheet(true);
+  };
 
   const form = useForm<SocialFormData>({
     resolver: zodResolver(socialSchema),
@@ -152,9 +158,14 @@ const SocialEditSheet = ({ isOpen, onClose, initialData, onUpdate }: SocialEditS
                     <InstagramIcon className="w-10 h-10 p-2" size={20} />
                     <div className="flex-1">
                       <FormLabel>Instagram</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ex: 250K" {...field} />
-                      </FormControl>
+                      <div className="flex items-center gap-2">
+                        <FormControl>
+                          <Input placeholder="Ex: 250K" {...field} className="flex-1" />
+                        </FormControl>
+                        <Button type="button" variant="outline" size="sm" className="shrink-0 gap-1" onClick={() => openVerification("instagram")}>
+                          <Camera className="w-4 h-4" /> Vérifier
+                        </Button>
+                      </div>
                     </div>
                   </div>
                   <FormMessage />
@@ -196,9 +207,14 @@ const SocialEditSheet = ({ isOpen, onClose, initialData, onUpdate }: SocialEditS
                     <SnapchatIcon className="w-10 h-10 p-2" size={20} />
                     <div className="flex-1">
                       <FormLabel>Snapchat</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ex: 100K" {...field} />
-                      </FormControl>
+                      <div className="flex items-center gap-2">
+                        <FormControl>
+                          <Input placeholder="Ex: 100K" {...field} className="flex-1" />
+                        </FormControl>
+                        <Button type="button" variant="outline" size="sm" className="shrink-0 gap-1" onClick={() => openVerification("snapchat")}>
+                          <Camera className="w-4 h-4" /> Vérifier
+                        </Button>
+                      </div>
                     </div>
                   </div>
                   <FormMessage />
@@ -215,9 +231,14 @@ const SocialEditSheet = ({ isOpen, onClose, initialData, onUpdate }: SocialEditS
                     <FacebookIcon className="w-10 h-10 p-2" size={20} />
                     <div className="flex-1">
                       <FormLabel>Facebook</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ex: 200K" {...field} />
-                      </FormControl>
+                      <div className="flex items-center gap-2">
+                        <FormControl>
+                          <Input placeholder="Ex: 200K" {...field} className="flex-1" />
+                        </FormControl>
+                        <Button type="button" variant="outline" size="sm" className="shrink-0 gap-1" onClick={() => openVerification("facebook")}>
+                          <Camera className="w-4 h-4" /> Vérifier
+                        </Button>
+                      </div>
                     </div>
                   </div>
                   <FormMessage />
@@ -225,28 +246,7 @@ const SocialEditSheet = ({ isOpen, onClose, initialData, onUpdate }: SocialEditS
               )}
             />
 
-            {/* AI Verification CTA */}
-            <div className="p-4 rounded-2xl bg-gold/10 border border-gold/30">
-              <div className="flex items-start gap-3">
-                <Camera className="w-5 h-5 text-gold shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Vérifier avec une capture d'écran</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    L'IA analysera votre capture pour valider automatiquement vos abonnés
-                  </p>
-                  <Button
-                    type="button"
-                    variant="gold"
-                    size="sm"
-                    className="mt-2"
-                    onClick={() => setShowVerificationSheet(true)}
-                  >
-                    <Camera className="w-4 h-4 mr-1" />
-                    Vérifier un réseau
-                  </Button>
-                </div>
-              </div>
-            </div>
+
 
             {/* Footer */}
             <div className="pt-4">
@@ -268,6 +268,7 @@ const SocialEditSheet = ({ isOpen, onClose, initialData, onUpdate }: SocialEditS
       isOpen={showVerificationSheet}
       onClose={() => setShowVerificationSheet(false)}
       onUpdate={onUpdate}
+      defaultPlatform={verificationPlatform}
     />
     </>
   );
