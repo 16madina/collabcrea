@@ -95,6 +95,9 @@ const AppContent = () => {
           {/* Admin Routes */}
           <Route path="/admin" element={<AdminDashboard />} />
           
+          {/* Generic redirects */}
+          <Route path="/messages" element={<Navigate to="/creator/collabs?tab=messages" replace />} />
+          
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

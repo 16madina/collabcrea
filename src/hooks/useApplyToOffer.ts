@@ -56,7 +56,7 @@ export const useApplyToOffer = () => {
         // Already applied, redirect to existing conversation
         if (existingApplication.conversation_id) {
           toast.info("Vous avez déjà postulé à cette offre");
-          navigate("/messages");
+          navigate("/creator/collabs?tab=messages");
           return { success: true, conversationId: existingApplication.conversation_id };
         }
         return { success: false, error: "Déjà postulé" };
@@ -115,7 +115,7 @@ export const useApplyToOffer = () => {
       }
 
       toast.success("Candidature envoyée !");
-      navigate("/messages");
+      navigate("/creator/collabs?tab=messages");
       
       return { success: true, conversationId: conversation.id };
     } catch (error: any) {
