@@ -140,16 +140,16 @@ const MessagesTab = ({ userRole }: MessagesTabProps) => {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {/* Proposal Card if conversation has an offer */}
-          {selectedConversation.offer_id && userRole === "creator" && (
+          {/* Proposal Card: shown to the RECEIVER (not the initiator) for accept/refuse */}
+          {selectedConversation.offer_id && selectedConversation.created_by !== user?.id && (
             <ProposalCard
               offerId={selectedConversation.offer_id}
               conversationId={selectedConversation.id}
             />
           )}
           
-          {/* Proposal Status Card for brands */}
-          {selectedConversation.offer_id && userRole === "brand" && (
+          {/* Proposal Status Card: shown to the INITIATOR to track status */}
+          {selectedConversation.offer_id && selectedConversation.created_by === user?.id && (
             <ProposalStatusCard
               offerId={selectedConversation.offer_id}
               conversationId={selectedConversation.id}
