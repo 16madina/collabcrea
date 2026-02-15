@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
 import { Home, Search, Briefcase, Handshake, User } from "lucide-react";
-import { useUnreadMessages } from "@/hooks/useUnreadMessages";
+import { useCollabsBadgeCount } from "@/hooks/useCollabsBadgeCount";
 import { useAuth } from "@/hooks/useAuth";
 
 interface NavItem {
@@ -13,7 +13,7 @@ interface NavItem {
 
 const BottomNav = () => {
   const location = useLocation();
-  const unreadMessages = useUnreadMessages();
+  const collabsBadgeCount = useCollabsBadgeCount();
   const { user, role } = useAuth();
 
   const isAuthenticated = !!user;
@@ -76,9 +76,9 @@ const BottomNav = () => {
                       }`}
                     />
                     {/* Unread badge for Collabs */}
-                    {item.showBadge && unreadMessages > 0 && (
+                    {item.showBadge && collabsBadgeCount > 0 && (
                       <span className="absolute -top-1 -right-2 min-w-[18px] h-[18px] bg-gold text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center px-1">
-                        {unreadMessages > 99 ? "99+" : unreadMessages}
+                        {collabsBadgeCount > 99 ? "99+" : collabsBadgeCount}
                       </span>
                     )}
                   </div>
