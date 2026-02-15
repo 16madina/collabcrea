@@ -87,6 +87,25 @@ const ProposalCard = ({ offerId, conversationId, onAccept, onRefuse }: ProposalC
     }
   }, [offerId]);
 
+  // Determine correct creator and brand IDs based on the offer owner and conversation participants
+  const getCollaborationRoles = async (currentUserId: string) => {
+    if (currentUserId === offer?.brand_id) {
+      // Current user is the brand, find the creator (other participant)
+      const { data: participants } = await supabase
+        .from("conversation_participants")
+        .select("user_id")
+        .eq("conversation_id", conversationId)
+        .neq("user_id", currentUserId);
+      
+      const creatorId = participants?.[0]?.user_id;
+      if (!creatorId) throw new Error("Impossible de trouver le créateur");
+      return { creatorId, brandId: currentUserId };
+    } else {
+      // Current user is the creator
+      return { creatorId: currentUserId, brandId: offer!.brand_id };
+    }
+  };
+
   const handleAccept = async () => {
     if (!offer) return;
     
@@ -95,14 +114,16 @@ const ProposalCard = ({ offerId, conversationId, onAccept, onRefuse }: ProposalC
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("Non authentifié");
 
+      const { creatorId, brandId } = await getCollaborationRoles(userData.user.id);
+
       // Create a real collaboration with status "pending_payment"
       const agreedAmount = Math.round((offer.budget_min + offer.budget_max) / 2);
       const deadline = offer.deadline || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
       await createCollaboration(
         offer.id,
-        userData.user.id,
-        offer.brand_id,
+        creatorId,
+        brandId,
         agreedAmount,
         deadline,
         conversationId
@@ -116,7 +137,7 @@ const ProposalCard = ({ offerId, conversationId, onAccept, onRefuse }: ProposalC
       });
 
       setProposalStatus("accepted");
-      toast.success("Proposition acceptée ! La marque doit maintenant effectuer le paiement.");
+      toast.success("Proposition acceptée ! La collaboration a été créée.");
       onAccept?.();
     } catch (err) {
       console.error("Error accepting proposal:", err);
@@ -134,15 +155,16 @@ const ProposalCard = ({ offerId, conversationId, onAccept, onRefuse }: ProposalC
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("Non authentifié");
 
+      const { creatorId, brandId } = await getCollaborationRoles(userData.user.id);
+
       // Create a collaboration with "refused" status
-      const platformFee = 0;
       const { error } = await supabase.from("collaborations").insert({
         offer_id: offer.id,
-        creator_id: userData.user.id,
-        brand_id: offer.brand_id,
+        creator_id: creatorId,
+        brand_id: brandId,
         conversation_id: conversationId,
         agreed_amount: 0,
-        platform_fee: platformFee,
+        platform_fee: 0,
         creator_amount: 0,
         deadline: offer.deadline || new Date().toISOString().split('T')[0],
         status: "refused",
