@@ -5,7 +5,7 @@ import { MessageCircle, Handshake } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
-import { useUnreadMessages } from "@/hooks/useUnreadMessages";
+
 import MessagesTab from "@/components/collabs/MessagesTab";
 import CollaborationsTab from "@/components/collabs/CollaborationsTab";
 import { toast } from "sonner";
@@ -13,7 +13,6 @@ import { toast } from "sonner";
 const CollabsHub = () => {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  const unreadMessages = useUnreadMessages();
   
   const defaultTab = searchParams.get("tab") || "messages";
   const [activeTab, setActiveTab] = useState(defaultTab);
@@ -65,11 +64,6 @@ const CollabsHub = () => {
             <TabsTrigger value="messages" className="flex items-center gap-2">
               <MessageCircle className="w-4 h-4" />
               Messages
-              {unreadMessages > 0 && (
-                <span className="ml-1 min-w-[18px] h-[18px] bg-gold text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center px-1">
-                  {unreadMessages > 99 ? "99+" : unreadMessages}
-                </span>
-              )}
             </TabsTrigger>
             <TabsTrigger value="collabs" className="flex items-center gap-2">
               <Handshake className="w-4 h-4" />
