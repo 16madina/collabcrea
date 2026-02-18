@@ -14,6 +14,7 @@ import {
   Timer,
   MessageSquare,
   RefreshCw,
+  Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -39,7 +40,9 @@ const getStatusBadge = (status: string) => {
     case "in_progress":
       return <Badge variant="secondary" className="bg-blue-500/20 text-blue-500">En cours</Badge>;
     case "content_submitted":
-      return <Badge variant="secondary" className="bg-purple-500/20 text-purple-500">Contenu soumis</Badge>;
+      return <Badge variant="secondary" className="bg-purple-500/20 text-purple-500">Contenu prêt 🔒</Badge>;
+    case "in_review":
+      return <Badge variant="secondary" className="bg-cyan-500/20 text-cyan-500">En revue</Badge>;
     case "revision_requested":
       return <Badge variant="secondary" className="bg-orange-500/20 text-orange-500">Modification demandée</Badge>;
     case "completed":
@@ -122,9 +125,9 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
   const [sheetType, setSheetType] = useState<"submit" | "payment" | "review" | null>(null);
   const [activeSubTab, setActiveSubTab] = useState("active");
 
-  // Active = pending_payment, in_progress, content_submitted, revision_requested (excludes refused)
+  // Active = in_progress, content_submitted, pending_payment (unlock), in_review, revision_requested (excludes refused)
   const activeCollabs = collaborations.filter((c) =>
-    ["pending_payment", "in_progress", "content_submitted", "revision_requested"].includes(c.status)
+    ["in_progress", "content_submitted", "pending_payment", "in_review", "revision_requested"].includes(c.status)
   );
   // Completed = completed, refunded, expired, refused
   const completedCollabs = collaborations.filter((c) =>
@@ -137,9 +140,11 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
     if (!user) return;
 
     if (collab.brand_id === user.id) {
-      if (collab.status === "pending_payment") {
+      if (collab.status === "content_submitted") {
+        // Brand needs to pay to unlock content
         setSheetType("payment");
-      } else if (collab.status === "content_submitted") {
+      } else if (collab.status === "in_review") {
+        // Brand paid, can now review original content
         setSheetType("review");
       }
     } else if (collab.creator_id === user.id) {
@@ -235,18 +240,6 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
             </div>
           )}
 
-          {collab.status === "pending_payment" && isBrand && (
-            <Button
-              variant="gold"
-              size="sm"
-              className="w-full"
-              onClick={() => handleAction(collab)}
-            >
-              <CreditCard className="w-4 h-4 mr-2" />
-              Effectuer le paiement
-            </Button>
-          )}
-
           {collab.status === "in_progress" && isCreator && !isExpired && (
             <Button
               variant="gold"
@@ -266,9 +259,35 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
               className="w-full"
               onClick={() => handleAction(collab)}
             >
+              <CreditCard className="w-4 h-4 mr-2" />
+              Payer pour débloquer le contenu
+            </Button>
+          )}
+
+          {collab.status === "content_submitted" && isCreator && (
+            <div className="flex items-center gap-2 text-purple-500 text-sm">
+              <Lock className="w-4 h-4" />
+              Contenu soumis — en attente du paiement de la marque
+            </div>
+          )}
+
+          {collab.status === "in_review" && isBrand && (
+            <Button
+              variant="gold"
+              size="sm"
+              className="w-full"
+              onClick={() => handleAction(collab)}
+            >
               <Eye className="w-4 h-4 mr-2" />
               Valider le contenu
             </Button>
+          )}
+
+          {collab.status === "in_review" && isCreator && (
+            <div className="flex items-center gap-2 text-cyan-500 text-sm">
+              <Eye className="w-4 h-4" />
+              La marque examine votre contenu
+            </div>
           )}
 
           {collab.status === "completed" && (

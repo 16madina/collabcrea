@@ -76,9 +76,9 @@ serve(async (req) => {
       throw new Error("Only the brand can pay for this collaboration");
     }
 
-    // Verify collaboration is pending payment
-    if (collab.status !== "pending_payment") {
-      throw new Error(`Invalid collaboration status: ${collab.status}`);
+    // Verify collaboration is awaiting payment (content_submitted = new unlock flow, pending_payment = legacy)
+    if (collab.status !== "content_submitted" && collab.status !== "pending_payment") {
+      throw new Error(`Invalid collaboration status: ${collab.status}. Expected content_submitted.`);
     }
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });

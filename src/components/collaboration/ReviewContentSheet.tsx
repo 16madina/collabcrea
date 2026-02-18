@@ -21,10 +21,12 @@ import {
   Video,
   MessageSquare,
   AlertCircle,
+  Lock,
 } from "lucide-react";
 import { useCollaborations, Collaboration } from "@/hooks/useCollaborations";
 import { format, parseISO, differenceInDays } from "date-fns";
 import { fr } from "date-fns/locale";
+import WatermarkOverlay from "./WatermarkOverlay";
 
 interface ReviewContentSheetProps {
   open: boolean;
