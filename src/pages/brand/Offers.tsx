@@ -29,11 +29,12 @@ interface Offer {
   applications_count?: number;
 }
 
-type FilterStatus = "all" | "active" | "closed" | "draft";
+type FilterStatus = "all" | "active" | "closed" | "draft" | "expired";
 
 const statusFilters: { label: string; value: FilterStatus }[] = [
   { label: "Toutes", value: "all" },
   { label: "Actives", value: "active" },
+  { label: "Expirées", value: "expired" },
   { label: "Fermées", value: "closed" },
   { label: "Brouillons", value: "draft" },
 ];
@@ -133,6 +134,29 @@ const BrandOffers = () => {
 
   const handleApply = (offerId: string) => {
     navigate(`/auth?role=creator&offer=${offerId}`);
+  };
+
+  const handleRenew = async (offerId: string) => {
+    if (!user) return;
+    const newDeadline = new Date();
+    newDeadline.setDate(newDeadline.getDate() + 30);
+    
+    const { error } = await supabase
+      .from("offers")
+      .update({ 
+        status: "active", 
+        deadline: newDeadline.toISOString().split('T')[0],
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", offerId)
+      .eq("brand_id", user.id);
+
+    if (error) {
+      toast.error("Erreur lors du renouvellement");
+    } else {
+      toast.success("Offre renouvelée pour 30 jours");
+      setDbOffers(prev => prev.map(o => o.id === offerId ? { ...o, status: "active", deadline: newDeadline.toISOString().split('T')[0] } : o));
+    }
   };
 
   const handleDelete = async (offerId: string) => {
@@ -250,6 +274,7 @@ const BrandOffers = () => {
                   onApply={() => handleApply(offer.id)}
                   onEdit={() => navigate(`/brand/edit-offer/${offer.id}`)}
                   onDelete={() => handleDelete(offer.id)}
+                  onRenew={() => handleRenew(offer.id)}
                 />
               ))}
             </div>

@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { MapPin, DollarSign, Calendar, Send, Users, Edit, Trash2 } from "lucide-react";
+import { MapPin, DollarSign, Calendar, Send, Users, Edit, Trash2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface OfferCardProps {
@@ -23,6 +23,7 @@ interface OfferCardProps {
   onApply?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  onRenew?: () => void;
   onClick?: () => void;
 }
 
@@ -33,6 +34,7 @@ const OfferCard = ({
   onApply, 
   onEdit, 
   onDelete,
+  onRenew,
   onClick 
 }: OfferCardProps) => {
   const formatBudget = (min: number, max: number) => {
@@ -60,6 +62,8 @@ const OfferCard = ({
         return "bg-accent/20 text-accent";
       case "closed":
         return "bg-destructive/20 text-destructive";
+      case "expired":
+        return "bg-orange-500/20 text-orange-500";
       case "draft":
         return "bg-gold/20 text-gold";
       default:
@@ -73,6 +77,8 @@ const OfferCard = ({
         return "Active";
       case "closed":
         return "Fermée";
+      case "expired":
+        return "Expirée";
       case "draft":
         return "Brouillon";
       default:
@@ -175,29 +181,59 @@ const OfferCard = ({
         {/* Action buttons */}
         {isOwner ? (
           <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="flex-1 gap-2"
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit?.();
-              }}
-            >
-              <Edit className="w-4 h-4" />
-              Modifier
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm"
-              className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-2"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete?.();
-              }}
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
+            {offer.status === "expired" ? (
+              <>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="flex-1 gap-2 border-gold/60 text-gold hover:bg-gold/10"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRenew?.();
+                  }}
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Renouveler
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete?.();
+                  }}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="flex-1 gap-2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit?.();
+                  }}
+                >
+                  <Edit className="w-4 h-4" />
+                  Modifier
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete?.();
+                  }}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </>
+            )}
           </div>
         ) : (
           <Button 
