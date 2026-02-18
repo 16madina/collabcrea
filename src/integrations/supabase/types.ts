@@ -896,6 +896,7 @@ export type Database = {
     }
     Functions: {
       can_initiate_contact: { Args: { _user_id: string }; Returns: boolean }
+      expire_overdue_offers: { Args: never; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
