@@ -147,7 +147,7 @@ export const useCollaborations = () => {
           creator_amount: creatorAmount,
           deadline: deadline,
           conversation_id: conversationId,
-          status: "pending_payment",
+          status: "in_progress",
         })
         .select()
         .single();

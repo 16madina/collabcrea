@@ -159,12 +159,12 @@ const InAppPaymentSheet = ({
             <div>
               <SheetTitle className="text-xl font-display flex items-center gap-2">
                 <Lock className="w-6 h-6 text-gold" />
-                {selectedMethod ? "Paiement sécurisé" : "Choisir le mode de paiement"}
+                {selectedMethod ? "Paiement sécurisé" : "Débloquer le contenu"}
               </SheetTitle>
               <SheetDescription>
                 {selectedMethod 
-                  ? "Payez en toute sécurité - L'argent sera en séquestre"
-                  : "Sélectionnez votre méthode de paiement préférée"
+                  ? "Payez pour accéder au contenu original du créateur"
+                  : "Payez pour voir le contenu sans filigrane et le valider"
                 }
               </SheetDescription>
             </div>
@@ -214,7 +214,7 @@ const InAppPaymentSheet = ({
                   <div className="text-sm">
                     <p className="font-medium text-foreground mb-1">Paiement sécurisé</p>
                     <p className="text-muted-foreground text-xs">
-                      Votre argent est conservé en séquestre jusqu'à ce que le créateur livre le contenu et que vous l'approuviez.
+                      En payant, vous débloquez le contenu original du créateur. Vous pourrez ensuite l'approuver ou demander des modifications.
                     </p>
                   </div>
                 </div>

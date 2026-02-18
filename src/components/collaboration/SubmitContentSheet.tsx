@@ -344,8 +344,8 @@ const SubmitContentSheet = ({
               <div className="text-sm text-muted-foreground">
                 <p className="font-medium text-foreground mb-1">Après soumission</p>
                 <p>
-                  La marque aura 7 jours pour valider votre contenu. Sans réponse
-                  de sa part, le paiement sera automatiquement libéré.
+                  Votre contenu sera protégé par un filigrane CollabCrea. La marque devra
+                  payer pour le débloquer et le voir en qualité originale avant de le valider.
                 </p>
               </div>
             </div>

@@ -84,8 +84,8 @@ serve(async (req) => {
       throw new Error("Only the brand can confirm this payment");
     }
 
-    // Check if already processed
-    if (collab.status !== "pending_payment") {
+    // Check if already processed (accept both pending_payment and content_submitted as valid pre-payment statuses)
+    if (collab.status !== "pending_payment" && collab.status !== "content_submitted") {
       logStep("Collaboration already processed", { status: collab.status });
       return new Response(
         JSON.stringify({
@@ -100,11 +100,11 @@ serve(async (req) => {
       );
     }
 
-    // Update collaboration status to in_progress
+    // Update collaboration status to in_review (brand can now see original content)
     const { error: updateError } = await supabaseClient
       .from("collaborations")
       .update({
-        status: "in_progress",
+        status: "in_review",
         updated_at: new Date().toISOString(),
       })
       .eq("id", collaborationId);
@@ -112,7 +112,7 @@ serve(async (req) => {
     if (updateError) {
       throw new Error(`Failed to update collaboration: ${updateError.message}`);
     }
-    logStep("Collaboration updated to in_progress");
+    logStep("Collaboration updated to in_review");
 
     // Get or create wallet for creator
     let { data: wallet } = await supabaseClient
@@ -167,8 +167,8 @@ serve(async (req) => {
 
       await supabaseClient.from("notifications").insert({
         user_id: collab.creator_id,
-        title: "Paiement reçu ! 🎉",
-        message: `Le paiement pour "${offer?.title || "la collaboration"}" a été effectué. L'argent est en séquestre et vous sera versé après validation du contenu.`,
+        title: "Contenu débloqué ! 🎉",
+        message: `La marque a payé pour "${offer?.title || "la collaboration"}". Votre contenu est maintenant en cours de revue.`,
         type: "success",
       });
       logStep("Notification sent to creator");
@@ -179,8 +179,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        status: "in_progress",
-        message: "Paiement confirmé avec succès",
+        status: "in_review",
+        message: "Paiement confirmé - contenu débloqué",
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
