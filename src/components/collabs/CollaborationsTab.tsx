@@ -25,6 +25,7 @@ import { useAuth } from "@/hooks/useAuth";
 import SubmitContentSheet from "@/components/collaboration/SubmitContentSheet";
 import InAppPaymentSheet from "@/components/collaboration/InAppPaymentSheet";
 import ReviewContentSheet from "@/components/collaboration/ReviewContentSheet";
+import WatermarkOverlay from "@/components/collaboration/WatermarkOverlay";
 import { format, parseISO, differenceInDays, differenceInHours, differenceInMinutes, isPast } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
@@ -253,15 +254,52 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
           )}
 
           {collab.status === "content_submitted" && isBrand && (
-            <Button
-              variant="gold"
-              size="sm"
-              className="w-full"
-              onClick={() => handleAction(collab)}
-            >
-              <CreditCard className="w-4 h-4 mr-2" />
-              Payer pour débloquer le contenu
-            </Button>
+            <div className="space-y-3">
+              {/* Watermarked preview */}
+              {collab.content_url && (
+                <WatermarkOverlay locked={true}>
+                  <div className="w-full aspect-video bg-muted rounded-lg overflow-hidden flex items-center justify-center">
+                    {(() => {
+                      // Parse content URLs - could be JSON array or single URL
+                      let previewUrl = "";
+                      try {
+                        const urls = JSON.parse(collab.content_url);
+                        previewUrl = Array.isArray(urls) ? urls[0] : collab.content_url;
+                      } catch {
+                        previewUrl = collab.content_url;
+                      }
+                      const isVideo = /\.(mp4|mov|webm|avi)$/i.test(previewUrl) || previewUrl.includes("/collaboration-content/");
+                      if (isVideo) {
+                        return (
+                          <video
+                            src={previewUrl}
+                            className="w-full h-full object-cover"
+                            muted
+                            playsInline
+                          />
+                        );
+                      }
+                      return (
+                        <img
+                          src={previewUrl}
+                          alt="Aperçu du contenu"
+                          className="w-full h-full object-cover"
+                        />
+                      );
+                    })()}
+                  </div>
+                </WatermarkOverlay>
+              )}
+              <Button
+                variant="gold"
+                size="sm"
+                className="w-full"
+                onClick={() => handleAction(collab)}
+              >
+                <CreditCard className="w-4 h-4 mr-2" />
+                Payer pour débloquer le contenu
+              </Button>
+            </div>
           )}
 
           {collab.status === "content_submitted" && isCreator && (
