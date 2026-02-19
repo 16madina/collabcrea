@@ -15,6 +15,8 @@ import {
   MessageSquare,
   RefreshCw,
   Lock,
+  Globe,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -46,6 +48,10 @@ const getStatusBadge = (status: string) => {
       return <Badge variant="secondary" className="bg-cyan-500/20 text-cyan-500">En revue</Badge>;
     case "revision_requested":
       return <Badge variant="secondary" className="bg-orange-500/20 text-orange-500">Modification demandée</Badge>;
+    case "pending_publication":
+      return <Badge variant="secondary" className="bg-indigo-500/20 text-indigo-500">📱 À publier</Badge>;
+    case "publication_submitted":
+      return <Badge variant="secondary" className="bg-teal-500/20 text-teal-500">🔗 Lien soumis</Badge>;
     case "completed":
       return <Badge variant="secondary" className="bg-green-500/20 text-green-500">Terminé</Badge>;
     case "refunded":
@@ -121,36 +127,43 @@ interface CollaborationsTabProps {
 const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { collaborations, loading, refreshCollaborations } = useCollaborations();
+  const { collaborations, loading, refreshCollaborations, approvePublication } = useCollaborations();
   const [selectedCollab, setSelectedCollab] = useState<Collaboration | null>(null);
-  const [sheetType, setSheetType] = useState<"submit" | "payment" | "review" | null>(null);
+  const [sheetType, setSheetType] = useState<"submit" | "payment" | "review" | "publication_link" | null>(null);
   const [activeSubTab, setActiveSubTab] = useState("active");
 
-  // Active = in_progress, content_submitted, pending_payment (unlock), in_review, revision_requested (excludes refused)
+  // Active = in_progress, content_submitted, pending_payment (unlock), in_review, revision_requested, pending_publication, publication_submitted
   const activeCollabs = collaborations.filter((c) =>
-    ["in_progress", "content_submitted", "pending_payment", "in_review", "revision_requested"].includes(c.status)
+    ["in_progress", "content_submitted", "pending_payment", "in_review", "revision_requested", "pending_publication", "publication_submitted"].includes(c.status)
   );
   // Completed = completed, refunded, expired, refused
   const completedCollabs = collaborations.filter((c) =>
     ["completed", "refunded", "expired", "refused"].includes(c.status)
   );
 
-  const handleAction = (collab: Collaboration) => {
+  const handleAction = (collab: Collaboration, actionOverride?: string) => {
     setSelectedCollab(collab);
 
     if (!user) return;
 
+    if (actionOverride === "publication_link") {
+      setSheetType("publication_link");
+      return;
+    }
+
     if (collab.brand_id === user.id) {
       if (collab.status === "content_submitted") {
-        // Brand needs to pay to unlock content
         setSheetType("payment");
       } else if (collab.status === "in_review") {
-        // Brand paid, can now review original content
+        setSheetType("review");
+      } else if (collab.status === "publication_submitted") {
         setSheetType("review");
       }
     } else if (collab.creator_id === user.id) {
       if (collab.status === "in_progress" || collab.status === "revision_requested") {
         setSheetType("submit");
+      } else if (collab.status === "pending_publication") {
+        setSheetType("publication_link");
       }
     }
   };
@@ -333,6 +346,79 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
             </div>
           )}
 
+          {/* Network mode: pending_publication - creator needs to publish */}
+          {collab.status === "pending_publication" && isCreator && (
+            <div className="space-y-3">
+              <div className="rounded-xl p-3 bg-indigo-500/10 border border-indigo-500/20">
+                <div className="flex items-start gap-2">
+                  <Globe className="w-4 h-4 text-indigo-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-indigo-500 mb-1">Aperçu validé ✅</p>
+                    <p className="text-sm text-muted-foreground">Publiez maintenant le contenu sur vos réseaux et soumettez le lien.</p>
+                  </div>
+                </div>
+              </div>
+              <Button
+                variant="gold"
+                size="sm"
+                className="w-full"
+                onClick={() => handleAction(collab, "publication_link")}
+              >
+                <Globe className="w-4 h-4 mr-2" />
+                Soumettre le lien de publication
+              </Button>
+            </div>
+          )}
+
+          {collab.status === "pending_publication" && isBrand && (
+            <div className="flex items-center gap-2 text-indigo-500 text-sm">
+              <Globe className="w-4 h-4" />
+              En attente de publication par le créateur
+            </div>
+          )}
+
+          {/* Network mode: publication_submitted - brand needs to verify link */}
+          {collab.status === "publication_submitted" && isBrand && (
+            <div className="space-y-3">
+              {(collab as any).publication_url && (
+                <a
+                  href={(collab as any).publication_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 glass rounded-xl p-3 hover:bg-muted/50 transition-colors"
+                >
+                  <ExternalLink className="w-5 h-5 text-gold flex-shrink-0" />
+                  <span className="flex-1 text-foreground truncate text-sm">
+                    {(collab as any).publication_url}
+                  </span>
+                  <Badge variant="secondary" className="text-xs">Voir le post</Badge>
+                </a>
+              )}
+              <Button
+                variant="gold"
+                size="sm"
+                className="w-full"
+                onClick={async () => {
+                  try {
+                    await approvePublication(collab.id);
+                  } catch (e) {
+                    console.error(e);
+                  }
+                }}
+              >
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Confirmer la publication et payer
+              </Button>
+            </div>
+          )}
+
+          {collab.status === "publication_submitted" && isCreator && (
+            <div className="flex items-center gap-2 text-teal-500 text-sm">
+              <Globe className="w-4 h-4" />
+              Lien soumis — en attente de vérification
+            </div>
+          )}
+
           {collab.status === "completed" && (
             <div className="flex items-center gap-2 text-green-500 text-sm">
               <CheckCircle className="w-4 h-4" />
@@ -463,6 +549,19 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
           }}
           collaboration={selectedCollab}
           onSuccess={refreshCollaborations}
+        />
+      )}
+
+      {selectedCollab && sheetType === "publication_link" && (
+        <SubmitContentSheet
+          open={true}
+          onOpenChange={() => {
+            setSelectedCollab(null);
+            setSheetType(null);
+          }}
+          collaboration={selectedCollab}
+          onSuccess={refreshCollaborations}
+          mode="publication_link"
         />
       )}
     </div>

@@ -107,6 +107,7 @@ export type Database = {
           id: string
           offer_id: string
           platform_fee: number
+          publication_url: string | null
           status: string
           updated_at: string
         }
@@ -127,6 +128,7 @@ export type Database = {
           id?: string
           offer_id: string
           platform_fee?: number
+          publication_url?: string | null
           status?: string
           updated_at?: string
         }
@@ -147,6 +149,7 @@ export type Database = {
           id?: string
           offer_id?: string
           platform_fee?: number
+          publication_url?: string | null
           status?: string
           updated_at?: string
         }
@@ -371,6 +374,7 @@ export type Database = {
           content_type: string
           created_at: string
           deadline: string | null
+          delivery_mode: string
           description: string
           id: string
           images: string[] | null
@@ -388,6 +392,7 @@ export type Database = {
           content_type: string
           created_at?: string
           deadline?: string | null
+          delivery_mode?: string
           description: string
           id?: string
           images?: string[] | null
@@ -405,6 +410,7 @@ export type Database = {
           content_type?: string
           created_at?: string
           deadline?: string | null
+          delivery_mode?: string
           description?: string
           id?: string
           images?: string[] | null
