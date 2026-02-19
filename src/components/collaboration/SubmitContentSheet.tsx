@@ -21,6 +21,8 @@ import {
   Plus,
   X,
   Video,
+  Globe,
+  Eye,
 } from "lucide-react";
 import { useCollaborations, Collaboration } from "@/hooks/useCollaborations";
 import { format, parseISO, differenceInDays, isPast } from "date-fns";
@@ -33,6 +35,7 @@ interface SubmitContentSheetProps {
   onOpenChange: (open: boolean) => void;
   collaboration: Collaboration;
   onSuccess?: () => void;
+  mode?: "content" | "publication_link"; // "content" = submit preview/file, "publication_link" = submit network link
 }
 
 const SubmitContentSheet = ({
@@ -40,15 +43,20 @@ const SubmitContentSheet = ({
   onOpenChange,
   collaboration,
   onSuccess,
+  mode = "content",
 }: SubmitContentSheetProps) => {
-  const { submitContent } = useCollaborations();
+  const { submitContent, submitPublicationLink } = useCollaborations();
   const [loading, setLoading] = useState(false);
   const [contentUrls, setContentUrls] = useState<string[]>([""]);
   const [description, setDescription] = useState("");
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
   const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [publicationUrl, setPublicationUrl] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isNetworkMode = collaboration.offer?.delivery_mode === "network";
+  const isPublicationLinkMode = mode === "publication_link";
 
   const MAX_LINKS = 4;
   const deadline = parseISO(collaboration.deadline);
@@ -76,44 +84,31 @@ const SubmitContentSheet = ({
   const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Check file size (max 500MB)
       if (file.size > 500 * 1024 * 1024) {
         toast.error("La vidéo ne doit pas dépasser 500 Mo");
         return;
       }
       setVideoFile(file);
-      // Create preview URL
       const previewUrl = URL.createObjectURL(file);
       setVideoPreviewUrl(previewUrl);
     }
   };
 
   const clearVideoFile = () => {
-    if (videoPreviewUrl) {
-      URL.revokeObjectURL(videoPreviewUrl);
-    }
+    if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl);
     setVideoFile(null);
     setVideoPreviewUrl(null);
   };
 
   const uploadVideo = async (): Promise<string | null> => {
     if (!videoFile) return null;
-
     setUploadingVideo(true);
     try {
       const fileExt = videoFile.name.split(".").pop();
       const fileName = `${collaboration.id}/${Date.now()}.${fileExt}`;
-
-      const { data, error } = await supabase.storage
-        .from("collaboration-content")
-        .upload(fileName, videoFile);
-
+      const { error } = await supabase.storage.from("collaboration-content").upload(fileName, videoFile);
       if (error) throw error;
-
-      const { data: urlData } = supabase.storage
-        .from("collaboration-content")
-        .getPublicUrl(fileName);
-
+      const { data: urlData } = supabase.storage.from("collaboration-content").getPublicUrl(fileName);
       return urlData.publicUrl;
     } catch (error) {
       console.error("Error uploading video:", error);
@@ -127,24 +122,30 @@ const SubmitContentSheet = ({
   const hasValidUrls = contentUrls.some((url) => url.trim() !== "");
 
   const handleSubmit = async () => {
-    if (!hasValidUrls && !videoFile) return;
+    // Publication link mode
+    if (isPublicationLinkMode) {
+      if (!publicationUrl.trim()) return;
+      setLoading(true);
+      try {
+        await submitPublicationLink(collaboration.id, publicationUrl.trim());
+        onOpenChange(false);
+        onSuccess?.();
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
 
+    // Standard content submission
+    if (!hasValidUrls && !videoFile) return;
     setLoading(true);
     try {
-      // Upload video if present
       const videoUrl = await uploadVideo();
-
-      // Filter out empty URLs and combine with video URL
       const validUrls = contentUrls.filter((url) => url.trim() !== "");
-      if (videoUrl) {
-        validUrls.push(videoUrl);
-      }
-
-      // Store as JSON string for multiple URLs
-      const contentUrlString = validUrls.length === 1 
-        ? validUrls[0] 
-        : JSON.stringify(validUrls);
-
+      if (videoUrl) validUrls.push(videoUrl);
+      const contentUrlString = validUrls.length === 1 ? validUrls[0] : JSON.stringify(validUrls);
       await submitContent(collaboration.id, contentUrlString, description);
       onOpenChange(false);
       onSuccess?.();
@@ -155,20 +156,115 @@ const SubmitContentSheet = ({
     }
   };
 
+  // Render publication link form (step 2 of network mode)
+  if (isPublicationLinkMode) {
+    return (
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent side="bottom" className="h-[70vh] rounded-t-3xl">
+          <SheetHeader className="mb-4">
+            <SheetTitle className="text-xl font-display flex items-center gap-2">
+              <Globe className="w-6 h-6 text-gold" />
+              Soumettre le lien de publication
+            </SheetTitle>
+            <SheetDescription>
+              Collez le lien de votre post publié sur les réseaux sociaux
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="space-y-6 overflow-y-auto max-h-[calc(70vh-200px)]">
+            <div className="bg-accent/10 border border-accent/20 rounded-xl p-4">
+              <div className="flex gap-3">
+                <Eye className="w-5 h-5 text-accent flex-shrink-0" />
+                <div className="text-sm">
+                  <p className="font-medium text-foreground mb-1">Aperçu validé par la marque ✅</p>
+                  <p className="text-muted-foreground">
+                    Publiez maintenant le contenu sur vos réseaux et collez le lien ci-dessous.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Label className="flex items-center gap-2">
+                <LinkIcon className="w-4 h-4" />
+                Lien de la publication *
+              </Label>
+              <Input
+                placeholder="https://www.tiktok.com/@username/video/..."
+                value={publicationUrl}
+                onChange={(e) => setPublicationUrl(e.target.value)}
+                className="bg-muted/30 border-border focus:border-gold"
+              />
+              <p className="text-xs text-muted-foreground">
+                Collez le lien direct vers votre publication (TikTok, Instagram, YouTube, etc.)
+              </p>
+            </div>
+
+            <div className="glass rounded-xl p-4">
+              <div className="flex gap-3">
+                <Clock className="w-5 h-5 text-gold flex-shrink-0" />
+                <div className="text-sm text-muted-foreground">
+                  <p className="font-medium text-foreground mb-1">Après soumission</p>
+                  <p>
+                    La marque vérifiera que le contenu est bien publié. Le paiement sera déclenché après validation.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-background via-background to-transparent">
+            <Button
+              variant="gold"
+              size="lg"
+              className="w-full"
+              onClick={handleSubmit}
+              disabled={loading || !publicationUrl.trim()}
+            >
+              {loading ? (
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+              ) : (
+                <Globe className="w-5 h-5 mr-2" />
+              )}
+              Soumettre le lien
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl">
         <SheetHeader className="mb-4">
           <SheetTitle className="text-xl font-display flex items-center gap-2">
             <Upload className="w-6 h-6 text-gold" />
-            Soumettre le contenu
+            {isNetworkMode ? "Soumettre l'aperçu" : "Soumettre le contenu"}
           </SheetTitle>
           <SheetDescription>
-            Partagez le lien vers votre contenu publié
+            {isNetworkMode
+              ? "Envoyez un aperçu pour validation avant de publier sur vos réseaux"
+              : "Partagez le lien vers votre contenu publié"}
           </SheetDescription>
         </SheetHeader>
 
         <div className="space-y-6 overflow-y-auto max-h-[calc(85vh-200px)]">
+          {/* Network mode info banner */}
+          {isNetworkMode && (
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
+              <div className="flex gap-3">
+                <Globe className="w-5 h-5 text-blue-500 flex-shrink-0" />
+                <div className="text-sm">
+                  <p className="font-medium text-foreground mb-1">📱 Mode publication réseau</p>
+                  <p className="text-muted-foreground">
+                    Étape 1 : Envoyez un aperçu du contenu. La marque le validera avant que vous ne le publiiez sur vos réseaux.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Deadline Warning */}
           <div
             className={`rounded-xl p-4 ${
@@ -218,7 +314,7 @@ const SubmitContentSheet = ({
             <div className="flex items-center justify-between">
               <Label className="flex items-center gap-2">
                 <LinkIcon className="w-4 h-4" />
-                Liens vers le contenu *
+                {isNetworkMode ? "Liens vers l'aperçu *" : "Liens vers le contenu *"}
               </Label>
               {contentUrls.length < MAX_LINKS && (
                 <Button
@@ -237,7 +333,7 @@ const SubmitContentSheet = ({
             {contentUrls.map((url, index) => (
               <div key={index} className="flex gap-2">
                 <Input
-                  placeholder="https://www.tiktok.com/@username/video/..."
+                  placeholder={isNetworkMode ? "Lien vers l'aperçu du contenu..." : "https://www.tiktok.com/@username/video/..."}
                   value={url}
                   onChange={(e) => updateLink(index, e.target.value)}
                   className="bg-muted/30 border-border focus:border-gold flex-1"
@@ -257,7 +353,9 @@ const SubmitContentSheet = ({
             ))}
             
             <p className="text-xs text-muted-foreground">
-              Collez les liens de vos vidéos TikTok, YouTube, Instagram, etc. ({contentUrls.length}/{MAX_LINKS} max)
+              {isNetworkMode
+                ? "Partagez des liens vers un aperçu (Google Drive, WeTransfer, etc.)"
+                : `Collez les liens de vos vidéos TikTok, YouTube, Instagram, etc. (${contentUrls.length}/${MAX_LINKS} max)`}
             </p>
           </div>
 
@@ -265,7 +363,7 @@ const SubmitContentSheet = ({
           <div className="space-y-3">
             <Label className="flex items-center gap-2">
               <Video className="w-4 h-4" />
-              Upload vidéo (optionnel)
+              {isNetworkMode ? "Upload de l'aperçu vidéo (recommandé)" : "Upload vidéo (optionnel)"}
             </Label>
             <input
               ref={fileInputRef}
@@ -277,14 +375,7 @@ const SubmitContentSheet = ({
             
             {videoFile && videoPreviewUrl ? (
               <div className="relative rounded-xl overflow-hidden bg-black">
-                {/* Video Preview */}
-                <video
-                  src={videoPreviewUrl}
-                  className="w-full h-40 object-contain"
-                  controls
-                  muted
-                />
-                {/* Overlay with file info */}
+                <video src={videoPreviewUrl} className="w-full h-40 object-contain" controls muted />
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-white">
@@ -295,17 +386,13 @@ const SubmitContentSheet = ({
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        clearVideoFile();
-                      }}
+                      onClick={(e) => { e.stopPropagation(); clearVideoFile(); }}
                       className="text-white hover:text-destructive hover:bg-white/10"
                     >
                       <X className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>
-                {/* File size badge */}
                 <div className="absolute top-2 right-2">
                   <Badge variant="secondary" className="bg-black/60 text-white text-xs">
                     {(videoFile.size / (1024 * 1024)).toFixed(1)} Mo
@@ -344,8 +431,9 @@ const SubmitContentSheet = ({
               <div className="text-sm text-muted-foreground">
                 <p className="font-medium text-foreground mb-1">Après soumission</p>
                 <p>
-                  Votre contenu sera protégé par un filigrane CollabCrea. La marque devra
-                  payer pour le débloquer et le voir en qualité originale avant de le valider.
+                  {isNetworkMode
+                    ? "Votre aperçu sera protégé par un filigrane. La marque le validera avant que vous ne publiiez sur vos réseaux."
+                    : "Votre contenu sera protégé par un filigrane CollabCrea. La marque devra payer pour le débloquer et le voir en qualité originale avant de le valider."}
                 </p>
               </div>
             </div>
@@ -370,7 +458,9 @@ const SubmitContentSheet = ({
               ? "Deadline dépassée" 
               : uploadingVideo 
                 ? "Upload en cours..."
-                : "Soumettre le contenu"}
+                : isNetworkMode
+                  ? "Soumettre l'aperçu"
+                  : "Soumettre le contenu"}
           </Button>
         </div>
       </SheetContent>

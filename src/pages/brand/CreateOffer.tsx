@@ -84,6 +84,7 @@ const CreateOffer = () => {
     countries: [] as string[],
     restrictions: "",
     expectations: "",
+    delivery_mode: "private" as "private" | "network",
   });
 
   // Load existing offer data when in edit mode
@@ -165,6 +166,7 @@ const CreateOffer = () => {
           countries,
           restrictions,
           expectations,
+          delivery_mode: (offer as any).delivery_mode || "private",
         });
       } catch (error) {
         console.error("Error loading offer:", error);
@@ -386,6 +388,7 @@ const CreateOffer = () => {
         logo_url: profile?.logo_url || null,
         status,
         images: allImageUrls,
+        delivery_mode: formData.delivery_mode,
       } as any;
 
       if (isEditMode && offerId) {
@@ -531,7 +534,39 @@ const CreateOffer = () => {
           </div>
         </div>
 
-        {/* Budget Type */}
+        {/* Delivery Mode */}
+        <div className="space-y-3">
+          <Label>Mode de livraison *</Label>
+          <p className="text-xs text-muted-foreground">
+            Comment le créateur doit-il livrer le contenu ?
+          </p>
+          <div className="flex gap-2">
+            {[
+              { value: "private", label: "📦 Livraison privée", desc: "Le créateur envoie le fichier directement" },
+              { value: "network", label: "📱 Publication réseau", desc: "Le créateur publie sur ses réseaux sociaux" },
+            ].map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => handleInputChange("delivery_mode", option.value)}
+                className={`flex-1 py-3 px-3 rounded-xl text-left transition-all ${
+                  formData.delivery_mode === option.value
+                    ? "bg-gold/20 border-2 border-gold"
+                    : "bg-muted/50 border-2 border-transparent hover:border-gold/30"
+                }`}
+              >
+                <span className="text-sm font-medium block">{option.label}</span>
+                <span className="text-xs text-muted-foreground block mt-1">{option.desc}</span>
+              </button>
+            ))}
+          </div>
+          {formData.delivery_mode === "network" && (
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3 text-sm text-blue-400">
+              <p className="font-medium mb-1">📱 Flux hybride activé</p>
+              <p className="text-xs">Le créateur soumettra d'abord un aperçu → vous validez → il publie sur ses réseaux → il soumet le lien → paiement déclenché.</p>
+            </div>
+          )}
+        </div>
         <div className="space-y-3">
           <Label>Type de budget *</Label>
           <div className="flex gap-2">
