@@ -359,6 +359,33 @@ export const useCollaborations = () => {
     }
   };
 
+  // Verify publication link with AI
+  const verifyPublicationLink = async (collaborationId: string) => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-publication-link`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ collaboration_id: collaborationId }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Erreur de vérification");
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error("Error verifying publication link:", error);
+      throw error;
+    }
+  };
+
   // Approve publication (network mode - final step: brand verifies link → payment)
   const approvePublication = async (collaborationId: string) => {
     try {
@@ -503,6 +530,7 @@ export const useCollaborations = () => {
     refundCollaboration,
     submitPublicationLink,
     approvePublication,
+    verifyPublicationLink,
     refreshCollaborations: fetchCollaborations,
   };
 };

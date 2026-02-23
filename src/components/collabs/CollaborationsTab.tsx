@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   Clock,
@@ -17,6 +17,8 @@ import {
   Lock,
   Globe,
   ExternalLink,
+  ShieldCheck,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -127,10 +129,12 @@ interface CollaborationsTabProps {
 const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { collaborations, loading, refreshCollaborations, approvePublication } = useCollaborations();
+  const { collaborations, loading, refreshCollaborations, approvePublication, verifyPublicationLink } = useCollaborations();
   const [selectedCollab, setSelectedCollab] = useState<Collaboration | null>(null);
   const [sheetType, setSheetType] = useState<"submit" | "payment" | "review" | "publication_link" | null>(null);
   const [activeSubTab, setActiveSubTab] = useState("active");
+  const [verificationResults, setVerificationResults] = useState<Record<string, any>>({});
+  const [verifyingIds, setVerifyingIds] = useState<Set<string>>(new Set());
 
   // Active = in_progress, content_submitted, pending_payment (unlock), in_review, revision_requested, pending_publication, publication_submitted
   const activeCollabs = collaborations.filter((c) =>
@@ -394,6 +398,69 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
                   <Badge variant="secondary" className="text-xs">Voir le post</Badge>
                 </a>
               )}
+
+              {/* AI Verification */}
+              {!verificationResults[collab.id] && !verifyingIds.has(collab.id) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full border-indigo-500/30 text-indigo-500 hover:bg-indigo-500/10"
+                  onClick={async () => {
+                    setVerifyingIds(prev => new Set(prev).add(collab.id));
+                    try {
+                      const result = await verifyPublicationLink(collab.id);
+                      setVerificationResults(prev => ({ ...prev, [collab.id]: result }));
+                    } catch (e) {
+                      setVerificationResults(prev => ({ ...prev, [collab.id]: { valid: false, reason: "Erreur lors de la vérification IA.", confidence: 0 } }));
+                    } finally {
+                      setVerifyingIds(prev => { const s = new Set(prev); s.delete(collab.id); return s; });
+                    }
+                  }}
+                >
+                  <ShieldCheck className="w-4 h-4 mr-2" />
+                  Vérifier le lien par IA
+                </Button>
+              )}
+
+              {verifyingIds.has(collab.id) && (
+                <div className="flex items-center justify-center gap-2 p-3 rounded-xl bg-indigo-500/10 text-indigo-500 text-sm">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Analyse IA en cours...
+                </div>
+              )}
+
+              {verificationResults[collab.id] && (
+                <div className={`rounded-xl p-3 border text-sm space-y-1 ${
+                  verificationResults[collab.id].valid
+                    ? "bg-green-500/10 border-green-500/20"
+                    : "bg-orange-500/10 border-orange-500/20"
+                }`}>
+                  <div className="flex items-center gap-2 font-medium">
+                    {verificationResults[collab.id].valid ? (
+                      <><ShieldCheck className="w-4 h-4 text-green-500" /> <span className="text-green-500">Lien validé par IA</span></>
+                    ) : (
+                      <><AlertTriangle className="w-4 h-4 text-orange-500" /> <span className="text-orange-500">Lien non validé</span></>
+                    )}
+                    {verificationResults[collab.id].confidence > 0 && (
+                      <Badge variant="secondary" className="text-[10px] ml-auto">
+                        {verificationResults[collab.id].confidence}% confiance
+                      </Badge>
+                    )}
+                  </div>
+                  {verificationResults[collab.id].platform && (
+                    <p className="text-muted-foreground text-xs">Plateforme : {verificationResults[collab.id].platform}</p>
+                  )}
+                  <p className="text-muted-foreground text-xs">{verificationResults[collab.id].reason}</p>
+                  {verificationResults[collab.id].warnings?.length > 0 && (
+                    <ul className="text-xs text-orange-500 list-disc list-inside">
+                      {verificationResults[collab.id].warnings.map((w: string, i: number) => (
+                        <li key={i}>{w}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+
               <Button
                 variant="gold"
                 size="sm"
