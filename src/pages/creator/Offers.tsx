@@ -253,7 +253,7 @@ const CreatorOffers = () => {
         const allCollabOffers = new Set((collabsData || []).map(c => c.offer_id));
         const activeCollabOffers = new Set(
           (collabsData || [])
-            .filter(c => !["cancelled", "refused", "refunded", "expired"].includes(c.status))
+            .filter(c => !["cancelled", "refused", "refunded", "expired", "completed"].includes(c.status))
             .map(c => c.offer_id)
         );
 
