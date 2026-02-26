@@ -114,15 +114,19 @@ export const useApplyToOffer = () => {
 
         if (updateError) throw updateError;
 
-        if (message) {
-          const { error: messageError } = await supabase.from("messages").insert({
-            conversation_id: conversationId,
-            sender_id: user.id,
-            content: message,
-          });
+        // Send automatic re-application notification message
+        const autoMessage = "📩 Je souhaite postuler à nouveau pour cette offre.";
+        await supabase.from("messages").insert({
+          conversation_id: conversationId,
+          sender_id: user.id,
+          content: message ? `${autoMessage}\n\n${message}` : autoMessage,
+        });
 
-          if (messageError) throw messageError;
-        }
+        // Update conversation timestamp
+        await supabase
+          .from("conversations")
+          .update({ updated_at: new Date().toISOString() })
+          .eq("id", conversationId);
 
         toast.success("Candidature renvoyée !");
         navigate("/creator/collabs?tab=messages");
