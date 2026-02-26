@@ -279,7 +279,7 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
               {/* Show preview or locked state based on whether already viewed */}
               {collab.content_url && (
                 <>
-                  {!(collab as any).preview_viewed_at ? (
+                  {!collab.preview_viewed_at ? (
                     // Not yet viewed — allow one-time preview
                     <div className="space-y-2">
                       <WatermarkOverlay locked={true}>
