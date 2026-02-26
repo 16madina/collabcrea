@@ -44,20 +44,23 @@ export const useApplyToOffer = () => {
     setIsApplying(true);
 
     try {
-      // Check if already applied
-      const { data: existingApplication } = await supabase
+      // Check if already applied (only block if application is still active/pending/accepted)
+      const { data: existingApplications } = await supabase
         .from("applications")
-        .select("id, conversation_id")
+        .select("id, conversation_id, status")
         .eq("offer_id", offerId)
-        .eq("creator_id", user.id)
-        .single();
+        .eq("creator_id", user.id);
 
-      if (existingApplication) {
-        // Already applied, redirect to existing conversation
-        if (existingApplication.conversation_id) {
+      const activeApplication = existingApplications?.find(
+        (app) => app.status === "pending" || app.status === "accepted"
+      );
+
+      if (activeApplication) {
+        // Already has an active application, redirect to existing conversation
+        if (activeApplication.conversation_id) {
           toast.info("Vous avez déjà postulé à cette offre");
           navigate("/creator/collabs?tab=messages");
-          return { success: true, conversationId: existingApplication.conversation_id };
+          return { success: true, conversationId: activeApplication.conversation_id };
         }
         return { success: false, error: "Déjà postulé" };
       }
