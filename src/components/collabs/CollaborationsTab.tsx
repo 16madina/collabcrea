@@ -62,6 +62,8 @@ const getStatusBadge = (status: string) => {
       return <Badge variant="secondary" className="bg-gray-500/20 text-gray-500">Expiré</Badge>;
     case "refused":
       return <Badge variant="secondary" className="bg-red-500/20 text-red-500 border border-red-500/30">Refusé</Badge>;
+    case "cancelled":
+      return <Badge variant="secondary" className="bg-gray-500/20 text-gray-500">Annulé</Badge>;
     default:
       return <Badge variant="secondary">{status}</Badge>;
   }
@@ -140,9 +142,9 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
   const activeCollabs = collaborations.filter((c) =>
     ["in_progress", "content_submitted", "pending_payment", "in_review", "revision_requested", "pending_publication", "publication_submitted"].includes(c.status)
   );
-  // Completed = completed, refunded, expired, refused
+  // Completed = completed, refunded, expired, refused, cancelled
   const completedCollabs = collaborations.filter((c) =>
-    ["completed", "refunded", "expired", "refused"].includes(c.status)
+    ["completed", "refunded", "expired", "refused", "cancelled"].includes(c.status)
   );
 
   const handleAction = (collab: Collaboration, actionOverride?: string) => {
