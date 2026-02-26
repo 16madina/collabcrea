@@ -23,6 +23,7 @@ export interface Collaboration {
   publication_url: string | null;
   created_at: string;
   updated_at: string;
+  preview_viewed_at: string | null;
   // Joined data
   offer?: {
     id: string;

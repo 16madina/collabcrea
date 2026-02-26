@@ -30,6 +30,7 @@ import SubmitContentSheet from "@/components/collaboration/SubmitContentSheet";
 import InAppPaymentSheet from "@/components/collaboration/InAppPaymentSheet";
 import ReviewContentSheet from "@/components/collaboration/ReviewContentSheet";
 import WatermarkOverlay from "@/components/collaboration/WatermarkOverlay";
+import ContentPreviewSheet from "@/components/collaboration/ContentPreviewSheet";
 import { format, parseISO, differenceInDays, differenceInHours, differenceInMinutes, isPast } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
@@ -137,6 +138,7 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
   const [activeSubTab, setActiveSubTab] = useState("active");
   const [verificationResults, setVerificationResults] = useState<Record<string, any>>({});
   const [verifyingIds, setVerifyingIds] = useState<Set<string>>(new Set());
+  const [previewCollab, setPreviewCollab] = useState<Collaboration | null>(null);
 
   // Active = in_progress, content_submitted, pending_payment (unlock), in_review, revision_requested, pending_publication, publication_submitted
   const activeCollabs = collaborations.filter((c) =>
@@ -274,40 +276,64 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
 
           {collab.status === "content_submitted" && isBrand && (
             <div className="space-y-3">
-              {/* Watermarked preview */}
+              {/* Show preview or locked state based on whether already viewed */}
               {collab.content_url && (
-                <WatermarkOverlay locked={true}>
-                  <div className="w-full aspect-video bg-muted rounded-lg overflow-hidden flex items-center justify-center">
-                    {(() => {
-                      // Parse content URLs - could be JSON array or single URL
-                      let previewUrl = "";
-                      try {
-                        const urls = JSON.parse(collab.content_url);
-                        previewUrl = Array.isArray(urls) ? urls[0] : collab.content_url;
-                      } catch {
-                        previewUrl = collab.content_url;
-                      }
-                      const isVideo = /\.(mp4|mov|webm|avi)$/i.test(previewUrl) || previewUrl.includes("/collaboration-content/");
-                      if (isVideo) {
-                        return (
-                          <video
-                            src={previewUrl}
-                            className="w-full h-full object-cover"
-                            muted
-                            playsInline
-                          />
-                        );
-                      }
-                      return (
-                        <img
-                          src={previewUrl}
-                          alt="Aperçu du contenu"
-                          className="w-full h-full object-cover"
-                        />
-                      );
-                    })()}
-                  </div>
-                </WatermarkOverlay>
+                <>
+                  {!(collab as any).preview_viewed_at ? (
+                    // Not yet viewed — allow one-time preview
+                    <div className="space-y-2">
+                      <WatermarkOverlay locked={true}>
+                        <div className="w-full aspect-video bg-muted rounded-lg overflow-hidden flex items-center justify-center">
+                          {(() => {
+                            let previewUrl = "";
+                            try {
+                              const urls = JSON.parse(collab.content_url!);
+                              previewUrl = Array.isArray(urls) ? urls[0] : collab.content_url!;
+                            } catch {
+                              previewUrl = collab.content_url!;
+                            }
+                            const isVideo = /\.(mp4|mov|webm|avi)$/i.test(previewUrl) || previewUrl.includes("/collaboration-content/");
+                            if (isVideo) {
+                              return (
+                                <video
+                                  src={previewUrl}
+                                  className="w-full h-full object-cover"
+                                  muted
+                                  playsInline
+                                />
+                              );
+                            }
+                            return (
+                              <img
+                                src={previewUrl}
+                                alt="Aperçu du contenu"
+                                className="w-full h-full object-cover"
+                              />
+                            );
+                          })()}
+                        </div>
+                      </WatermarkOverlay>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full border-purple-500/30 text-purple-500 hover:bg-purple-500/10"
+                        onClick={() => setPreviewCollab(collab)}
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        Visionner une fois (aperçu unique)
+                      </Button>
+                    </div>
+                  ) : (
+                    // Already viewed — fully locked
+                    <div className="w-full aspect-video bg-muted rounded-lg overflow-hidden flex items-center justify-center relative">
+                      <div className="absolute inset-0 bg-black/60 backdrop-blur-md flex flex-col items-center justify-center gap-2 z-10">
+                        <Lock className="w-8 h-8 text-white/60" />
+                        <p className="text-white/80 text-sm font-medium">Aperçu déjà consulté</p>
+                        <p className="text-white/50 text-xs">Payez pour accéder au contenu complet</p>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
               {collab.content_description && (
                 <p className="text-sm text-muted-foreground line-clamp-2">
@@ -631,6 +657,17 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
           collaboration={selectedCollab}
           onSuccess={refreshCollaborations}
           mode="publication_link"
+        />
+      )}
+
+      {previewCollab && (
+        <ContentPreviewSheet
+          open={true}
+          onOpenChange={(isOpen) => {
+            if (!isOpen) setPreviewCollab(null);
+          }}
+          collaboration={previewCollab}
+          onViewed={refreshCollaborations}
         />
       )}
     </div>

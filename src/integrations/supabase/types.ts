@@ -107,6 +107,7 @@ export type Database = {
           id: string
           offer_id: string
           platform_fee: number
+          preview_viewed_at: string | null
           publication_url: string | null
           status: string
           updated_at: string
@@ -128,6 +129,7 @@ export type Database = {
           id?: string
           offer_id: string
           platform_fee?: number
+          preview_viewed_at?: string | null
           publication_url?: string | null
           status?: string
           updated_at?: string
@@ -149,6 +151,7 @@ export type Database = {
           id?: string
           offer_id?: string
           platform_fee?: number
+          preview_viewed_at?: string | null
           publication_url?: string | null
           status?: string
           updated_at?: string
