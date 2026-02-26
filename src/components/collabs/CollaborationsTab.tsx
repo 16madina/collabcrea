@@ -667,7 +667,11 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
             if (!isOpen) setPreviewCollab(null);
           }}
           collaboration={previewCollab}
-          onViewed={refreshCollaborations}
+          onViewed={() => {
+            // Update local state immediately so the button disappears
+            setPreviewCollab(prev => prev ? { ...prev, preview_viewed_at: new Date().toISOString() } as any : null);
+            refreshCollaborations();
+          }}
         />
       )}
     </div>

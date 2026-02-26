@@ -17,12 +17,16 @@ interface ContentPreviewSheetProps {
   onViewed: () => void;
 }
 
+// Track viewed IDs across remounts within the same session
+const alreadyViewedIds = new Set<string>();
+
 /**
  * One-time secure preview for brands.
  * Shows watermarked content, disables download, marks as viewed on open.
  */
 const ContentPreviewSheet = ({ open, onOpenChange, collaboration, onViewed }: ContentPreviewSheetProps) => {
   const [hasMarkedViewed, setHasMarkedViewed] = useState(false);
+  const alreadyViewed = !!collaboration.preview_viewed_at || alreadyViewedIds.has(collaboration.id);
 
   // Parse content URLs
   const getPreviewUrls = (): string[] => {
@@ -42,9 +46,9 @@ const ContentPreviewSheet = ({ open, onOpenChange, collaboration, onViewed }: Co
 
   // Mark as viewed when the sheet opens for the first time
   const handleOpenChange = async (isOpen: boolean) => {
-    if (isOpen && !hasMarkedViewed) {
+    if (isOpen && !hasMarkedViewed && !alreadyViewed) {
       setHasMarkedViewed(true);
-      // Mark preview as viewed in DB
+      alreadyViewedIds.add(collaboration.id);
       await supabase
         .from("collaborations")
         .update({ preview_viewed_at: new Date().toISOString() } as any)
