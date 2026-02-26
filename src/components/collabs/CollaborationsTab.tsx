@@ -324,14 +324,38 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
                       </Button>
                     </div>
                   ) : (
-                    // Already viewed — fully locked
-                    <div className="w-full aspect-video bg-muted rounded-lg overflow-hidden flex items-center justify-center relative">
-                      <div className="absolute inset-0 bg-black/60 backdrop-blur-md flex flex-col items-center justify-center gap-2 z-10">
-                        <Lock className="w-8 h-8 text-white/60" />
-                        <p className="text-white/80 text-sm font-medium">Aperçu déjà consulté</p>
-                        <p className="text-white/50 text-xs">Payez pour accéder au contenu complet</p>
+                    // Already viewed — show thumbnail with watermark but no interaction
+                    <WatermarkOverlay locked={true}>
+                      <div className="w-full aspect-video bg-muted rounded-lg overflow-hidden flex items-center justify-center">
+                        {(() => {
+                          let previewUrl = "";
+                          try {
+                            const urls = JSON.parse(collab.content_url!);
+                            previewUrl = Array.isArray(urls) ? urls[0] : collab.content_url!;
+                          } catch {
+                            previewUrl = collab.content_url!;
+                          }
+                          const isVideo = /\.(mp4|mov|webm|avi)$/i.test(previewUrl) || previewUrl.includes("/collaboration-content/");
+                          if (isVideo) {
+                            return (
+                              <video
+                                src={previewUrl}
+                                className="w-full h-full object-cover pointer-events-none"
+                                muted
+                                playsInline
+                              />
+                            );
+                          }
+                          return (
+                            <img
+                              src={previewUrl}
+                              alt="Aperçu du contenu"
+                              className="w-full h-full object-cover pointer-events-none"
+                            />
+                          );
+                        })()}
                       </div>
-                    </div>
+                    </WatermarkOverlay>
                   )}
                 </>
               )}
