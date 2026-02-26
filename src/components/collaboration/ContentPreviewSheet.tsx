@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Eye, Lock, AlertTriangle } from "lucide-react";
@@ -44,17 +44,26 @@ const ContentPreviewSheet = ({ open, onOpenChange, collaboration, onViewed }: Co
   const isVideo = (url: string) =>
     /\.(mp4|mov|webm|avi)$/i.test(url) || url.includes("/collaboration-content/");
 
-  // Mark as viewed when the sheet opens for the first time
-  const handleOpenChange = async (isOpen: boolean) => {
-    if (isOpen && !hasMarkedViewed && !alreadyViewed) {
-      setHasMarkedViewed(true);
-      alreadyViewedIds.add(collaboration.id);
-      await supabase
-        .from("collaborations")
-        .update({ preview_viewed_at: new Date().toISOString() } as any)
-        .eq("id", collaboration.id);
-      onViewed();
-    }
+  // Mark as viewed when the component mounts (sheet opens)
+  useEffect(() => {
+    const markAsViewed = async () => {
+      if (!hasMarkedViewed && !alreadyViewed && open) {
+        setHasMarkedViewed(true);
+        alreadyViewedIds.add(collaboration.id);
+        const { error } = await supabase
+          .from("collaborations")
+          .update({ preview_viewed_at: new Date().toISOString() })
+          .eq("id", collaboration.id);
+        if (error) {
+          console.error("Failed to mark preview as viewed:", error);
+        }
+        onViewed();
+      }
+    };
+    markAsViewed();
+  }, [open, collaboration.id]);
+
+  const handleOpenChange = (isOpen: boolean) => {
     onOpenChange(isOpen);
   };
 
