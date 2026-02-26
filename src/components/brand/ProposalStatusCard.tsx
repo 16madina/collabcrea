@@ -199,6 +199,7 @@ const ProposalStatusCard = ({ offerId, conversationId, onPaymentSuccess }: Propo
     content_description: null,
     brand_feedback: null,
     publication_url: null,
+    preview_viewed_at: null,
     offer: offer ? {
       id: offer.id,
       title: offer.title,

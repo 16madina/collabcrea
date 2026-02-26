@@ -1,0 +1,145 @@
+import { useState } from "react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { Eye, Lock, AlertTriangle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+
+interface ContentPreviewSheetProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  collaboration: {
+    id: string;
+    content_url: string | null;
+    content_description: string | null;
+    preview_viewed_at?: string | null;
+  };
+  onViewed: () => void;
+}
+
+/**
+ * One-time secure preview for brands.
+ * Shows watermarked content, disables download, marks as viewed on open.
+ */
+const ContentPreviewSheet = ({ open, onOpenChange, collaboration, onViewed }: ContentPreviewSheetProps) => {
+  const [hasMarkedViewed, setHasMarkedViewed] = useState(false);
+
+  // Parse content URLs
+  const getPreviewUrls = (): string[] => {
+    if (!collaboration.content_url) return [];
+    try {
+      const parsed = JSON.parse(collaboration.content_url);
+      return Array.isArray(parsed) ? parsed : [collaboration.content_url];
+    } catch {
+      return [collaboration.content_url];
+    }
+  };
+
+  const previewUrls = getPreviewUrls();
+
+  const isVideo = (url: string) =>
+    /\.(mp4|mov|webm|avi)$/i.test(url) || url.includes("/collaboration-content/");
+
+  // Mark as viewed when the sheet opens for the first time
+  const handleOpenChange = async (isOpen: boolean) => {
+    if (isOpen && !hasMarkedViewed) {
+      setHasMarkedViewed(true);
+      // Mark preview as viewed in DB
+      await supabase
+        .from("collaborations")
+        .update({ preview_viewed_at: new Date().toISOString() } as any)
+        .eq("id", collaboration.id);
+      onViewed();
+    }
+    onOpenChange(isOpen);
+  };
+
+  return (
+    <Sheet open={open} onOpenChange={handleOpenChange}>
+      <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl overflow-y-auto">
+        <SheetHeader className="pb-4">
+          <SheetTitle className="flex items-center gap-2">
+            <Eye className="w-5 h-5 text-gold" />
+            Aperçu unique du contenu
+          </SheetTitle>
+        </SheetHeader>
+
+        {/* Warning banner */}
+        <div className="rounded-xl p-3 bg-orange-500/10 border border-orange-500/20 mb-4">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-orange-500">Visionnage unique</p>
+              <p className="text-xs text-muted-foreground">
+                Vous ne pouvez voir ce contenu qu'une seule fois. Après fermeture, le paiement sera nécessaire pour y accéder à nouveau.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Content with watermark overlay */}
+        <div className="space-y-4">
+          {previewUrls.map((url, index) => (
+            <div key={index} className="relative overflow-hidden rounded-xl">
+              {/* Content */}
+              {isVideo(url) ? (
+                <video
+                  src={url}
+                  controls
+                  controlsList="nodownload nofullscreen"
+                  disablePictureInPicture
+                  playsInline
+                  className="w-full rounded-xl"
+                  style={{ pointerEvents: "auto" }}
+                  onContextMenu={(e) => e.preventDefault()}
+                />
+              ) : (
+                <img
+                  src={url}
+                  alt={`Contenu ${index + 1}`}
+                  className="w-full rounded-xl"
+                  onContextMenu={(e) => e.preventDefault()}
+                  draggable={false}
+                />
+              )}
+
+              {/* Watermark overlay - always visible */}
+              <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden">
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-12 -rotate-30">
+                  {Array.from({ length: 5 }).map((_, row) => (
+                    <div key={row} className="flex items-center gap-16 whitespace-nowrap">
+                      {Array.from({ length: 3 }).map((_, col) => (
+                        <span
+                          key={col}
+                          className="text-white/25 text-2xl font-bold tracking-widest select-none"
+                          style={{ textShadow: "0 2px 8px rgba(0,0,0,0.3)" }}
+                        >
+                          COLLABCREA
+                        </span>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Description */}
+        {collaboration.content_description && (
+          <div className="mt-4 p-3 rounded-xl bg-muted/50">
+            <p className="text-sm font-medium text-foreground mb-1">Description du créateur :</p>
+            <p className="text-sm text-muted-foreground">{collaboration.content_description}</p>
+          </div>
+        )}
+
+        {/* Lock reminder */}
+        <div className="mt-6 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+          <Lock className="w-4 h-4" />
+          <span>Le contenu sera verrouillé après fermeture</span>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+};
+
+export default ContentPreviewSheet;
