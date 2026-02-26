@@ -98,6 +98,25 @@ const BrandOffers = () => {
     };
 
     fetchOffers();
+
+    // Realtime: re-fetch when applications or offers change
+    const channel = supabase
+      .channel(`brand-offers:${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "applications" },
+        () => fetchOffers()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "offers" },
+        () => fetchOffers()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const convertedMockOffers: Offer[] = mockOffers.map(m => ({
