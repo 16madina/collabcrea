@@ -44,74 +44,112 @@ export const useApplyToOffer = () => {
     setIsApplying(true);
 
     try {
-      // Check if already applied (only block if application is still active/pending/accepted)
+      const createConversation = async (): Promise<string> => {
+        // Get offer details for conversation subject
+        const { data: offer } = await supabase
+          .from("offers")
+          .select("title")
+          .eq("id", offerId)
+          .single();
+
+        // Create conversation
+        const { data: conversation, error: convError } = await supabase
+          .from("conversations")
+          .insert({
+            created_by: user.id,
+            offer_id: offerId,
+            subject: offer?.title || "Nouvelle candidature",
+          })
+          .select()
+          .single();
+
+        if (convError) throw convError;
+
+        // Add both participants
+        const { error: partError } = await supabase
+          .from("conversation_participants")
+          .insert([
+            { conversation_id: conversation.id, user_id: user.id },
+            { conversation_id: conversation.id, user_id: brandId },
+          ]);
+
+        if (partError) throw partError;
+
+        return conversation.id;
+      };
+
+      // Check if already applied
       const { data: existingApplications } = await supabase
         .from("applications")
         .select("id, conversation_id, status")
         .eq("offer_id", offerId)
         .eq("creator_id", user.id);
 
-      const activeApplication = existingApplications?.find(
-        (app) => app.status === "pending" || app.status === "accepted"
-      );
+      const existingApplication = existingApplications?.[0];
 
-      if (activeApplication) {
-        // Already has an active application, redirect to existing conversation
-        if (activeApplication.conversation_id) {
+      // Block only if current application is still active
+      if (existingApplication?.status === "pending" || existingApplication?.status === "accepted") {
+        if (existingApplication.conversation_id) {
           toast.info("Vous avez déjà postulé à cette offre");
           navigate("/creator/collabs?tab=messages");
-          return { success: true, conversationId: activeApplication.conversation_id };
+          return { success: true, conversationId: existingApplication.conversation_id };
         }
+
         return { success: false, error: "Déjà postulé" };
       }
 
-      // Get offer details for conversation subject
-      const { data: offer } = await supabase
-        .from("offers")
-        .select("title")
-        .eq("id", offerId)
-        .single();
+      // Re-apply on existing row (unique constraint offer_id+creator_id)
+      if (existingApplication) {
+        const conversationId = existingApplication.conversation_id || (await createConversation());
 
-      // Create conversation
-      const { data: conversation, error: convError } = await supabase
-        .from("conversations")
-        .insert({
-          created_by: user.id,
-          offer_id: offerId,
-          subject: offer?.title || "Nouvelle candidature",
-        })
-        .select()
-        .single();
+        const { error: updateError } = await supabase
+          .from("applications")
+          .update({
+            status: "pending",
+            message: message || null,
+            conversation_id: conversationId,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", existingApplication.id);
 
-      if (convError) throw convError;
+        if (updateError) throw updateError;
 
-      // Add both participants
-      const { error: partError } = await supabase
-        .from("conversation_participants")
-        .insert([
-          { conversation_id: conversation.id, user_id: user.id },
-          { conversation_id: conversation.id, user_id: brandId },
-        ]);
+        if (message) {
+          const { error: messageError } = await supabase.from("messages").insert({
+            conversation_id: conversationId,
+            sender_id: user.id,
+            content: message,
+          });
 
-      if (partError) throw partError;
+          if (messageError) throw messageError;
+        }
 
-      // Create application
+        toast.success("Candidature renvoyée !");
+        navigate("/creator/collabs?tab=messages");
+        return { success: true, conversationId };
+      }
+
+      // First application: create conversation + application
+      const conversationId = await createConversation();
+
       const { error: appError } = await supabase
         .from("applications")
         .insert({
           offer_id: offerId,
           creator_id: user.id,
-          conversation_id: conversation.id,
+          conversation_id: conversationId,
           message: message || null,
           status: "pending",
         });
 
-      if (appError) throw appError;
+      if (appError) {
+        console.error("Application insert error:", appError);
+        throw appError;
+      }
 
-      // Send initial message if provided
       if (message) {
         await supabase.from("messages").insert({
-          conversation_id: conversation.id,
+          conversation_id: conversationId,
           sender_id: user.id,
           content: message,
         });
@@ -119,8 +157,8 @@ export const useApplyToOffer = () => {
 
       toast.success("Candidature envoyée !");
       navigate("/creator/collabs?tab=messages");
-      
-      return { success: true, conversationId: conversation.id };
+
+      return { success: true, conversationId };
     } catch (error: any) {
       console.error("Error applying to offer:", JSON.stringify(error));
       toast.error("Erreur lors de la candidature", {
