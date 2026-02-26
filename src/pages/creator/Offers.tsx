@@ -276,6 +276,27 @@ const CreatorOffers = () => {
     };
 
     fetchData();
+
+    // Realtime: re-fetch when applications or collaborations change
+    if (user) {
+      const channel = supabase
+        .channel(`creator-offers:${user.id}`)
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "applications" },
+          () => fetchData()
+        )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "collaborations" },
+          () => fetchData()
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
   }, [user]);
 
   // Merge DB offers with mock offers (DB first, then mock to fill)
