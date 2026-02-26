@@ -122,6 +122,25 @@ const BrandMarketplace = () => {
     };
 
     fetchCreators();
+
+    // Realtime: re-fetch when profiles or user_roles change
+    const channel = supabase
+      .channel("brand-marketplace")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "profiles" },
+        () => fetchCreators()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "user_roles" },
+        () => fetchCreators()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   // Convert DB creators to Creator format
