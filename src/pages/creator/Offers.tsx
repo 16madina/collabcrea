@@ -42,6 +42,7 @@ interface Offer {
 interface Application {
   offer_id: string;
   status: string;
+  has_active_collab?: boolean;
 }
 
 type FilterStatus = "all" | "new" | "applied";
@@ -243,7 +244,30 @@ const CreatorOffers = () => {
           .select("offer_id, status")
           .eq("creator_id", user.id);
 
-        setApplications(appsData || []);
+        // Check which offers have active or ended collaborations
+        const { data: collabsData } = await supabase
+          .from("collaborations")
+          .select("offer_id, status")
+          .eq("creator_id", user.id);
+
+        const allCollabOffers = new Set((collabsData || []).map(c => c.offer_id));
+        const activeCollabOffers = new Set(
+          (collabsData || [])
+            .filter(c => !["cancelled", "refused", "refunded", "expired"].includes(c.status))
+            .map(c => c.offer_id)
+        );
+
+        const appsWithCollabInfo = (appsData || []).map(a => ({
+          ...a,
+          // has_active_collab: true = active collab exists, false = had collabs but all ended, undefined = never had collabs
+          has_active_collab: activeCollabOffers.has(a.offer_id) 
+            ? true 
+            : allCollabOffers.has(a.offer_id) 
+              ? false 
+              : undefined,
+        }));
+
+        setApplications(appsWithCollabInfo);
       } catch (error) {
         console.error("Error fetching offers:", error);
       } finally {
@@ -257,8 +281,21 @@ const CreatorOffers = () => {
   // Merge DB offers with mock offers (DB first, then mock to fill)
   const allOffers = [...dbOffers, ...mockOffers];
 
+  // Track which offers have had collaborations (even cancelled ones)
+  const offersWithPastCollabs = new Set(
+    applications.filter(a => a.has_active_collab !== undefined).map(a => a.offer_id)
+  );
+
   const getApplicationStatus = (offerId: string) => {
-    return applications.find(a => a.offer_id === offerId);
+    const app = applications.find(a => a.offer_id === offerId);
+    if (!app) return undefined;
+    // If application was rejected → allow re-apply
+    if (app.status === "rejected") return undefined;
+    // If there's no active collab but there WERE past collabs (all cancelled/refused) → allow re-apply
+    if (app.status === "pending" && app.has_active_collab === false) {
+      return undefined;
+    }
+    return app;
   };
 
   const filteredOffers = allOffers.filter((offer) => {
