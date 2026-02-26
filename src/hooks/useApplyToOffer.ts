@@ -122,8 +122,10 @@ export const useApplyToOffer = () => {
       
       return { success: true, conversationId: conversation.id };
     } catch (error: any) {
-      console.error("Error applying to offer:", error);
-      toast.error("Erreur lors de la candidature");
+      console.error("Error applying to offer:", JSON.stringify(error));
+      toast.error("Erreur lors de la candidature", {
+        description: error?.message || error?.details || "Erreur inconnue",
+      });
       return { success: false, error: error.message };
     } finally {
       setIsApplying(false);
