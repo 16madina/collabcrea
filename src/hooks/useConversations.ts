@@ -133,6 +133,12 @@ export const useConversations = () => {
           };
         })
       );
+      // Sort by most recent message first, fallback to conversation updated_at
+      enrichedConversations.sort((a, b) => {
+        const dateA = a.lastMessage?.created_at || a.updated_at;
+        const dateB = b.lastMessage?.created_at || b.updated_at;
+        return new Date(dateB).getTime() - new Date(dateA).getTime();
+      });
 
       setConversations(enrichedConversations);
     } catch (err: any) {
