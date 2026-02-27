@@ -35,10 +35,14 @@ const paymentMethods = [
   {
     id: "card" as const,
     name: "Carte bancaire",
-    description: "Visa, Mastercard, Wave Visa, Orange Visa",
+    description: "Visa, Mastercard",
     icon: CreditCard,
     color: "text-gold",
     bgColor: "bg-gold/10",
+    extraBadges: [
+      { label: "Wave Visa", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
+      { label: "Orange Visa", color: "bg-orange-500/20 text-orange-400 border-orange-500/30" },
+    ],
   },
   {
     id: "orange_money" as const,
@@ -235,6 +239,18 @@ const InAppPaymentSheet = ({
                     <div className="flex-1">
                       <p className="font-semibold text-foreground">{method.name}</p>
                       <p className="text-sm text-muted-foreground">{method.description}</p>
+                      {"extraBadges" in method && method.extraBadges && (
+                        <div className="flex flex-wrap gap-1.5 mt-1.5">
+                          {method.extraBadges.map((badge) => (
+                            <span
+                              key={badge.label}
+                              className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${badge.color}`}
+                            >
+                              {badge.label}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <ChevronLeft className="w-5 h-5 text-muted-foreground rotate-180" />
                   </button>
