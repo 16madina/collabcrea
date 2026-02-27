@@ -100,7 +100,9 @@ export const useApplyToOffer = () => {
 
       // Re-apply on existing row (unique constraint offer_id+creator_id)
       if (existingApplication) {
-        const conversationId = existingApplication.conversation_id || (await createConversation());
+        // Always create a NEW conversation for re-applications
+        // so the brand gets fresh accept/refuse buttons
+        const conversationId = await createConversation();
 
         const { error: updateError } = await supabase
           .from("applications")
@@ -121,12 +123,6 @@ export const useApplyToOffer = () => {
           sender_id: user.id,
           content: message ? `${autoMessage}\n\n${message}` : autoMessage,
         });
-
-        // Update conversation timestamp
-        await supabase
-          .from("conversations")
-          .update({ updated_at: new Date().toISOString() })
-          .eq("id", conversationId);
 
         toast.success("Candidature renvoyée !");
         navigate("/creator/collabs?tab=messages");
