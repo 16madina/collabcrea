@@ -26,14 +26,21 @@ const CollabsHub = () => {
   useEffect(() => {
     const payment = searchParams.get("payment");
     const collaborationId = searchParams.get("collaboration");
-    const reference = searchParams.get("reference");
+    const rawReference = searchParams.get("reference");
+
+    const normalizedReference = (() => {
+      if (!rawReference) return null;
+      const decoded = decodeURIComponent(rawReference).trim();
+      const nested = decoded.match(/[?&]reference=([^&]+)/);
+      return (nested?.[1] ?? decoded).split("?")[0].split("&")[0];
+    })();
     
-    if (payment === "success" && reference && collaborationId) {
+    if (payment === "success" && normalizedReference && collaborationId) {
       // Verify payment with Fincra
       const verifyPayment = async () => {
         try {
           const { data, error } = await supabase.functions.invoke("fincra-verify-payment", {
-            body: { reference, collaborationId },
+            body: { reference: normalizedReference, collaborationId },
           });
 
           if (data?.paymentStatus === "success") {
