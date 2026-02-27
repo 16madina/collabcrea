@@ -63,6 +63,35 @@ export const useMessages = (conversationId: string | null) => {
     if (!conversationId || !user || !content.trim()) return false;
 
     try {
+      // Check if the other user has blocked us
+      const { data: blocked } = await supabase
+        .from("blocked_users")
+        .select("id")
+        .or(`and(blocker_id.eq.${user.id}),and(blocked_id.eq.${user.id})`)
+        .limit(1);
+
+      // More precise check - get other participant
+      const { data: participants } = await supabase
+        .from("conversation_participants")
+        .select("user_id")
+        .eq("conversation_id", conversationId)
+        .neq("user_id", user.id);
+
+      const otherUserId = participants?.[0]?.user_id;
+
+      if (otherUserId) {
+        const { data: blockCheck } = await supabase
+          .from("blocked_users")
+          .select("id")
+          .eq("blocker_id", user.id)
+          .eq("blocked_id", otherUserId);
+
+        if (blockCheck && blockCheck.length > 0) {
+          setError("Vous avez bloqué cet utilisateur. Débloquez-le pour envoyer un message.");
+          return false;
+        }
+      }
+
       // Check user verification before sending
       const { data: profile } = await supabase
         .from("profiles")
