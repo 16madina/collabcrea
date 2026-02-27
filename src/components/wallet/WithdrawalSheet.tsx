@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, ArrowUpRight, AlertCircle, Clock, ShieldAlert } from "lucide-react";
+import { Loader2, ArrowUpRight, AlertCircle, Clock, ShieldAlert, Zap, User } from "lucide-react";
 import { useWithdrawal } from "@/hooks/useWithdrawal";
 import { useAuth } from "@/hooks/useAuth";
 import { Wallet } from "@/hooks/useWallet";
@@ -40,6 +40,9 @@ const phoneRulesByCountry: Record<string, { lengths: number[]; hint: string }> =
   "Kenya": { lengths: [9], hint: "9 chiffres" },
 };
 
+// Providers that support automatic Fincra payout
+const AUTO_PAYOUT_PROVIDERS = ["orange", "mtn", "moov", "free", "airtel"];
+
 interface WithdrawalSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -55,6 +58,7 @@ const mobileProviders = [
   {
     id: "wave",
     name: "Wave",
+    auto: false,
     logo: (
       <svg viewBox="0 0 40 40" className="w-10 h-10">
         <rect width="40" height="40" rx="10" fill="#1DC3E2" />
@@ -65,11 +69,45 @@ const mobileProviders = [
   {
     id: "orange",
     name: "Orange Money",
+    auto: true,
     logo: (
       <svg viewBox="0 0 40 40" className="w-10 h-10">
         <rect width="40" height="40" rx="10" fill="#FF6600" />
         <circle cx="20" cy="18" r="8" fill="white" />
         <rect x="12" y="26" width="16" height="4" rx="2" fill="white" />
+      </svg>
+    ),
+  },
+  {
+    id: "mtn",
+    name: "MTN MoMo",
+    auto: true,
+    logo: (
+      <svg viewBox="0 0 40 40" className="w-10 h-10">
+        <rect width="40" height="40" rx="10" fill="#FFCC00" />
+        <text x="20" y="26" textAnchor="middle" fontWeight="bold" fontSize="14" fill="#003087">MTN</text>
+      </svg>
+    ),
+  },
+  {
+    id: "moov",
+    name: "Moov Money",
+    auto: true,
+    logo: (
+      <svg viewBox="0 0 40 40" className="w-10 h-10">
+        <rect width="40" height="40" rx="10" fill="#0066B3" />
+        <text x="20" y="26" textAnchor="middle" fontWeight="bold" fontSize="10" fill="white">MOOV</text>
+      </svg>
+    ),
+  },
+  {
+    id: "free",
+    name: "Free Money",
+    auto: true,
+    logo: (
+      <svg viewBox="0 0 40 40" className="w-10 h-10">
+        <rect width="40" height="40" rx="10" fill="#CD1719" />
+        <text x="20" y="26" textAnchor="middle" fontWeight="bold" fontSize="10" fill="white">FREE</text>
       </svg>
     ),
   },
@@ -122,6 +160,9 @@ const WithdrawalSheet = ({
     : mobileNumber.length >= 7 && mobileNumber.length <= 10 && /^\d+$/.test(mobileNumber);
   const phonesMatch = mobileNumber === mobileNumberConfirm;
   const phoneHint = phoneRules?.hint || "7 à 10 chiffres";
+
+  const selectedProvider = mobileProviders.find((p) => p.id === mobileProvider);
+  const isAutoProvider = AUTO_PAYOUT_PROVIDERS.includes(mobileProvider);
 
   const handleSubmit = async () => {
     if (!wallet || !isValidAmount || !mobileProvider || !isValidPhone || !phonesMatch) {
@@ -195,25 +236,45 @@ const WithdrawalSheet = ({
           {/* Provider Selection */}
           <div className="space-y-3">
             <Label>Méthode de retrait *</Label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-2">
               {mobileProviders.map((provider) => (
                 <button
                   key={provider.id}
                   onClick={() => setMobileProvider(provider.id)}
-                  className={`glass rounded-xl p-4 transition-all ${
+                  className={`glass rounded-xl p-3 transition-all relative ${
                     mobileProvider === provider.id
                       ? "ring-2 ring-gold"
                       : "hover:bg-muted/30"
                   }`}
                 >
-                  <div className="flex flex-col items-center gap-2">
+                  <div className="flex flex-col items-center gap-1.5">
                     {provider.logo}
-                    <span className="text-sm font-semibold">{provider.name}</span>
+                    <span className="text-[10px] font-semibold leading-tight">{provider.name}</span>
+                    {provider.auto ? (
+                      <span className="flex items-center gap-0.5 text-[8px] text-emerald-500 font-medium">
+                        <Zap className="w-2 h-2" /> Instant
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-0.5 text-[8px] text-muted-foreground font-medium">
+                        <User className="w-2 h-2" /> ~24h
+                      </span>
+                    )}
                   </div>
                 </button>
               ))}
             </div>
           </div>
+
+          {/* Wave manual notice */}
+          {mobileProvider === "wave" && (
+            <div className="flex items-start gap-2 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
+              <Clock className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+              <p className="text-xs text-amber-700 dark:text-amber-300">
+                Les retraits Wave sont traités manuellement par notre équipe sous <strong>24h ouvrables</strong>. 
+                Les autres opérateurs (Orange, MTN, Moov, Free) sont traités automatiquement.
+              </p>
+            </div>
+          )}
 
           {/* Phone Number */}
           {mobileProvider && (
@@ -230,7 +291,7 @@ const WithdrawalSheet = ({
 
               <div className="space-y-2">
                 <Label>
-                  Numéro {mobileProvider === "wave" ? "Wave" : "Orange Money"} *
+                  Numéro {selectedProvider?.name || "Mobile Money"} *
                 </Label>
                 <div className="flex gap-2">
                   <div className="w-24 h-10 bg-muted/50 border border-border rounded-xl px-3 flex items-center justify-center text-sm font-medium text-muted-foreground shrink-0">
@@ -285,13 +346,15 @@ const WithdrawalSheet = ({
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-orange-500 shrink-0" />
               <p className="text-xs font-medium text-foreground">
-                Délai de traitement : 2 jours ouvrables
+                {isAutoProvider
+                  ? "Traitement automatique : quelques minutes"
+                  : "Délai de traitement : jusqu'à 24h ouvrables"}
               </p>
             </div>
             <p className="text-xs text-muted-foreground">
-              Votre demande sera vérifiée et le dépôt sera effectué sur votre compte
-              {mobileProvider === "wave" ? " Wave" : mobileProvider === "orange" ? " Orange Money" : ""} sous 2 jours ouvrables.
-              Vous recevrez une notification une fois le transfert effectué.
+              {isAutoProvider
+                ? "Votre retrait sera traité automatiquement via notre partenaire de paiement. Vous recevrez une notification une fois le transfert effectué."
+                : "Votre demande sera vérifiée et le dépôt sera effectué manuellement sur votre compte. Vous recevrez une notification une fois le transfert effectué."}
             </p>
           </div>
         </div>

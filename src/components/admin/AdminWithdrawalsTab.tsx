@@ -555,8 +555,10 @@ const AdminWithdrawalsTab = () => {
               {/* Actions when not in completion flow */}
               {selectedRequest.status === "pending" && !showCompletionFlow && (
                 <div className="space-y-3 pt-4 border-t">
-                  {/* Fincra automatic payout */}
-                  {selectedRequest.method === "mobile_money" && (
+              {/* Fincra automatic payout - only for non-Wave providers */}
+                  {selectedRequest.method === "mobile_money" && 
+                   selectedRequest.mobile_provider && 
+                   ["orange", "mtn", "moov", "free", "airtel"].includes(selectedRequest.mobile_provider.toLowerCase()) && (
                     <Button
                       className="w-full text-xs bg-emerald-600 hover:bg-emerald-700"
                       onClick={() => handleFincraAutoPayut(selectedRequest)}
@@ -567,8 +569,17 @@ const AdminWithdrawalsTab = () => {
                       ) : (
                         <Send className="w-4 h-4 mr-2" />
                       )}
-                      Envoyer via Fincra (automatique)
+                      ⚡ Envoyer via Fincra (automatique)
                     </Button>
+                  )}
+
+                  {/* Wave = manual only notice */}
+                  {selectedRequest.method === "mobile_money" && 
+                   selectedRequest.mobile_provider?.toLowerCase() === "wave" && (
+                    <div className="text-xs text-amber-600 bg-amber-500/10 rounded-lg p-3 flex items-start gap-2">
+                      <Clock className="w-4 h-4 shrink-0 mt-0.5" />
+                      <span>Wave ne supporte pas le payout automatique. Effectuez le virement manuellement puis uploadez la preuve ci-dessous.</span>
+                    </div>
                   )}
 
                   {/* Manual option */}
