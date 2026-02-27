@@ -1,35 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
+  Sheet, SheetContent, SheetHeader, SheetTitle,
 } from "@/components/ui/sheet";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Wallet, CheckCircle, XCircle, Clock, Phone, Building2, User } from "lucide-react";
+import { Wallet, CheckCircle, XCircle, Clock, Phone, Building2, User, Upload, Image } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
@@ -50,6 +31,7 @@ interface WithdrawalWithProfile {
   rejection_reason: string | null;
   reviewed_at: string | null;
   reviewed_by: string | null;
+  proof_url: string | null;
   created_at: string;
   profile: {
     full_name: string;
@@ -64,6 +46,10 @@ const AdminWithdrawalsTab = () => {
   const [selectedRequest, setSelectedRequest] = useState<WithdrawalWithProfile | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [processing, setProcessing] = useState(false);
+  const [proofFile, setProofFile] = useState<File | null>(null);
+  const [proofPreview, setProofPreview] = useState<string | null>(null);
+  const [showCompletionFlow, setShowCompletionFlow] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchRequests();
@@ -85,8 +71,7 @@ const AdminWithdrawalsTab = () => {
           .select("full_name, avatar_url")
           .eq("user_id", req.user_id)
           .maybeSingle();
-
-        requestsWithProfiles.push({ ...req, profile });
+        requestsWithProfiles.push({ ...req, profile } as WithdrawalWithProfile);
       }
 
       setRequests(requestsWithProfiles);
@@ -97,22 +82,50 @@ const AdminWithdrawalsTab = () => {
     }
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Veuillez sélectionner une image");
+      return;
+    }
+    setProofFile(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => setProofPreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
   const handleMarkCompleted = async (request: WithdrawalWithProfile) => {
-    if (!user) return;
+    if (!user || !proofFile) {
+      toast.error("Veuillez uploader la preuve du virement");
+      return;
+    }
     setProcessing(true);
     try {
+      // Upload proof
+      const ext = proofFile.name.split(".").pop();
+      const path = `${request.id}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("withdrawal-proofs")
+        .upload(path, proofFile, { upsert: true });
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from("withdrawal-proofs")
+        .getPublicUrl(path);
+
       const { error } = await supabase
         .from("withdrawal_requests")
         .update({
           status: "completed",
           reviewed_by: user.id,
           reviewed_at: new Date().toISOString(),
+          proof_url: urlData.publicUrl,
         })
         .eq("id", request.id);
 
       if (error) throw error;
 
-      // Send notification to creator
       await supabase.from("notifications").insert({
         user_id: request.user_id,
         title: "✅ Retrait effectué !",
@@ -121,6 +134,7 @@ const AdminWithdrawalsTab = () => {
       });
 
       toast.success("Retrait marqué comme effectué");
+      resetCompletionFlow();
       fetchRequests();
       setSelectedRequest(null);
     } catch (error) {
@@ -138,7 +152,6 @@ const AdminWithdrawalsTab = () => {
     }
     setProcessing(true);
     try {
-      // Refund the wallet balance
       const { data: wallet } = await supabase
         .from("wallets")
         .select("balance")
@@ -181,6 +194,12 @@ const AdminWithdrawalsTab = () => {
     } finally {
       setProcessing(false);
     }
+  };
+
+  const resetCompletionFlow = () => {
+    setProofFile(null);
+    setProofPreview(null);
+    setShowCompletionFlow(false);
   };
 
   const formatAmount = (amount: number) =>
@@ -260,18 +279,18 @@ const AdminWithdrawalsTab = () => {
               {pendingRequests.map((req) => (
                 <div
                   key={req.id}
-                  className="border rounded-lg p-4 space-y-3 cursor-pointer hover:bg-muted/50 transition-colors"
+                  className="border rounded-lg p-3 space-y-2 cursor-pointer hover:bg-muted/50 transition-colors"
                   onClick={() => setSelectedRequest(req)}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <User className="w-4 h-4 text-muted-foreground" />
-                      <span className="font-medium">{req.profile?.full_name || "Inconnu"}</span>
+                      <User className="w-3.5 h-3.5 text-muted-foreground" />
+                      <span className="text-sm font-medium">{req.profile?.full_name || "Inconnu"}</span>
                     </div>
-                    <span className="text-lg font-bold text-gold">{formatAmount(req.amount)}</span>
+                    <span className="text-sm font-bold text-gold">{formatAmount(req.amount)}</span>
                   </div>
 
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
                     {req.method === "mobile_money" ? (
                       <span className="flex items-center gap-1">
                         <Phone className="w-3 h-3" />
@@ -286,25 +305,28 @@ const AdminWithdrawalsTab = () => {
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-[10px] text-muted-foreground">
                       {format(new Date(req.created_at), "dd MMM yyyy à HH:mm", { locale: fr })}
                     </span>
-                    <div className="flex gap-2">
+                    <div className="flex gap-1.5">
                       <Button
                         size="sm"
                         variant="default"
+                        className="text-[10px] h-7 px-2"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleMarkCompleted(req);
+                          setSelectedRequest(req);
+                          setShowCompletionFlow(true);
                         }}
                         disabled={processing}
                       >
                         <CheckCircle className="w-3 h-3 mr-1" />
-                        Virement effectué
+                        Effectué
                       </Button>
                       <Button
                         size="sm"
                         variant="destructive"
+                        className="text-[10px] h-7 px-2"
                         onClick={(e) => {
                           e.stopPropagation();
                           setSelectedRequest(req);
@@ -345,17 +367,17 @@ const AdminWithdrawalsTab = () => {
                 </TableHeader>
                 <TableBody>
                   {completedRequests.map((req) => (
-                    <TableRow key={req.id}>
-                      <TableCell className="whitespace-nowrap">
+                    <TableRow key={req.id} className="cursor-pointer" onClick={() => setSelectedRequest(req)}>
+                      <TableCell className="whitespace-nowrap text-xs">
                         {format(new Date(req.created_at), "dd MMM yyyy", { locale: fr })}
                       </TableCell>
-                      <TableCell>{req.profile?.full_name || "N/A"}</TableCell>
-                      <TableCell>
+                      <TableCell className="text-xs">{req.profile?.full_name || "N/A"}</TableCell>
+                      <TableCell className="text-xs">
                         {req.method === "mobile_money"
                           ? `${req.mobile_provider} (${req.mobile_number})`
                           : `${req.bank_name}`}
                       </TableCell>
-                      <TableCell className="text-right font-semibold">
+                      <TableCell className="text-right font-semibold text-xs">
                         {formatAmount(req.amount)}
                       </TableCell>
                       <TableCell>{getStatusBadge(req.status)}</TableCell>
@@ -368,8 +390,8 @@ const AdminWithdrawalsTab = () => {
         </CardContent>
       </Card>
 
-      {/* Detail Sheet */}
-      <Sheet open={!!selectedRequest} onOpenChange={(open) => !open && setSelectedRequest(null)}>
+      {/* Detail / Completion Sheet */}
+      <Sheet open={!!selectedRequest} onOpenChange={(open) => { if (!open) { setSelectedRequest(null); resetCompletionFlow(); } }}>
         <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto">
           {selectedRequest && (
             <div className="space-y-4">
@@ -377,7 +399,7 @@ const AdminWithdrawalsTab = () => {
                 <SheetTitle>Détail du retrait</SheetTitle>
               </SheetHeader>
 
-              <div className="space-y-3">
+              <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Créateur</span>
                   <span className="font-medium">{selectedRequest.profile?.full_name}</span>
@@ -390,7 +412,6 @@ const AdminWithdrawalsTab = () => {
                   <span className="text-muted-foreground">Méthode</span>
                   <span>{selectedRequest.method === "mobile_money" ? "Mobile Money" : "Virement bancaire"}</span>
                 </div>
-
                 {selectedRequest.method === "mobile_money" ? (
                   <>
                     <div className="flex justify-between">
@@ -418,19 +439,64 @@ const AdminWithdrawalsTab = () => {
                     </div>
                   </>
                 )}
-
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Date de demande</span>
+                  <span className="text-muted-foreground">Date</span>
                   <span>{format(new Date(selectedRequest.created_at), "dd MMM yyyy à HH:mm", { locale: fr })}</span>
                 </div>
               </div>
 
-              {selectedRequest.status === "pending" && (
+              {/* Completion flow with proof upload */}
+              {(selectedRequest.status === "pending" && showCompletionFlow) && (
+                <div className="space-y-3 pt-4 border-t">
+                  <p className="text-sm font-medium">📸 Uploadez la preuve du virement</p>
+                  
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileSelect}
+                  />
+
+                  {proofPreview ? (
+                    <div className="relative">
+                      <img src={proofPreview} alt="Preuve" className="w-full rounded-lg border max-h-48 object-contain bg-muted" />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="absolute top-2 right-2 text-xs h-7"
+                        onClick={() => { setProofFile(null); setProofPreview(null); }}
+                      >
+                        Changer
+                      </Button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full border-2 border-dashed rounded-lg p-6 flex flex-col items-center gap-2 text-muted-foreground hover:border-gold/50 hover:text-gold transition-colors"
+                    >
+                      <Upload className="w-6 h-6" />
+                      <span className="text-xs">Cliquez pour ajouter la capture</span>
+                    </button>
+                  )}
+
+                  <Button
+                    className="w-full text-xs"
+                    onClick={() => handleMarkCompleted(selectedRequest)}
+                    disabled={processing || !proofFile}
+                  >
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Confirmer le virement
+                  </Button>
+                </div>
+              )}
+
+              {/* Actions when not in completion flow */}
+              {selectedRequest.status === "pending" && !showCompletionFlow && (
                 <div className="space-y-3 pt-4 border-t">
                   <Button
-                    className="w-full"
-                    onClick={() => handleMarkCompleted(selectedRequest)}
-                    disabled={processing}
+                    className="w-full text-xs"
+                    onClick={() => setShowCompletionFlow(true)}
                   >
                     <CheckCircle className="w-4 h-4 mr-2" />
                     Virement effectué
@@ -444,7 +510,7 @@ const AdminWithdrawalsTab = () => {
                     />
                     <Button
                       variant="destructive"
-                      className="w-full"
+                      className="w-full text-xs"
                       onClick={() => handleReject(selectedRequest)}
                       disabled={processing || !rejectionReason.trim()}
                     >
@@ -452,6 +518,17 @@ const AdminWithdrawalsTab = () => {
                       Refuser le retrait
                     </Button>
                   </div>
+                </div>
+              )}
+
+              {/* Show proof for completed */}
+              {selectedRequest.status === "completed" && selectedRequest.proof_url && (
+                <div className="pt-4 border-t space-y-2">
+                  <p className="text-sm font-medium flex items-center gap-1">
+                    <Image className="w-4 h-4 text-green-500" />
+                    Preuve du virement
+                  </p>
+                  <img src={selectedRequest.proof_url} alt="Preuve" className="w-full rounded-lg border max-h-48 object-contain bg-muted" />
                 </div>
               )}
 
