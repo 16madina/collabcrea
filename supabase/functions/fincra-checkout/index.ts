@@ -103,15 +103,19 @@ serve(async (req) => {
 
     const origin = req.headers.get("origin") || "https://collabcrea.lovable.app";
 
+    // Convert FCFA to NGN (Fincra doesn't support XOF)
+    // Using approximate rate: 1 FCFA ≈ 0.93 NGN (adjust as needed)
+    const FCFA_TO_NGN_RATE = 0.93;
+    const amountInNGN = Math.ceil(collab.agreed_amount * FCFA_TO_NGN_RATE);
+
     // Create Fincra checkout payment
     const checkoutPayload = {
-      amount: collab.agreed_amount,
-      currency: "XOF",
+      amount: amountInNGN,
+      currency: "NGN",
       customer: {
         name: brandName,
         email: user.email,
       },
-      paymentMethods: ["mobile_money"],
       feeBearer: "customer",
       reference: reference,
       redirectUrl: `${origin}/brand/collabs?payment=success&collaboration=${collaborationId}&reference=${reference}`,
@@ -120,14 +124,15 @@ serve(async (req) => {
         collaboration_id: collaborationId,
         brand_id: collab.brand_id,
         creator_id: collab.creator_id,
-        agreed_amount: collab.agreed_amount.toString(),
+        agreed_amount_fcfa: collab.agreed_amount.toString(),
+        agreed_amount_ngn: amountInNGN.toString(),
         platform_fee: collab.platform_fee.toString(),
         creator_amount: collab.creator_amount.toString(),
       },
       successMessage: `Paiement réussi pour "${offerTitle}" - Créateur: ${creatorName}`,
     };
 
-    logStep("Creating Fincra checkout", { amount: collab.agreed_amount, currency: "XOF" });
+    logStep("Creating Fincra checkout", { amountFCFA: collab.agreed_amount, amountNGN: amountInNGN, currency: "NGN" });
 
     const fincraResponse = await fetch(`${FINCRA_API_URL}/checkout/payments`, {
       method: "POST",
