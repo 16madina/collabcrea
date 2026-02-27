@@ -13,15 +13,16 @@ const logStep = (step: string, details?: any) => {
   console.log(`[FINCRA-PAYOUT] ${step}${detailsStr}`);
 };
 
-// Mobile money codes for Fincra
-const MOBILE_MONEY_CODES: Record<string, string> = {
-  "orange_ci": "ORANGE_CI",
-  "wave_ci": "WAVE_CI", 
-  "mtn_ci": "MTN_CI",
-  "orange_sn": "ORANGE_SN",
-  "wave_sn": "WAVE_SN",
-  "orange_cm": "ORANGE_CM",
-  "mtn_cm": "MTN_CM",
+// Providers that support automatic Fincra payout (generic codes)
+const AUTO_PROVIDERS = ["orange", "mtn", "moov", "free", "airtel"];
+
+// Map provider id to Fincra mobileMoneyCode (generic, no country suffix)
+const FINCRA_MOBILE_MONEY_CODES: Record<string, string> = {
+  orange: "ORANGE",
+  mtn: "MTN",
+  moov: "MOOV",
+  free: "FREE",
+  airtel: "AIRTEL",
 };
 
 serve(async (req) => {
@@ -66,6 +67,17 @@ serve(async (req) => {
       throw new Error(`Invalid withdrawal status: ${withdrawal.status}`);
     }
 
+    // Check if provider supports automatic payout
+    const provider = (withdrawal.mobile_provider || "").toLowerCase();
+    if (!AUTO_PROVIDERS.includes(provider)) {
+      throw new Error(`Le fournisseur "${withdrawal.mobile_provider}" ne supporte pas le payout automatique. Utilisez le mode manuel.`);
+    }
+
+    const mobileMoneyCode = FINCRA_MOBILE_MONEY_CODES[provider];
+    if (!mobileMoneyCode) {
+      throw new Error(`Code Mobile Money non trouvé pour: ${provider}`);
+    }
+
     // Get creator profile for name
     const { data: profile } = await supabase
       .from("profiles")
@@ -78,13 +90,10 @@ serve(async (req) => {
     const firstName = nameParts[0] || "Créateur";
     const lastName = nameParts.slice(1).join(" ") || "CollabCrea";
 
-    // Determine mobile money code based on provider and country
+    // Determine country code
     const country = (profile?.residence_country || "CI").toUpperCase();
-    const provider = (withdrawal.mobile_provider || "wave").toLowerCase();
-    const mobileMoneyCodeKey = `${provider}_${country.toLowerCase()}`;
-    const mobileMoneyCode = MOBILE_MONEY_CODES[mobileMoneyCodeKey] || `${provider.toUpperCase()}_${country}`;
 
-    // Fetch live USD→XOF rate for conversion (funds collected in USD, payout in XOF)
+    // Fetch live USD→XOF rate for conversion
     let usdToXof = 615; // fallback
     try {
       const rateRes = await fetch("https://open.er-api.com/v6/latest/USD");
@@ -97,19 +106,19 @@ serve(async (req) => {
       logStep("Exchange rate fallback used", { reason: String(e) });
     }
 
-    // Convert FCFA amount to USD for the payout (source is USD balance on Fincra)
+    // Convert FCFA amount to USD
     const amountInUSD = Math.round((withdrawal.amount / usdToXof) * 100) / 100;
 
     logStep("Initiating payout", {
       amountFCFA: withdrawal.amount,
       amountUSD: amountInUSD,
       usdToXof,
-      provider: withdrawal.mobile_provider,
+      provider,
       mobileMoneyCode,
       country,
     });
 
-    // Create Fincra payout - source USD, destination XOF (Fincra handles conversion)
+    // Create Fincra payout
     const payoutPayload = {
       business: fincraBusinessId,
       sourceCurrency: "USD",
@@ -123,7 +132,7 @@ serve(async (req) => {
         lastName,
         accountHolderName: fullName,
         accountNumber: withdrawal.mobile_number || "",
-        country: ["CI", "SN", "CM"].includes(country) ? country : "CI",
+        country: ["CI", "SN", "CM", "BF", "BJ", "ML", "TG", "NE"].includes(country) ? country : "CI",
         email: "",
         phone: withdrawal.mobile_number || "",
         type: "individual",
