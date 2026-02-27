@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Star, MapPin, MessageCircle, Flag, User, CreditCard, Image, ShieldAlert } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { CountryFlag } from "@/lib/flags";
-import { FaYoutube, FaInstagram, FaTiktok, FaSnapchatGhost } from "react-icons/fa";
+import { FaYoutube, FaInstagram, FaTiktok, FaSnapchatGhost, FaFacebookF } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import ReportDialog from "@/components/ReportDialog";
@@ -18,6 +18,7 @@ export interface CreatorSocials {
   instagram?: string;
   tiktok?: string;
   snapchat?: string;
+  facebook?: string;
 }
 
 export interface CreatorPricing {
@@ -213,6 +214,17 @@ const CreatorDetailSheet = ({ creator, creatorUserId, open, onOpenChange }: Crea
                       <div>
                         <p className="text-xs text-muted-foreground">Snapchat</p>
                         <p className="font-semibold text-foreground">{creator.socials.snapchat}</p>
+                      </div>
+                    </div>
+                  )}
+                  {creator.socials.facebook && (
+                    <div className="glass rounded-xl p-3 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-[#1877F2] flex items-center justify-center">
+                        <FaFacebookF className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Facebook</p>
+                        <p className="font-semibold text-foreground">{creator.socials.facebook}</p>
                       </div>
                     </div>
                   )}

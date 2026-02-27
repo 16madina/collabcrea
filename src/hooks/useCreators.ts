@@ -17,6 +17,7 @@ interface ProfileWithRole {
   instagram_followers: string | null;
   tiktok_followers: string | null;
   snapchat_followers: string | null;
+  facebook_followers: string | null;
   pricing: unknown;
   identity_verified: boolean | null;
   is_banned: boolean | null;
@@ -115,6 +116,7 @@ function mapProfileToCreator(profile: ProfileWithRole): Creator & { userId: stri
       instagram: profile.instagram_followers || undefined,
       tiktok: profile.tiktok_followers || undefined,
       snapchat: profile.snapchat_followers || undefined,
+      facebook: profile.facebook_followers || undefined,
     },
     pricing,
   };
