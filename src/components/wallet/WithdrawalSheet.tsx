@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, ArrowUpRight, AlertCircle } from "lucide-react";
+import { Loader2, ArrowUpRight, AlertCircle, Clock } from "lucide-react";
 import { useWithdrawal } from "@/hooks/useWithdrawal";
 import { Wallet } from "@/hooks/useWallet";
 
@@ -60,12 +60,15 @@ const WithdrawalSheet = ({
   const [amount, setAmount] = useState("");
   const [mobileProvider, setMobileProvider] = useState("");
   const [mobileNumber, setMobileNumber] = useState("");
+  const [mobileNumberConfirm, setMobileNumberConfirm] = useState("");
 
   const numericAmount = parseInt(amount) || 0;
   const isValidAmount = numericAmount >= 1000 && numericAmount <= (wallet?.balance || 0);
+  const isValidPhone = /^\d{10}$/.test(mobileNumber);
+  const phonesMatch = mobileNumber === mobileNumberConfirm;
 
   const handleSubmit = async () => {
-    if (!wallet || !isValidAmount || !mobileProvider || !mobileNumber) return;
+    if (!wallet || !isValidAmount || !mobileProvider || !isValidPhone || !phonesMatch) return;
 
     await requestMobileMoneyWithdrawal(wallet.id, numericAmount, {
       mobile_provider: mobileProvider,
@@ -81,9 +84,10 @@ const WithdrawalSheet = ({
     setAmount("");
     setMobileProvider("");
     setMobileNumber("");
+    setMobileNumberConfirm("");
   };
 
-  const canSubmit = isValidAmount && mobileProvider && mobileNumber;
+  const canSubmit = isValidAmount && mobileProvider && isValidPhone && phonesMatch;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -147,28 +151,61 @@ const WithdrawalSheet = ({
 
           {/* Phone Number */}
           {mobileProvider && (
-            <div className="space-y-2">
-              <Label>
-                Numéro {mobileProvider === "wave" ? "Wave" : "Orange Money"} *
-              </Label>
-              <Input
-                type="tel"
-                placeholder="07 00 00 00 00"
-                value={mobileNumber}
-                onChange={(e) => setMobileNumber(e.target.value)}
-                className="bg-muted/30"
-              />
-              <p className="text-xs text-muted-foreground">
-                Entrez le numéro associé à votre compte {mobileProvider === "wave" ? "Wave" : "Orange Money"}
-              </p>
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label>
+                  Numéro {mobileProvider === "wave" ? "Wave" : "Orange Money"} *
+                </Label>
+                <Input
+                  type="tel"
+                  inputMode="numeric"
+                  placeholder="07 00 00 00 00"
+                  value={mobileNumber}
+                  onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, ""))}
+                  maxLength={10}
+                  className="bg-muted/30"
+                />
+                {mobileNumber && !isValidPhone && (
+                  <div className="flex items-center gap-2 text-destructive text-xs">
+                    <AlertCircle className="w-3 h-3" />
+                    Le numéro doit contenir exactement 10 chiffres
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Confirmer le numéro *</Label>
+                <Input
+                  type="tel"
+                  inputMode="numeric"
+                  placeholder="Retapez le numéro"
+                  value={mobileNumberConfirm}
+                  onChange={(e) => setMobileNumberConfirm(e.target.value.replace(/\D/g, ""))}
+                  maxLength={10}
+                  className="bg-muted/30"
+                />
+                {mobileNumberConfirm && !phonesMatch && (
+                  <div className="flex items-center gap-2 text-destructive text-xs">
+                    <AlertCircle className="w-3 h-3" />
+                    Les numéros ne correspondent pas
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
           {/* Info */}
-          <div className="glass rounded-xl p-4">
+          <div className="glass rounded-xl p-4 space-y-2">
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-orange-500 shrink-0" />
+              <p className="text-xs font-medium text-foreground">
+                Délai de traitement : 2 jours ouvrables
+              </p>
+            </div>
             <p className="text-xs text-muted-foreground">
-              Les retraits sont traités sous 24-48h ouvrées. Vous recevrez une
-              notification une fois le transfert effectué.
+              Votre demande sera vérifiée et le dépôt sera effectué sur votre compte
+              {mobileProvider === "wave" ? " Wave" : mobileProvider === "orange" ? " Orange Money" : ""} sous 2 jours ouvrables.
+              Vous recevrez une notification une fois le transfert effectué.
             </p>
           </div>
         </div>
