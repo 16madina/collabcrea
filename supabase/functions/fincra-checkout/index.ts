@@ -103,15 +103,17 @@ serve(async (req) => {
 
     const origin = req.headers.get("origin") || "https://collabcrea.lovable.app";
 
-    // Convert FCFA to NGN (Fincra doesn't support XOF)
-    // Using approximate rate: 1 FCFA ≈ 0.93 NGN (adjust as needed)
-    const FCFA_TO_NGN_RATE = 0.93;
-    const amountInNGN = Math.ceil(collab.agreed_amount * FCFA_TO_NGN_RATE);
+    // Convert FCFA to USD (Fincra doesn't support XOF)
+    // Using approximate rate: 1 USD ≈ 615 FCFA (adjust as needed)
+    const FCFA_TO_USD_RATE = 1 / 615;
+    const amountInUSD = Math.round(collab.agreed_amount * FCFA_TO_USD_RATE * 100) / 100; // Round to 2 decimals
+    const minAmount = 0.50; // Fincra minimum
+    const finalAmountUSD = Math.max(amountInUSD, minAmount);
 
     // Create Fincra checkout payment
     const checkoutPayload = {
-      amount: amountInNGN,
-      currency: "NGN",
+      amount: finalAmountUSD,
+      currency: "USD",
       customer: {
         name: brandName,
         email: user.email,
@@ -126,14 +128,14 @@ serve(async (req) => {
         brand_id: collab.brand_id,
         creator_id: collab.creator_id,
         agreed_amount_fcfa: collab.agreed_amount.toString(),
-        agreed_amount_ngn: amountInNGN.toString(),
+        agreed_amount_usd: finalAmountUSD.toString(),
         platform_fee: collab.platform_fee.toString(),
         creator_amount: collab.creator_amount.toString(),
       },
       successMessage: `Paiement réussi pour "${offerTitle}" - Créateur: ${creatorName}`,
     };
 
-    logStep("Creating Fincra checkout", { amountFCFA: collab.agreed_amount, amountNGN: amountInNGN, currency: "NGN" });
+    logStep("Creating Fincra checkout", { amountFCFA: collab.agreed_amount, amountUSD: finalAmountUSD, currency: "USD" });
 
     const fincraResponse = await fetch(`${FINCRA_API_URL}/checkout/payments`, {
       method: "POST",
@@ -168,6 +170,9 @@ serve(async (req) => {
         url: fincraData.data.link,
         reference: reference,
         payCode: fincraData.data.payCode,
+        amountUSD: finalAmountUSD,
+        amountFCFA: collab.agreed_amount,
+        exchangeRate: Math.round(1 / FCFA_TO_USD_RATE),
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

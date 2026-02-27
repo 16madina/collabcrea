@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Sheet,
   SheetContent,
@@ -9,7 +9,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, Lock, Shield, Phone, ChevronLeft, ExternalLink } from "lucide-react";
+import { Loader2, Lock, Shield, Phone, ExternalLink, DollarSign, RefreshCw } from "lucide-react";
 import { Collaboration } from "@/hooks/useCollaborations";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -25,6 +25,13 @@ const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("fr-FR").format(amount) + " FCFA";
 };
 
+const formatUSD = (amount: number) => {
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
+};
+
+// Approximate FCFA to USD rate (1 USD ≈ 615 FCFA)
+const FCFA_TO_USD_RATE = 1 / 615;
+
 const InAppPaymentSheet = ({
   open,
   onOpenChange,
@@ -32,6 +39,9 @@ const InAppPaymentSheet = ({
   onSuccess,
 }: InAppPaymentSheetProps) => {
   const [loading, setLoading] = useState(false);
+
+  const amountFCFA = collaboration.agreed_amount;
+  const amountUSD = Math.round(amountFCFA * FCFA_TO_USD_RATE * 100) / 100;
 
   const handleFincraCheckout = async () => {
     setLoading(true);
@@ -53,7 +63,6 @@ const InAppPaymentSheet = ({
       }
 
       if (data?.url) {
-        // Redirect to Fincra checkout
         window.location.href = data.url;
       } else {
         toast.error("URL de paiement non reçue");
@@ -76,7 +85,7 @@ const InAppPaymentSheet = ({
               Débloquer le contenu
             </SheetTitle>
             <SheetDescription>
-              Payez via Mobile Money pour accéder au contenu original du créateur
+              Payez pour accéder au contenu original du créateur
             </SheetDescription>
           </div>
         </SheetHeader>
@@ -103,15 +112,28 @@ const InAppPaymentSheet = ({
           <div className="glass rounded-xl p-4 space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Montant de la collaboration</span>
-              <span className="font-semibold">{formatCurrency(collaboration.agreed_amount)}</span>
+              <span className="font-semibold">{formatCurrency(amountFCFA)}</span>
             </div>
             <Separator />
             <div className="flex justify-between items-center">
               <span className="font-semibold text-foreground">Total à payer</span>
-              <span className="text-xl font-bold text-gold">
-                {formatCurrency(collaboration.agreed_amount)}
-              </span>
+              <div className="text-right">
+                <span className="text-xl font-bold text-gold">
+                  {formatUSD(amountUSD)}
+                </span>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  ≈ {formatCurrency(amountFCFA)}
+                </p>
+              </div>
             </div>
+          </div>
+
+          {/* Exchange rate info */}
+          <div className="flex items-center gap-2 px-1">
+            <RefreshCw className="w-3.5 h-3.5 text-muted-foreground" />
+            <p className="text-xs text-muted-foreground">
+              Taux indicatif : 1 USD ≈ 615 FCFA. Le montant final peut varier légèrement.
+            </p>
           </div>
 
           {/* Security Info */}
@@ -130,14 +152,24 @@ const InAppPaymentSheet = ({
           {/* Payment methods info */}
           <div className="space-y-3">
             <p className="text-sm font-medium text-muted-foreground">Méthodes de paiement acceptées</p>
-            <div className="glass rounded-xl p-4">
+            <div className="glass rounded-xl p-4 space-y-3">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-gold/10 flex items-center justify-center">
-                  <Phone className="w-6 h-6 text-gold" />
+                <div className="w-10 h-10 rounded-full bg-gold/10 flex items-center justify-center">
+                  <DollarSign className="w-5 h-5 text-gold" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-semibold text-foreground">Mobile Money</p>
-                  <div className="flex flex-wrap gap-1.5 mt-1.5">
+                  <p className="font-semibold text-foreground text-sm">Carte bancaire</p>
+                  <p className="text-xs text-muted-foreground">Visa, Mastercard</p>
+                </div>
+              </div>
+              <Separator />
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-gold/10 flex items-center justify-center">
+                  <Phone className="w-5 h-5 text-gold" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-foreground text-sm">Mobile Money</p>
+                  <div className="flex flex-wrap gap-1.5 mt-1">
                     <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border bg-orange-500/20 text-orange-400 border-orange-500/30">
                       Orange Money
                     </span>
@@ -168,10 +200,10 @@ const InAppPaymentSheet = ({
             ) : (
               <ExternalLink className="w-5 h-5 mr-2" />
             )}
-            Payer {formatCurrency(collaboration.agreed_amount)}
+            Payer {formatUSD(amountUSD)}
           </Button>
           <p className="text-xs text-muted-foreground text-center mt-2">
-            Vous serez redirigé vers la page de paiement sécurisée Fincra
+            Soit ≈ {formatCurrency(amountFCFA)} • Paiement sécurisé Fincra
           </p>
         </div>
       </SheetContent>
