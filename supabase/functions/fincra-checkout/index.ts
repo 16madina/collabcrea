@@ -103,10 +103,22 @@ serve(async (req) => {
 
     const origin = req.headers.get("origin") || "https://collabcrea.lovable.app";
 
-    // Convert FCFA to USD (Fincra doesn't support XOF)
-    // Using approximate rate: 1 USD ≈ 615 FCFA (adjust as needed)
-    const FCFA_TO_USD_RATE = 1 / 615;
-    const amountInUSD = Math.round(collab.agreed_amount * FCFA_TO_USD_RATE * 100) / 100; // Round to 2 decimals
+    // Fetch live USD → XOF rate from exchangerate-api (free, no key needed)
+    let usdToXof = 615; // fallback
+    try {
+      const rateRes = await fetch("https://open.er-api.com/v6/latest/USD");
+      const rateData = await rateRes.json();
+      if (rateData?.result === "success" && rateData.rates?.XOF) {
+        usdToXof = rateData.rates.XOF;
+        logStep("Live exchange rate fetched", { usdToXof });
+      } else {
+        logStep("Exchange rate fallback used", { reason: "API response missing XOF" });
+      }
+    } catch (e) {
+      logStep("Exchange rate fallback used", { reason: String(e) });
+    }
+
+    const amountInUSD = Math.round((collab.agreed_amount / usdToXof) * 100) / 100;
     const minAmount = 0.50; // Fincra minimum
     const finalAmountUSD = Math.max(amountInUSD, minAmount);
 
@@ -172,7 +184,7 @@ serve(async (req) => {
         payCode: fincraData.data.payCode,
         amountUSD: finalAmountUSD,
         amountFCFA: collab.agreed_amount,
-        exchangeRate: Math.round(1 / FCFA_TO_USD_RATE),
+        exchangeRate: Math.round(usdToXof),
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

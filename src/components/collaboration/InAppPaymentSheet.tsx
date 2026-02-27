@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Sheet,
   SheetContent,
@@ -29,8 +29,8 @@ const formatUSD = (amount: number) => {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
 };
 
-// Approximate FCFA to USD rate (1 USD ≈ 615 FCFA)
-const FCFA_TO_USD_RATE = 1 / 615;
+// Fallback rate, will be replaced by live rate from backend
+const DEFAULT_USD_TO_XOF = 615;
 
 const InAppPaymentSheet = ({
   open,
@@ -39,9 +39,23 @@ const InAppPaymentSheet = ({
   onSuccess,
 }: InAppPaymentSheetProps) => {
   const [loading, setLoading] = useState(false);
+  const [liveRate, setLiveRate] = useState<number | null>(null);
 
   const amountFCFA = collaboration.agreed_amount;
-  const amountUSD = Math.round(amountFCFA * FCFA_TO_USD_RATE * 100) / 100;
+  const rate = liveRate || DEFAULT_USD_TO_XOF;
+  const amountUSD = Math.round((amountFCFA / rate) * 100) / 100;
+
+  // Fetch live exchange rate on mount
+  useEffect(() => {
+    fetch("https://open.er-api.com/v6/latest/USD")
+      .then(r => r.json())
+      .then(data => {
+        if (data?.result === "success" && data.rates?.XOF) {
+          setLiveRate(data.rates.XOF);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleFincraCheckout = async () => {
     setLoading(true);
@@ -132,7 +146,7 @@ const InAppPaymentSheet = ({
           <div className="flex items-center gap-2 px-1">
             <RefreshCw className="w-3.5 h-3.5 text-muted-foreground" />
             <p className="text-xs text-muted-foreground">
-              Taux indicatif : 1 USD ≈ 615 FCFA. Le montant final peut varier légèrement.
+              Taux {liveRate ? "en temps réel" : "indicatif"} : 1 USD ≈ {Math.round(rate)} FCFA{!liveRate && ". Le montant final peut varier légèrement."}
             </p>
           </div>
 
