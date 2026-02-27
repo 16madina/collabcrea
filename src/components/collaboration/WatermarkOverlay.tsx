@@ -1,5 +1,4 @@
 import { ReactNode } from "react";
-import logoCollabcrea from "@/assets/logo-collabcrea.png";
 
 interface WatermarkOverlayProps {
   children: ReactNode;
@@ -19,40 +18,25 @@ const WatermarkOverlay = ({ children, locked = true }: WatermarkOverlayProps) =>
           {Array.from({ length: 12 }).map((_, row) => (
             <div key={row} className="flex items-center gap-10 whitespace-nowrap">
               {Array.from({ length: 6 }).map((_, col) => (
-                <div key={col} className="flex flex-col items-center gap-1">
-                  <img
-                    src={logoCollabcrea}
-                    alt=""
-                    className="w-8 h-8 opacity-30 select-none"
-                    draggable={false}
-                  />
-                  <span
-                    className="text-white/30 text-base font-bold tracking-widest select-none"
-                    style={{ textShadow: "0 2px 8px rgba(0,0,0,0.3)" }}
-                  >
-                    COLLABCREA
-                  </span>
-                </div>
+                <span
+                  key={col}
+                  className="text-white/25 text-sm font-bold tracking-widest select-none"
+                  style={{ textShadow: "0 2px 8px rgba(0,0,0,0.3)" }}
+                >
+                  COLLABCREA
+                </span>
               ))}
             </div>
           ))}
         </div>
         {/* Central large watermark with logo */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-2 -rotate-30">
-            <img
-              src={logoCollabcrea}
-              alt=""
-              className="w-16 h-16 opacity-40 select-none"
-              draggable={false}
-            />
-            <span
-              className="text-white/40 text-4xl font-black tracking-[0.3em] select-none"
-              style={{ textShadow: "0 4px 16px rgba(0,0,0,0.5)" }}
-            >
-              COLLABCREA
-            </span>
-          </div>
+          <span
+            className="text-white/35 text-3xl font-black tracking-[0.3em] select-none -rotate-30"
+            style={{ textShadow: "0 4px 16px rgba(0,0,0,0.5)" }}
+          >
+            COLLABCREA
+          </span>
         </div>
       </div>
       {/* Lock icon overlay */}
