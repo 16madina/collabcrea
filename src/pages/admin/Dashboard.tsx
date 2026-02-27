@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useAuth } from "@/hooks/useAuth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Shield, Bell, FileCheck, BarChart3, LogOut, Flag, Coins, FileText, Share2, Wallet } from "lucide-react";
+import { Users, Shield, Bell, FileCheck, BarChart3, LogOut, Flag, Coins, FileText, Share2, Wallet, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import AdminUsersTab from "@/components/admin/AdminUsersTab";
 import AdminVerificationTab from "@/components/admin/AdminVerificationTab";
@@ -52,7 +52,10 @@ const AdminDashboard = () => {
       {/* Header */}
       <header className="sticky top-0 z-50 glass border-b border-border px-4 pt-[max(env(safe-area-inset-top),0.75rem)] pb-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="shrink-0">
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
             <img src={logoCollabCrea} alt="CollabCréa" className="h-8" />
             <div className="flex items-center gap-2">
               <Shield className="w-5 h-5 text-gold" />
