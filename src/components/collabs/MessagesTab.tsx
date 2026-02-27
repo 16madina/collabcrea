@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Send, ArrowLeft, MoreVertical, Check, CheckCheck, MessageCircle, User } from "lucide-react";
+import { Search, Send, ArrowLeft, Check, CheckCheck, MessageCircle, User } from "lucide-react";
+import ChatActionMenu from "@/components/chat/ChatActionMenu";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -132,9 +133,10 @@ const MessagesTab = ({ userRole }: MessagesTabProps) => {
                 </p>
               )}
             </div>
-            <button className="touch-target">
-              <MoreVertical className="w-5 h-5 text-muted-foreground" />
-            </button>
+            <ChatActionMenu
+              otherUserId={selectedConversation.otherParticipant?.user_id || null}
+              otherUserName={getDisplayName(selectedConversation)}
+            />
           </div>
         </div>
 
