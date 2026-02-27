@@ -185,6 +185,7 @@ const SocialEditSheet = ({ isOpen, onClose, initialData, onUpdate }: SocialEditS
                           currentFollowers={initialData.youtube_followers}
                           onSyncComplete={onUpdate}
                         />
+                        {getVerifyButton("youtube")}
                       </div>
                     </div>
                   </div>
@@ -232,6 +233,7 @@ const SocialEditSheet = ({ isOpen, onClose, initialData, onUpdate }: SocialEditS
                           currentFollowers={initialData.tiktok_followers}
                           onSyncComplete={onUpdate}
                         />
+                        {getVerifyButton("tiktok")}
                       </div>
                     </div>
                   </div>
