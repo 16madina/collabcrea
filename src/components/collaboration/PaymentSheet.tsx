@@ -17,6 +17,7 @@ import {
   CheckCircle,
   Wallet,
   ExternalLink,
+  Phone,
 } from "lucide-react";
 import { Collaboration } from "@/hooks/useCollaborations";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,18 +43,10 @@ const PaymentSheet = ({
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
 
-  const MINIMUM_STRIPE_AMOUNT = 300; // ~50 cents USD in FCFA
-
-  const handleStripePayment = async () => {
-    // Check minimum amount for Stripe
-    if (collaboration.agreed_amount < MINIMUM_STRIPE_AMOUNT) {
-      toast.error(`Le montant minimum pour un paiement par carte est de ${MINIMUM_STRIPE_AMOUNT} FCFA`);
-      return;
-    }
-
+  const handleFincraPayment = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("create-collaboration-checkout", {
+      const { data, error } = await supabase.functions.invoke("fincra-checkout", {
         body: { collaborationId: collaboration.id },
       });
 
@@ -65,16 +58,12 @@ const PaymentSheet = ({
 
       if (data?.error) {
         console.error("Checkout error:", data.error);
-        if (data.error.includes("50 cents")) {
-          toast.error(`Le montant minimum pour un paiement par carte est de ${MINIMUM_STRIPE_AMOUNT} FCFA`);
-        } else {
-          toast.error(data.error);
-        }
+        toast.error(data.error);
         return;
       }
 
       if (data?.url) {
-        // Redirect to Stripe checkout
+        // Redirect to Fincra checkout
         window.location.href = data.url;
       } else {
         toast.error("URL de paiement non reçue");
@@ -88,29 +77,24 @@ const PaymentSheet = ({
   };
 
   const handlePayment = async () => {
-    if (paymentMethod === "card") {
-      await handleStripePayment();
-    } else {
-      toast.info("Cette méthode de paiement sera bientôt disponible");
+    if (paymentMethod === "mobile_money") {
+      await handleFincraPayment();
     }
   };
 
   const paymentMethods = [
     {
-      id: "card",
-      name: "Carte bancaire",
-      icon: CreditCard,
-      description: "Visa, Mastercard - Paiement sécurisé via Stripe",
+      id: "mobile_money",
+      name: "Mobile Money",
+      icon: Phone,
+      description: "Orange Money, Wave, MTN Money",
       disabled: false,
       comingSoon: false,
-    },
-    {
-      id: "mobile",
-      name: "Mobile Money",
-      icon: Wallet,
-      description: "Orange, MTN, Wave",
-      disabled: true,
-      comingSoon: true,
+      badges: [
+        { label: "Orange Money", color: "bg-orange-500/20 text-orange-400 border-orange-500/30" },
+        { label: "Wave", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
+        { label: "MTN", color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
+      ],
     },
   ];
 
@@ -123,7 +107,7 @@ const PaymentSheet = ({
             Paiement sécurisé
           </SheetTitle>
           <SheetDescription>
-            Payez en toute sécurité - L'argent sera en séquestre
+            Payez en toute sécurité via Mobile Money
           </SheetDescription>
         </SheetHeader>
 
@@ -165,7 +149,7 @@ const PaymentSheet = ({
             <div className="flex gap-3">
               <Shield className="w-5 h-5 text-green-500 flex-shrink-0" />
               <div className="text-sm">
-                <p className="font-medium text-foreground mb-1">Paiement sécurisé</p>
+                <p className="font-medium text-foreground mb-1">Paiement sécurisé via Fincra</p>
                 <p className="text-muted-foreground text-xs">
                   Votre argent est conservé en séquestre jusqu'à ce que le créateur livre le contenu et que vous l'approuviez. En cas de non-livraison, vous êtes intégralement remboursé.
                 </p>
@@ -207,6 +191,18 @@ const PaymentSheet = ({
                       <p className="text-xs text-muted-foreground">
                         {method.description}
                       </p>
+                      {"badges" in method && method.badges && (
+                        <div className="flex flex-wrap gap-1.5 mt-1.5">
+                          {method.badges.map((badge) => (
+                            <span
+                              key={badge.label}
+                              className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${badge.color}`}
+                            >
+                              {badge.label}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     {paymentMethod === method.id && (
                       <CheckCircle className="w-5 h-5 text-gold" />
@@ -229,18 +225,14 @@ const PaymentSheet = ({
           >
             {loading ? (
               <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-            ) : paymentMethod === "card" ? (
-              <ExternalLink className="w-5 h-5 mr-2" />
             ) : (
-              <Lock className="w-5 h-5 mr-2" />
+              <ExternalLink className="w-5 h-5 mr-2" />
             )}
-            {paymentMethod === "card" ? "Payer avec Stripe" : "Payer"} {formatCurrency(collaboration.agreed_amount)}
+            Payer {formatCurrency(collaboration.agreed_amount)}
           </Button>
-          {paymentMethod === "card" && (
-            <p className="text-xs text-muted-foreground text-center mt-2">
-              Vous serez redirigé vers la page de paiement sécurisée Stripe
-            </p>
-          )}
+          <p className="text-xs text-muted-foreground text-center mt-2">
+            Vous serez redirigé vers la page de paiement sécurisée Fincra
+          </p>
         </div>
       </SheetContent>
     </Sheet>
