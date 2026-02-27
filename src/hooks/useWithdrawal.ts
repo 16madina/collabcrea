@@ -117,38 +117,35 @@ export const useWithdrawal = () => {
     setLoading(true);
 
     try {
-      // Check wallet balance
-      const { data: wallet } = await supabase
-        .from("wallets")
-        .select("balance")
-        .eq("id", walletId)
-        .single();
-
-      if (!wallet || wallet.balance < amount) {
-        toast.error("Solde insuffisant");
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("Session expirée, veuillez vous reconnecter");
         return;
       }
 
-      // Create withdrawal request
-      const { error } = await supabase.from("withdrawal_requests").insert({
-        user_id: user.id,
-        wallet_id: walletId,
-        amount,
-        method: "mobile_money",
-        mobile_provider: details.mobile_provider,
-        mobile_number: details.mobile_number,
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/request-withdrawal`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            wallet_id: walletId,
+            amount,
+            mobile_provider: details.mobile_provider,
+            mobile_number: details.mobile_number,
+          }),
+        }
+      );
 
-      if (error) throw error;
+      const result = await response.json();
 
-      // Deduct from wallet (move to pending)
-      await supabase
-        .from("wallets")
-        .update({
-          balance: wallet.balance - amount,
-          pending_balance: amount,
-        })
-        .eq("id", walletId);
+      if (!response.ok) {
+        toast.error(result.error || "Erreur lors de la demande de retrait");
+        return;
+      }
 
       toast.success("Demande de retrait envoyée !");
       fetchWithdrawalRequests();
