@@ -9,11 +9,14 @@ import {
   XCircle,
   Building2,
   Smartphone,
+  Image,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/BottomNav";
 import { useWallet, Transaction } from "@/hooks/useWallet";
 import { useWithdrawal } from "@/hooks/useWithdrawal";
@@ -60,6 +63,7 @@ const CreatorWallet = () => {
   const { wallet, transactions, loading, refreshWallet } = useWallet();
   const { requests, fetchWithdrawalRequests } = useWithdrawal();
   const [showWithdrawalSheet, setShowWithdrawalSheet] = useState(false);
+  const [proofUrl, setProofUrl] = useState<string | null>(null);
 
   useEffect(() => {
     fetchWithdrawalRequests();
@@ -216,6 +220,21 @@ const CreatorWallet = () => {
                           {req.rejection_reason}
                         </p>
                       )}
+                      {req.status === "completed" && (req as any).proof_url && (
+                        <button
+                          className="text-xs text-gold flex items-center gap-1 mt-1"
+                          onClick={async () => {
+                            const fileName = (req as any).proof_url.split("/").pop();
+                            const { data } = await supabase.storage
+                              .from("withdrawal-proofs")
+                              .createSignedUrl(fileName, 300);
+                            if (data?.signedUrl) setProofUrl(data.signedUrl);
+                          }}
+                        >
+                          <Image className="w-3 h-3" />
+                          Voir preuve
+                        </button>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -303,6 +322,17 @@ const CreatorWallet = () => {
           fetchWithdrawalRequests();
         }}
       />
+
+      <Dialog open={!!proofUrl} onOpenChange={(open) => !open && setProofUrl(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-sm">Preuve du virement</DialogTitle>
+          </DialogHeader>
+          {proofUrl && (
+            <img src={proofUrl} alt="Preuve de virement" className="w-full rounded-lg" />
+          )}
+        </DialogContent>
+      </Dialog>
 
       <BottomNav />
     </div>
