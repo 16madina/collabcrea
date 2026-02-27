@@ -5,6 +5,7 @@ import { MessageCircle, Handshake } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 import MessagesTab from "@/components/collabs/MessagesTab";
 import CollaborationsTab from "@/components/collabs/CollaborationsTab";
@@ -21,14 +22,36 @@ const CollabsHub = () => {
   const isCreator = window.location.pathname.includes("/creator");
   const userRole = isCreator ? "creator" : "brand";
 
-  // Handle Stripe payment callback
+  // Handle Fincra payment callback
   useEffect(() => {
     const payment = searchParams.get("payment");
     const collaborationId = searchParams.get("collaboration");
+    const reference = searchParams.get("reference");
     
-    if (payment === "success") {
-      toast.success("Paiement effectué avec succès ! Le créateur peut maintenant livrer le contenu.");
-      // Clean up URL params
+    if (payment === "success" && reference && collaborationId) {
+      // Verify payment with Fincra
+      const verifyPayment = async () => {
+        try {
+          const { data, error } = await supabase.functions.invoke("fincra-verify-payment", {
+            body: { reference, collaborationId },
+          });
+
+          if (data?.paymentStatus === "success") {
+            toast.success("Paiement confirmé ! Le contenu est maintenant en revue.");
+          } else {
+            toast.info("Paiement en cours de traitement. Vous serez notifié une fois confirmé.");
+          }
+        } catch (err) {
+          console.error("Verify error:", err);
+          toast.info("Paiement en cours de vérification...");
+        }
+      };
+
+      verifyPayment();
+      setSearchParams({ tab: "collabs" });
+      setActiveTab("collabs");
+    } else if (payment === "success") {
+      toast.success("Paiement effectué avec succès !");
       setSearchParams({ tab: "collabs" });
       setActiveTab("collabs");
     } else if (payment === "cancelled") {

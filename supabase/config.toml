@@ -29,3 +29,15 @@ verify_jwt = false
 
 [functions.request-withdrawal]
 verify_jwt = false
+
+[functions.fincra-checkout]
+verify_jwt = false
+
+[functions.fincra-webhook]
+verify_jwt = false
+
+[functions.fincra-verify-payment]
+verify_jwt = false
+
+[functions.fincra-payout]
+verify_jwt = false
