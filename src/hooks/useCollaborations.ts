@@ -245,91 +245,31 @@ export const useCollaborations = () => {
 
   const approveContent = async (collaborationId: string, feedback?: string) => {
     try {
-      // Get collaboration details
-      const { data: collab, error: getError } = await supabase
-        .from("collaborations")
-        .select("*, offer:offers(delivery_mode)")
-        .eq("id", collaborationId)
-        .single();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Non authentifié");
 
-      if (getError) throw getError;
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/approve-content`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ collaborationId, feedback }),
+        }
+      );
 
-      const deliveryMode = (collab as any).offer?.delivery_mode;
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "Erreur lors de l'approbation");
+      }
 
-      if (deliveryMode === "network") {
-        // Network mode: brand approves preview → status goes to pending_publication
-        const { error: updateError } = await supabase
-          .from("collaborations")
-          .update({
-            status: "pending_publication",
-            brand_feedback: feedback,
-          })
-          .eq("id", collaborationId);
-
-        if (updateError) throw updateError;
-
+      if (result.status === "pending_publication") {
         toast.success("Aperçu approuvé ! Le créateur doit maintenant publier sur ses réseaux.");
-        fetchCollaborations();
-        return;
+      } else {
+        toast.success("Contenu approuvé ! Le paiement a été libéré au créateur.");
       }
-
-      // Private mode: standard approval + payment release
-      const { error: updateError } = await supabase
-        .from("collaborations")
-        .update({
-          status: "completed",
-          approved_at: new Date().toISOString(),
-          brand_feedback: feedback,
-        })
-        .eq("id", collaborationId);
-
-      if (updateError) throw updateError;
-
-      // Get or create creator wallet
-      let { data: wallet, error: walletError } = await supabase
-        .from("wallets")
-        .select("*")
-        .eq("user_id", collab.creator_id)
-        .maybeSingle();
-
-      if (walletError) console.error("Error fetching wallet:", walletError);
-
-      if (!wallet) {
-        const { data: newWallet, error: createWalletError } = await supabase
-          .from("wallets")
-          .insert({ user_id: collab.creator_id })
-          .select()
-          .single();
-        if (createWalletError) throw createWalletError;
-        wallet = newWallet;
-      }
-
-      if (!wallet) throw new Error("Impossible de créer ou récupérer le portefeuille");
-
-      // Create release transaction
-      const { error: txError } = await supabase.from("transactions").insert({
-        collaboration_id: collaborationId,
-        wallet_id: wallet.id,
-        user_id: collab.creator_id,
-        type: "release",
-        status: "completed",
-        amount: collab.creator_amount,
-        fee: 0,
-        net_amount: collab.creator_amount,
-        description: `Paiement pour collaboration`,
-      });
-
-      if (txError) throw txError;
-
-      const newBalance = (wallet.balance || 0) + collab.creator_amount;
-      const { error: updateWalletError } = await supabase
-        .from("wallets")
-        .update({ balance: newBalance, updated_at: new Date().toISOString() })
-        .eq("id", wallet.id);
-
-      if (updateWalletError) throw updateWalletError;
-
-      toast.success("Contenu approuvé ! Le paiement a été libéré au créateur.");
       fetchCollaborations();
     } catch (error) {
       console.error("Error approving content:", error);
@@ -390,60 +330,25 @@ export const useCollaborations = () => {
   // Approve publication (network mode - final step: brand verifies link → payment)
   const approvePublication = async (collaborationId: string) => {
     try {
-      const { data: collab, error: getError } = await supabase
-        .from("collaborations")
-        .select("*")
-        .eq("id", collaborationId)
-        .single();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Non authentifié");
 
-      if (getError) throw getError;
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/approve-content`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ collaborationId, mode: "approve_publication" }),
+        }
+      );
 
-      const { error: updateError } = await supabase
-        .from("collaborations")
-        .update({
-          status: "completed",
-          approved_at: new Date().toISOString(),
-        })
-        .eq("id", collaborationId);
-
-      if (updateError) throw updateError;
-
-      // Get or create wallet + release payment
-      let { data: wallet } = await supabase
-        .from("wallets")
-        .select("*")
-        .eq("user_id", collab.creator_id)
-        .maybeSingle();
-
-      if (!wallet) {
-        const { data: newWallet, error: createWalletError } = await supabase
-          .from("wallets")
-          .insert({ user_id: collab.creator_id })
-          .select()
-          .single();
-        if (createWalletError) throw createWalletError;
-        wallet = newWallet;
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "Erreur lors de la validation");
       }
-
-      if (!wallet) throw new Error("Impossible de créer ou récupérer le portefeuille");
-
-      await supabase.from("transactions").insert({
-        collaboration_id: collaborationId,
-        wallet_id: wallet.id,
-        user_id: collab.creator_id,
-        type: "release",
-        status: "completed",
-        amount: collab.creator_amount,
-        fee: 0,
-        net_amount: collab.creator_amount,
-        description: `Paiement pour collaboration (publication réseau)`,
-      });
-
-      const newBalance = (wallet.balance || 0) + collab.creator_amount;
-      await supabase
-        .from("wallets")
-        .update({ balance: newBalance, updated_at: new Date().toISOString() })
-        .eq("id", wallet.id);
 
       toast.success("Publication vérifiée ! Le paiement a été libéré au créateur.");
       fetchCollaborations();
