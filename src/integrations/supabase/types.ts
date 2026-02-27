@@ -835,6 +835,7 @@ export type Database = {
           method: string
           mobile_number: string | null
           mobile_provider: string | null
+          proof_url: string | null
           rejection_reason: string | null
           reviewed_at: string | null
           reviewed_by: string | null
@@ -854,6 +855,7 @@ export type Database = {
           method: string
           mobile_number?: string | null
           mobile_provider?: string | null
+          proof_url?: string | null
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -873,6 +875,7 @@ export type Database = {
           method?: string
           mobile_number?: string | null
           mobile_provider?: string | null
+          proof_url?: string | null
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
