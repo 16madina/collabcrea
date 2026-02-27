@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Sheet,
   SheetContent,
@@ -10,9 +10,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, ArrowUpRight, AlertCircle, Clock } from "lucide-react";
+import { Loader2, ArrowUpRight, AlertCircle, Clock, ShieldAlert } from "lucide-react";
 import { useWithdrawal } from "@/hooks/useWithdrawal";
+import { useAuth } from "@/hooks/useAuth";
 import { Wallet } from "@/hooks/useWallet";
+import { worldCountries } from "@/data/countries";
+import { supabase } from "@/integrations/supabase/client";
 
 interface WithdrawalSheetProps {
   open: boolean;
@@ -55,12 +58,37 @@ const WithdrawalSheet = ({
   wallet,
   onSuccess,
 }: WithdrawalSheetProps) => {
+  const { user } = useAuth();
   const { loading, requestMobileMoneyWithdrawal } = useWithdrawal();
 
   const [amount, setAmount] = useState("");
   const [mobileProvider, setMobileProvider] = useState("");
   const [mobileNumber, setMobileNumber] = useState("");
   const [mobileNumberConfirm, setMobileNumberConfirm] = useState("");
+  const [userCountry, setUserCountry] = useState("");
+  const [userPhoneCode, setUserPhoneCode] = useState("");
+  const [userFlag, setUserFlag] = useState("");
+
+  // Fetch user's country from profile
+  useEffect(() => {
+    if (!user || !open) return;
+    const fetchCountry = async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("country")
+        .eq("user_id", user.id)
+        .single();
+      if (data?.country) {
+        setUserCountry(data.country);
+        const found = worldCountries.find((c) => c.name === data.country);
+        if (found) {
+          setUserPhoneCode(found.phoneCode);
+          setUserFlag(found.flag);
+        }
+      }
+    };
+    fetchCountry();
+  }, [user, open]);
 
   const numericAmount = parseInt(amount) || 0;
   const isValidAmount = numericAmount >= 1000 && numericAmount <= (wallet?.balance || 0);
@@ -72,7 +100,7 @@ const WithdrawalSheet = ({
 
     await requestMobileMoneyWithdrawal(wallet.id, numericAmount, {
       mobile_provider: mobileProvider,
-      mobile_number: mobileNumber,
+      mobile_number: `${userPhoneCode}${mobileNumber}`,
     });
 
     onOpenChange(false);
@@ -152,19 +180,34 @@ const WithdrawalSheet = ({
           {/* Phone Number */}
           {mobileProvider && (
             <div className="space-y-3">
+              {/* Country info */}
+              {userCountry && (
+                <div className="flex items-center gap-2 bg-muted/30 rounded-xl p-3">
+                  <ShieldAlert className="w-4 h-4 text-gold shrink-0" />
+                  <p className="text-xs text-muted-foreground">
+                    Le numéro doit correspondre à votre pays d'inscription : <span className="font-semibold text-foreground">{userFlag} {userCountry}</span>
+                  </p>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label>
                   Numéro {mobileProvider === "wave" ? "Wave" : "Orange Money"} *
                 </Label>
-                <Input
-                  type="tel"
-                  inputMode="numeric"
-                  placeholder="07 00 00 00 00"
-                  value={mobileNumber}
-                  onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, ""))}
-                  maxLength={10}
-                  className="bg-muted/30"
-                />
+                <div className="flex gap-2">
+                  <div className="w-24 h-10 bg-muted/50 border border-border rounded-xl px-3 flex items-center justify-center text-sm font-medium text-muted-foreground shrink-0">
+                    {userFlag} {userPhoneCode || "+--"}
+                  </div>
+                  <Input
+                    type="tel"
+                    inputMode="numeric"
+                    placeholder="07 00 00 00 00"
+                    value={mobileNumber}
+                    onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, ""))}
+                    maxLength={10}
+                    className="bg-muted/30"
+                  />
+                </div>
                 {mobileNumber && !isValidPhone && (
                   <div className="flex items-center gap-2 text-destructive text-xs">
                     <AlertCircle className="w-3 h-3" />
@@ -175,15 +218,20 @@ const WithdrawalSheet = ({
 
               <div className="space-y-2">
                 <Label>Confirmer le numéro *</Label>
-                <Input
-                  type="tel"
-                  inputMode="numeric"
-                  placeholder="Retapez le numéro"
-                  value={mobileNumberConfirm}
-                  onChange={(e) => setMobileNumberConfirm(e.target.value.replace(/\D/g, ""))}
-                  maxLength={10}
-                  className="bg-muted/30"
-                />
+                <div className="flex gap-2">
+                  <div className="w-24 h-10 bg-muted/50 border border-border rounded-xl px-3 flex items-center justify-center text-sm font-medium text-muted-foreground shrink-0">
+                    {userFlag} {userPhoneCode || "+--"}
+                  </div>
+                  <Input
+                    type="tel"
+                    inputMode="numeric"
+                    placeholder="Retapez le numéro"
+                    value={mobileNumberConfirm}
+                    onChange={(e) => setMobileNumberConfirm(e.target.value.replace(/\D/g, ""))}
+                    maxLength={10}
+                    className="bg-muted/30"
+                  />
+                </div>
                 {mobileNumberConfirm && !phonesMatch && (
                   <div className="flex items-center gap-2 text-destructive text-xs">
                     <AlertCircle className="w-3 h-3" />
