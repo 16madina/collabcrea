@@ -5,10 +5,12 @@ import {
   User, 
   Star, 
   Shield,
+  Image,
+  Wallet,
   type LucideIcon 
 } from "lucide-react";
 
-export type ProfileTabType = "info" | "pricing" | "offers" | "reviews" | "verification";
+export type ProfileTabType = "info" | "portfolio" | "pricing" | "wallet" | "offers" | "reviews" | "verification";
 
 interface Tab {
   id: ProfileTabType;
@@ -34,7 +36,9 @@ const ProfileTabs = ({
 }: ProfileTabsProps) => {
   const tabs: Tab[] = [
     { id: "info", label: "Infos", icon: User },
+    { id: "portfolio", label: "Portfolio", icon: Image },
     { id: "pricing", label: "Tarifs", icon: CreditCard },
+    { id: "wallet", label: "Solde", icon: Wallet },
     { id: "offers", label: "Offres", icon: Briefcase, badge: offersCount },
     { id: "reviews", label: "Avis", icon: Star, badge: reviewsCount },
     { id: "verification", label: "Sécurité", icon: Shield },
