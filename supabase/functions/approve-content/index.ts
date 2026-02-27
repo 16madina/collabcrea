@@ -105,6 +105,20 @@ serve(async (req) => {
     }
 
     if (wallet) {
+      // Mark existing escrow transaction as completed
+      const { error: escrowUpdateError } = await supabaseClient
+        .from("transactions")
+        .update({ status: "completed", updated_at: new Date().toISOString() })
+        .eq("collaboration_id", collaborationId)
+        .eq("type", "escrow")
+        .eq("status", "pending");
+
+      if (escrowUpdateError) {
+        logStep("Warning: escrow transaction update failed", { error: escrowUpdateError.message });
+      } else {
+        logStep("Escrow transaction marked completed");
+      }
+
       // Create release transaction
       const { error: txError } = await supabaseClient.from("transactions").insert({
         collaboration_id: collaborationId,

@@ -40,14 +40,14 @@ const getTransactionIcon = (type: Transaction["type"]) => {
   }
 };
 
-const getTransactionLabel = (type: Transaction["type"]) => {
-  switch (type) {
+const getTransactionLabel = (tx: Transaction) => {
+  switch (tx.type) {
     case "release": return "Paiement reçu";
     case "withdrawal": return "Retrait";
     case "deposit": return "Dépôt";
     case "refund": return "Remboursement";
-    case "escrow": return "Séquestre";
-    default: return type;
+    case "escrow": return tx.status === "pending" ? "En cours de traitement" : "Séquestre validé";
+    default: return tx.type;
   }
 };
 
@@ -236,7 +236,7 @@ const WalletTab = () => {
                         {getTransactionIcon(tx.type)}
                       </div>
                       <div>
-                        <p className="font-medium text-sm">{getTransactionLabel(tx.type)}</p>
+                        <p className="font-medium text-sm">{getTransactionLabel(tx)}</p>
                         <p className="text-xs text-muted-foreground">
                           {format(parseISO(tx.created_at), "dd MMM yyyy", { locale: fr })}
                         </p>
