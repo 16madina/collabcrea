@@ -41,9 +41,14 @@ serve(async (req) => {
     const user = userData.user;
     if (!user) throw new Error("User not authenticated");
 
-    const { reference, collaborationId } = await req.json();
-    if (!reference) throw new Error("reference is required");
-    logStep("Verifying payment", { reference });
+    const { reference: rawReference, collaborationId } = await req.json();
+    if (!rawReference) throw new Error("reference is required");
+
+    const decodedReference = decodeURIComponent(String(rawReference)).trim();
+    const nestedReference = decodedReference.match(/[?&]reference=([^&]+)/);
+    const reference = (nestedReference?.[1] ?? decodedReference).split("?")[0].split("&")[0];
+
+    logStep("Verifying payment", { rawReference, normalizedReference: reference });
 
     // Call Fincra verify endpoint
     const verifyResponse = await fetch(
@@ -64,8 +69,9 @@ serve(async (req) => {
     }
 
     const paymentStatus = verifyData.data?.status;
+    const normalizedStatus = String(paymentStatus || "").toLowerCase();
 
-    if (paymentStatus === "success" && collaborationId) {
+    if (["success", "successful", "completed"].includes(normalizedStatus) && collaborationId) {
       // Payment confirmed — update collaboration if not already done
       const { data: collab } = await supabaseClient
         .from("collaborations")

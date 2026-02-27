@@ -118,7 +118,8 @@ serve(async (req) => {
       },
       feeBearer: "customer",
       reference: reference,
-      redirectUrl: `${origin}/brand/collabs?payment=success&collaboration=${collaborationId}&reference=${reference}`,
+      // Fincra ajoute déjà le paramètre `reference` au callback
+      redirectUrl: `${origin}/brand/collabs?payment=success&collaboration=${collaborationId}`,
       settlementDestination: "wallet",
       metadata: {
         collaboration_id: collaborationId,
