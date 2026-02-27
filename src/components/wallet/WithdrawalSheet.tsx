@@ -16,6 +16,29 @@ import { useAuth } from "@/hooks/useAuth";
 import { Wallet } from "@/hooks/useWallet";
 import { worldCountries } from "@/data/countries";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
+// Phone number rules per country (local number length, without country code)
+const phoneRulesByCountry: Record<string, { lengths: number[]; hint: string }> = {
+  "Côte d'Ivoire": { lengths: [10], hint: "10 chiffres (ex: 07 08 09 10 11)" },
+  "Sénégal": { lengths: [9], hint: "9 chiffres (ex: 77 123 45 67)" },
+  "Cameroun": { lengths: [9], hint: "9 chiffres (ex: 6 99 99 99 99)" },
+  "Mali": { lengths: [8], hint: "8 chiffres" },
+  "Burkina Faso": { lengths: [8], hint: "8 chiffres" },
+  "Guinée": { lengths: [9], hint: "9 chiffres" },
+  "Bénin": { lengths: [8], hint: "8 chiffres" },
+  "Togo": { lengths: [8], hint: "8 chiffres" },
+  "Niger": { lengths: [8], hint: "8 chiffres" },
+  "Congo": { lengths: [9], hint: "9 chiffres" },
+  "RD Congo": { lengths: [9], hint: "9 chiffres" },
+  "RDC": { lengths: [9], hint: "9 chiffres" },
+  "Gabon": { lengths: [7, 8], hint: "7 ou 8 chiffres" },
+  "Tchad": { lengths: [8], hint: "8 chiffres" },
+  "Madagascar": { lengths: [9], hint: "9 chiffres" },
+  "Ghana": { lengths: [9], hint: "9 chiffres" },
+  "Nigeria": { lengths: [10], hint: "10 chiffres" },
+  "Kenya": { lengths: [9], hint: "9 chiffres" },
+};
 
 interface WithdrawalSheetProps {
   open: boolean;
@@ -92,11 +115,26 @@ const WithdrawalSheet = ({
 
   const numericAmount = parseInt(amount) || 0;
   const isValidAmount = numericAmount >= 1000 && numericAmount <= (wallet?.balance || 0);
-  const isValidPhone = /^\d{10}$/.test(mobileNumber);
+  const phoneRules = phoneRulesByCountry[userCountry];
+  const maxPhoneLength = phoneRules ? Math.max(...phoneRules.lengths) : 10;
+  const isValidPhone = phoneRules
+    ? phoneRules.lengths.includes(mobileNumber.length) && /^\d+$/.test(mobileNumber)
+    : mobileNumber.length >= 7 && mobileNumber.length <= 10 && /^\d+$/.test(mobileNumber);
   const phonesMatch = mobileNumber === mobileNumberConfirm;
+  const phoneHint = phoneRules?.hint || "7 à 10 chiffres";
 
   const handleSubmit = async () => {
-    if (!wallet || !isValidAmount || !mobileProvider || !isValidPhone || !phonesMatch) return;
+    if (!wallet || !isValidAmount || !mobileProvider || !isValidPhone || !phonesMatch) {
+      if (!isValidPhone && mobileNumber) {
+        toast.error(`Numéro invalide. Format attendu : ${phoneHint}`);
+        return;
+      }
+      if (!phonesMatch && mobileNumberConfirm) {
+        toast.error("Les numéros ne correspondent pas");
+        return;
+      }
+      return;
+    }
 
     await requestMobileMoneyWithdrawal(wallet.id, numericAmount, {
       mobile_provider: mobileProvider,
@@ -204,14 +242,14 @@ const WithdrawalSheet = ({
                     placeholder="07 00 00 00 00"
                     value={mobileNumber}
                     onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, ""))}
-                    maxLength={10}
+                    maxLength={maxPhoneLength}
                     className="bg-muted/30"
                   />
                 </div>
                 {mobileNumber && !isValidPhone && (
                   <div className="flex items-center gap-2 text-destructive text-xs">
                     <AlertCircle className="w-3 h-3" />
-                    Le numéro doit contenir exactement 10 chiffres
+                    Format attendu : {phoneHint}
                   </div>
                 )}
               </div>
@@ -228,7 +266,7 @@ const WithdrawalSheet = ({
                     placeholder="Retapez le numéro"
                     value={mobileNumberConfirm}
                     onChange={(e) => setMobileNumberConfirm(e.target.value.replace(/\D/g, ""))}
-                    maxLength={10}
+                    maxLength={maxPhoneLength}
                     className="bg-muted/30"
                   />
                 </div>

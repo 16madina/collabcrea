@@ -74,6 +74,15 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Validate phone number format (digits only after code, reasonable length)
+    const localPart = mobile_number.replace(/^\+\d{1,3}/, "");
+    if (!/^\d{7,10}$/.test(localPart)) {
+      return new Response(
+        JSON.stringify({ error: "Format de numéro invalide. Le numéro local doit contenir entre 7 et 10 chiffres." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Use service role for privileged operations
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
