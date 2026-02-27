@@ -10,7 +10,7 @@ import {
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle,
 } from "@/components/ui/sheet";
-import { Wallet, CheckCircle, XCircle, Clock, Phone, Building2, User, Upload, Image } from "lucide-react";
+import { Wallet, CheckCircle, XCircle, Clock, Phone, Building2, User, Upload, Image, Send, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
@@ -49,6 +49,7 @@ const AdminWithdrawalsTab = () => {
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [proofPreview, setProofPreview] = useState<string | null>(null);
   const [showCompletionFlow, setShowCompletionFlow] = useState(false);
+  const [payoutLoading, setPayoutLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -213,6 +214,46 @@ const AdminWithdrawalsTab = () => {
       toast.error("Erreur lors du refus");
     } finally {
       setProcessing(false);
+    }
+  };
+
+  const handleFincraAutoPayut = async (request: WithdrawalWithProfile) => {
+    if (!user) return;
+    setPayoutLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("Session expirée");
+        return;
+      }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/fincra-payout`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ withdrawalRequestId: request.id }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        toast.error(result.error || "Erreur lors du payout Fincra");
+        return;
+      }
+
+      toast.success(`Payout Fincra envoyé ! Réf: ${result.reference || "N/A"} (${result.amountUSD} USD)`);
+      fetchRequests();
+      setSelectedRequest(null);
+    } catch (error) {
+      console.error("Fincra payout error:", error);
+      toast.error("Erreur lors de l'envoi du payout");
+    } finally {
+      setPayoutLoading(false);
     }
   };
 
@@ -514,12 +555,30 @@ const AdminWithdrawalsTab = () => {
               {/* Actions when not in completion flow */}
               {selectedRequest.status === "pending" && !showCompletionFlow && (
                 <div className="space-y-3 pt-4 border-t">
+                  {/* Fincra automatic payout */}
+                  {selectedRequest.method === "mobile_money" && (
+                    <Button
+                      className="w-full text-xs bg-emerald-600 hover:bg-emerald-700"
+                      onClick={() => handleFincraAutoPayut(selectedRequest)}
+                      disabled={payoutLoading || processing}
+                    >
+                      {payoutLoading ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Send className="w-4 h-4 mr-2" />
+                      )}
+                      Envoyer via Fincra (automatique)
+                    </Button>
+                  )}
+
+                  {/* Manual option */}
                   <Button
+                    variant="outline"
                     className="w-full text-xs"
                     onClick={() => setShowCompletionFlow(true)}
                   >
                     <CheckCircle className="w-4 h-4 mr-2" />
-                    Virement effectué
+                    Virement manuel (avec preuve)
                   </Button>
 
                   <div className="space-y-2">
