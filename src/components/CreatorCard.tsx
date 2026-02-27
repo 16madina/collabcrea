@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Star, BadgeCheck } from "lucide-react";
-import { FaYoutube, FaInstagram, FaTiktok, FaSnapchatGhost } from "react-icons/fa";
+import { FaYoutube, FaInstagram, FaTiktok, FaSnapchatGhost, FaFacebookF } from "react-icons/fa";
 import type { Creator } from "./CreatorDetailSheet";
 import { CountryFlag } from "@/lib/flags";
 
@@ -75,6 +75,12 @@ const CreatorCard = ({ creator, index = 0, variant = "grid", onClick }: CreatorC
               <div className="flex items-center gap-0.5">
                 <FaTiktok className="w-3 h-3 text-foreground" />
                 <span className="text-[9px] text-muted-foreground">{creator.socials.tiktok}</span>
+              </div>
+            )}
+            {creator.socials.facebook && (
+              <div className="flex items-center gap-0.5">
+                <FaFacebookF className="w-3 h-3" color="#1877F2" />
+                <span className="text-[9px] text-muted-foreground">{creator.socials.facebook}</span>
               </div>
             )}
           </div>
@@ -174,8 +180,16 @@ const CreatorCard = ({ creator, index = 0, variant = "grid", onClick }: CreatorC
                 {creator.socials.tiktok}
               </span>
             </div>
-          )}
-          {creator.socials.snapchat && (
+            )}
+            {creator.socials.facebook && (
+              <div className="flex items-center gap-1">
+                <FaFacebookF className="w-3.5 h-3.5" color="#1877F2" />
+                <span className="text-[10px] font-medium text-muted-foreground">
+                  {creator.socials.facebook}
+                </span>
+              </div>
+            )}
+            {creator.socials.snapchat && (
             <div className="flex items-center gap-1">
               <FaSnapchatGhost className="w-3.5 h-3.5" color="#FFFC00" />
               <span className="text-[10px] font-medium text-muted-foreground">
