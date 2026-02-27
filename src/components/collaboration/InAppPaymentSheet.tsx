@@ -35,7 +35,7 @@ const paymentMethods = [
   {
     id: "card" as const,
     name: "Carte bancaire",
-    description: "Visa, Mastercard, etc.",
+    description: "Visa, Mastercard, Wave Visa, Orange Visa",
     icon: CreditCard,
     color: "text-gold",
     bgColor: "bg-gold/10",
