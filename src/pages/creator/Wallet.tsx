@@ -66,6 +66,7 @@ const CreatorWallet = () => {
   }, []);
 
   const pendingWithdrawals = requests.filter((r) => r.status === "pending" || r.status === "processing");
+  const completedWithdrawals = requests.filter((r) => r.status === "completed" || r.status === "rejected");
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -175,7 +176,54 @@ const CreatorWallet = () => {
         </div>
       )}
 
-      {/* Transactions */}
+      {/* Withdrawal History */}
+      {completedWithdrawals.length > 0 && (
+        <div className="px-6 mt-6">
+          <h2 className="font-semibold mb-3 flex items-center gap-2">
+            <CheckCircle className="w-4 h-4 text-green-500" />
+            Historique des retraits
+          </h2>
+          <div className="space-y-2">
+            {completedWithdrawals.map((req) => (
+              <Card key={req.id} className="glass">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Smartphone className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <p className="font-medium">{formatCurrency(req.amount)}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {req.mobile_provider === "wave" ? "Wave" : "Orange Money"} — {req.mobile_number}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(parseISO(req.created_at), "dd MMM yyyy", { locale: fr })}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <Badge
+                        variant="secondary"
+                        className={
+                          req.status === "completed"
+                            ? "bg-green-500/20 text-green-500"
+                            : "bg-destructive/20 text-destructive"
+                        }
+                      >
+                        {req.status === "completed" ? "Effectué" : "Refusé"}
+                      </Badge>
+                      {req.status === "rejected" && req.rejection_reason && (
+                        <p className="text-xs text-destructive mt-1 max-w-[150px]">
+                          {req.rejection_reason}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="px-6 mt-6">
         <h2 className="font-semibold mb-3">Historique des transactions</h2>
         <div className="space-y-2">
