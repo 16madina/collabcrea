@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   Wallet,
@@ -10,6 +10,7 @@ import {
   Building2,
   Smartphone,
   Image,
+  Filter,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,7 +22,7 @@ import BottomNav from "@/components/BottomNav";
 import { useWallet, Transaction } from "@/hooks/useWallet";
 import { useWithdrawal } from "@/hooks/useWithdrawal";
 import WithdrawalSheet from "@/components/wallet/WithdrawalSheet";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, startOfWeek, startOfMonth, isAfter } from "date-fns";
 import { fr } from "date-fns/locale";
 
 const formatCurrency = (amount: number) => {
@@ -64,6 +65,14 @@ const CreatorWallet = () => {
   const { requests, fetchWithdrawalRequests } = useWithdrawal();
   const [showWithdrawalSheet, setShowWithdrawalSheet] = useState(false);
   const [proofUrl, setProofUrl] = useState<string | null>(null);
+  const [period, setPeriod] = useState<"all" | "week" | "month">("all");
+
+  const filteredTransactions = useMemo(() => {
+    if (period === "all") return transactions;
+    const now = new Date();
+    const start = period === "week" ? startOfWeek(now, { locale: fr }) : startOfMonth(now);
+    return transactions.filter((tx) => isAfter(parseISO(tx.created_at), start));
+  }, [transactions, period]);
 
   useEffect(() => {
     fetchWithdrawalRequests();
@@ -244,16 +253,33 @@ const CreatorWallet = () => {
         </div>
       )}
       <div className="px-6 mt-6">
-        <h2 className="font-semibold mb-3">Historique des transactions</h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-semibold">Historique des transactions</h2>
+          <div className="flex gap-1">
+            {([["all", "Tout"], ["week", "Semaine"], ["month", "Mois"]] as const).map(([key, label]) => (
+              <button
+                key={key}
+                onClick={() => setPeriod(key)}
+                className={`text-xs px-2.5 py-1 rounded-full transition-colors ${
+                  period === key
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="space-y-2">
-          {transactions.length === 0 ? (
+          {filteredTransactions.length === 0 ? (
             <Card className="glass">
               <CardContent className="p-6 text-center">
                 <p className="text-muted-foreground">Aucune transaction</p>
               </CardContent>
             </Card>
           ) : (
-            transactions.map((tx) => (
+            filteredTransactions.map((tx) => (
               <Card key={tx.id} className="glass">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
