@@ -114,6 +114,21 @@ const AdminWithdrawalsTab = () => {
         .from("withdrawal-proofs")
         .getPublicUrl(path);
 
+      // Reset pending_balance on wallet
+      const { data: wallet } = await supabase
+        .from("wallets")
+        .select("pending_balance")
+        .eq("id", request.wallet_id)
+        .single();
+
+      if (wallet) {
+        const newPending = Math.max(0, (wallet.pending_balance || 0) - request.amount);
+        await supabase
+          .from("wallets")
+          .update({ pending_balance: newPending, updated_at: new Date().toISOString() })
+          .eq("id", request.wallet_id);
+      }
+
       const { error } = await supabase
         .from("withdrawal_requests")
         .update({
@@ -154,14 +169,19 @@ const AdminWithdrawalsTab = () => {
     try {
       const { data: wallet } = await supabase
         .from("wallets")
-        .select("balance")
+        .select("balance, pending_balance")
         .eq("id", request.wallet_id)
         .single();
 
       if (wallet) {
+        const newPending = Math.max(0, (wallet.pending_balance || 0) - request.amount);
         await supabase
           .from("wallets")
-          .update({ balance: wallet.balance + request.amount })
+          .update({ 
+            balance: wallet.balance + request.amount, 
+            pending_balance: newPending,
+            updated_at: new Date().toISOString() 
+          })
           .eq("id", request.wallet_id);
       }
 
