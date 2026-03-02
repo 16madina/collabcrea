@@ -446,6 +446,53 @@ export type Database = {
         }
         Relationships: []
       }
+      paydunya_logs: {
+        Row: {
+          amount: number | null
+          created_at: string
+          event_type: string
+          id: string
+          matched: boolean
+          payload: Json
+          response_code: string | null
+          status: string | null
+          transaction_id: string | null
+          withdrawal_request_id: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          matched?: boolean
+          payload?: Json
+          response_code?: string | null
+          status?: string | null
+          transaction_id?: string | null
+          withdrawal_request_id?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          matched?: boolean
+          payload?: Json
+          response_code?: string | null
+          status?: string | null
+          transaction_id?: string | null
+          withdrawal_request_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paydunya_logs_withdrawal_request_id_fkey"
+            columns: ["withdrawal_request_id"]
+            isOneToOne: false
+            referencedRelation: "withdrawal_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       portfolio_items: {
         Row: {
           created_at: string
