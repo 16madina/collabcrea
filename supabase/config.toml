@@ -41,3 +41,6 @@ verify_jwt = false
 
 [functions.fincra-payout]
 verify_jwt = false
+
+[functions.paydunya-payout]
+verify_jwt = false
