@@ -9,11 +9,7 @@ const corsHeaders = {
 /**
  * PayDunya IPN (Instant Payment Notification) Webhook
  * 
- * Receives async notifications from PayDunya about disbursement status changes.
- * Updates withdrawal_requests and wallets accordingly.
- * 
- * IPN Endpoint URL to configure in PayDunya dashboard:
- * https://fkfdjibqpmdaobjrryja.supabase.co/functions/v1/paydunya-webhook
+ * Endpoint URL: https://fkfdjibqpmdaobjrryja.supabase.co/functions/v1/paydunya-webhook
  */
 
 Deno.serve(async (req) => {
@@ -21,31 +17,22 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const supabaseAdmin = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  );
+
   try {
     const body = await req.json();
     console.log("PayDunya IPN received:", JSON.stringify(body));
 
-    // PayDunya IPN payload fields:
-    // - response_code: "00" = success
-    // - response_text: description
-    // - transaction_id / disburse_token: reference
-    // - status: "completed", "failed", etc.
-    // - custom_data: any data we passed (we use withdrawal_request_id)
-
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-
-    // Extract relevant fields from PayDunya IPN
-    const responseCode = body.response_code;
-    const status = body.status?.toLowerCase();
+    const responseCode = body.response_code || null;
+    const status = (body.status || "").toLowerCase();
     const transactionId = body.transaction_id || body.disburse_token || body.token || "";
-    const amount = body.amount;
+    const amount = body.amount || null;
     const responseText = body.response_text || body.message || "";
 
     // Try to find the withdrawal by matching the transaction reference
-    // PayDunya stores the proof_url as "PayDunya TX: <ref>" during payout
     let withdrawal = null;
 
     if (transactionId) {
@@ -58,7 +45,7 @@ Deno.serve(async (req) => {
       withdrawal = data;
     }
 
-    // Fallback: match by amount + status=processing if no TX match
+    // Fallback: match by amount + status=processing
     if (!withdrawal && amount) {
       const { data } = await supabaseAdmin
         .from("withdrawal_requests")
@@ -71,9 +58,22 @@ Deno.serve(async (req) => {
       withdrawal = data;
     }
 
+    const matched = !!withdrawal;
+
+    // Log IPN event
+    await supabaseAdmin.from("paydunya_logs").insert({
+      event_type: "ipn",
+      withdrawal_request_id: withdrawal?.id || null,
+      payload: body,
+      response_code: responseCode,
+      status: status || null,
+      transaction_id: transactionId || null,
+      amount: amount ? Number(amount) : null,
+      matched,
+    });
+
     if (!withdrawal) {
       console.log("IPN: No matching withdrawal found for TX:", transactionId);
-      // Return 200 to acknowledge receipt (avoid retries)
       return new Response(
         JSON.stringify({ received: true, matched: false }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -86,7 +86,6 @@ Deno.serve(async (req) => {
     const isFailed = responseCode !== "00" && (status === "failed" || status === "error" || status === "reversed");
 
     if (isSuccess && withdrawal.status === "processing") {
-      // Payout confirmed - finalize
       const { data: wallet } = await supabaseAdmin
         .from("wallets")
         .select("pending_balance")
@@ -109,7 +108,6 @@ Deno.serve(async (req) => {
         })
         .eq("id", withdrawal.id);
 
-      // Notify creator
       await supabaseAdmin.from("notifications").insert({
         user_id: withdrawal.user_id,
         title: "✅ Retrait confirmé !",
@@ -117,10 +115,7 @@ Deno.serve(async (req) => {
         type: "success",
       });
 
-      console.log("IPN: Withdrawal completed:", withdrawal.id);
-
     } else if (isFailed && withdrawal.status === "processing") {
-      // Payout failed - restore balance
       const { data: wallet } = await supabaseAdmin
         .from("wallets")
         .select("balance, pending_balance")
@@ -147,15 +142,13 @@ Deno.serve(async (req) => {
         })
         .eq("id", withdrawal.id);
 
-      // Notify creator
       await supabaseAdmin.from("notifications").insert({
         user_id: withdrawal.user_id,
         title: "❌ Retrait échoué",
-        message: `Votre retrait de ${new Intl.NumberFormat("fr-FR").format(withdrawal.amount)} FCFA a échoué. Votre solde a été restauré. ${responseText ? `Raison: ${responseText}` : ""}`,
+        message: `Votre retrait de ${new Intl.NumberFormat("fr-FR").format(withdrawal.amount)} FCFA a échoué. Votre solde a été restauré.${responseText ? ` Raison: ${responseText}` : ""}`,
         type: "error",
       });
 
-      // Notify admins
       const { data: admins } = await supabaseAdmin
         .from("user_roles")
         .select("user_id")
@@ -165,14 +158,10 @@ Deno.serve(async (req) => {
         await supabaseAdmin.from("notifications").insert({
           user_id: admin.user_id,
           title: "⚠️ Payout échoué",
-          message: `Le payout de ${new Intl.NumberFormat("fr-FR").format(withdrawal.amount)} FCFA pour le retrait ${withdrawal.id} a échoué: ${responseText}`,
+          message: `Payout de ${new Intl.NumberFormat("fr-FR").format(withdrawal.amount)} FCFA échoué: ${responseText}`,
           type: "error",
         });
       }
-
-      console.log("IPN: Withdrawal failed, balance restored:", withdrawal.id);
-    } else {
-      console.log("IPN: No action needed. Status:", status, "Withdrawal status:", withdrawal.status);
     }
 
     return new Response(
@@ -181,7 +170,16 @@ Deno.serve(async (req) => {
     );
   } catch (error) {
     console.error("IPN webhook error:", error);
-    // Always return 200 to avoid PayDunya retries on our errors
+
+    // Log error too
+    try {
+      await supabaseAdmin.from("paydunya_logs").insert({
+        event_type: "ipn_error",
+        payload: { error: String(error) },
+        matched: false,
+      });
+    } catch (_) { /* ignore logging errors */ }
+
     return new Response(
       JSON.stringify({ received: true, error: "Internal processing error" }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
