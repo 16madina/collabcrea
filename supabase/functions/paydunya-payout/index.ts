@@ -171,6 +171,13 @@ Deno.serve(async (req) => {
     const privateKey = Deno.env.get("PAYDUNYA_PRIVATE_KEY");
     const paydunyaToken = Deno.env.get("PAYDUNYA_TOKEN");
 
+    // Debug: log key prefixes (safe - only first chars)
+    console.log("PayDunya keys check:", {
+      masterKey: masterKey ? masterKey.substring(0, 8) + "..." : "MISSING",
+      privateKey: privateKey ? privateKey.substring(0, 15) + "..." : "MISSING",
+      token: paydunyaToken ? paydunyaToken.substring(0, 6) + "..." : "MISSING",
+    });
+
     if (!masterKey || !privateKey || !paydunyaToken) {
       console.error("PayDunya credentials not configured");
       return new Response(
