@@ -44,3 +44,6 @@ verify_jwt = false
 
 [functions.paydunya-payout]
 verify_jwt = false
+
+[functions.paydunya-webhook]
+verify_jwt = false
