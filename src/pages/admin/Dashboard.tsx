@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useAuth } from "@/hooks/useAuth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Shield, Bell, FileCheck, BarChart3, LogOut, Flag, Coins, FileText, Share2, Wallet, ArrowLeft } from "lucide-react";
+import { Users, Shield, Bell, FileCheck, BarChart3, LogOut, Flag, Coins, FileText, Share2, Wallet, ArrowLeft, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import AdminUsersTab from "@/components/admin/AdminUsersTab";
 import AdminVerificationTab from "@/components/admin/AdminVerificationTab";
@@ -14,6 +14,7 @@ import AdminCommissionsTab from "@/components/admin/AdminCommissionsTab";
 import AdminLegalPagesTab from "@/components/admin/AdminLegalPagesTab";
 import AdminSocialVerificationTab from "@/components/admin/AdminSocialVerificationTab";
 import AdminWithdrawalsTab from "@/components/admin/AdminWithdrawalsTab";
+import AdminPaydunyaLogsTab from "@/components/admin/AdminPaydunyaLogsTab";
 import logoCollabCrea from "@/assets/logo-collabcrea.png";
 
 const AdminDashboard = () => {
@@ -72,7 +73,7 @@ const AdminDashboard = () => {
       {/* Main Content */}
       <main className="p-4 pb-20">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full grid grid-cols-9 mb-6">
+          <TabsList className="w-full grid grid-cols-10 mb-6">
             <TabsTrigger value="users" className="flex items-center gap-1 text-xs">
               <Users className="w-4 h-4" />
               <span className="hidden sm:inline">Utilisateurs</span>
@@ -96,6 +97,10 @@ const AdminDashboard = () => {
             <TabsTrigger value="withdrawals" className="flex items-center gap-1 text-xs">
               <Wallet className="w-4 h-4" />
               <span className="hidden sm:inline">Retraits</span>
+            </TabsTrigger>
+            <TabsTrigger value="paydunya" className="flex items-center gap-1 text-xs">
+              <Activity className="w-4 h-4" />
+              <span className="hidden sm:inline">PayDunya</span>
             </TabsTrigger>
             <TabsTrigger value="legal" className="flex items-center gap-1 text-xs">
               <FileText className="w-4 h-4" />
@@ -133,6 +138,10 @@ const AdminDashboard = () => {
 
           <TabsContent value="withdrawals">
             <AdminWithdrawalsTab />
+          </TabsContent>
+
+          <TabsContent value="paydunya">
+            <AdminPaydunyaLogsTab />
           </TabsContent>
 
           <TabsContent value="legal">

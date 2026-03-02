@@ -202,6 +202,18 @@ Deno.serve(async (req) => {
     const paydunyaResult = await paydunyaResponse.json();
     console.log("PayDunya response:", JSON.stringify(paydunyaResult));
 
+    // Log the payout attempt
+    await supabaseAdmin.from("paydunya_logs").insert({
+      event_type: "payout",
+      withdrawal_request_id: withdrawal_request_id,
+      payload: paydunyaResult,
+      response_code: paydunyaResult.response_code || null,
+      status: paydunyaResult.response_code === "00" ? "success" : "failed",
+      transaction_id: paydunyaResult.transaction_id || paydunyaResult.disburse_token || null,
+      amount: withdrawal.amount,
+      matched: true,
+    });
+
     if (paydunyaResult.response_code === "00" || paydunyaResult.success) {
       // Payout successful
       const transactionRef = paydunyaResult.transaction_id || paydunyaResult.disburse_token || "";
