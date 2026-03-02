@@ -32,8 +32,9 @@ Deno.serve(async (req) => {
     const amount = body.amount || null;
     const responseText = body.response_text || body.message || "";
 
-    // Try to find the withdrawal by matching the transaction reference
+    // Try to find the withdrawal by matching the transaction reference or token
     let withdrawal = null;
+    const token = body.token || body.disburse_token || "";
 
     if (transactionId) {
       const { data } = await supabaseAdmin
@@ -41,6 +42,17 @@ Deno.serve(async (req) => {
         .select("*")
         .eq("status", "processing")
         .ilike("proof_url", `%${transactionId}%`)
+        .maybeSingle();
+      withdrawal = data;
+    }
+
+    // Try matching by disburse token
+    if (!withdrawal && token) {
+      const { data } = await supabaseAdmin
+        .from("withdrawal_requests")
+        .select("*")
+        .eq("status", "processing")
+        .ilike("proof_url", `%${token}%`)
         .maybeSingle();
       withdrawal = data;
     }
