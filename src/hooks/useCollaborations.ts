@@ -32,6 +32,8 @@ export interface Collaboration {
     content_type: string;
     logo_url: string | null;
     delivery_mode?: string;
+    presence_mode?: string;
+    filming_by?: string;
     creative_brief?: {
       phone?: string;
       address?: string;
@@ -94,7 +96,7 @@ export const useCollaborations = () => {
         .from("collaborations")
         .select(`
           *,
-          offer:offers(id, title, category, content_type, logo_url, delivery_mode, creative_brief)
+          offer:offers(id, title, category, content_type, logo_url, delivery_mode, presence_mode, filming_by, creative_brief)
         `)
         .or(`creator_id.eq.${user.id},brand_id.eq.${user.id}`)
         .order("created_at", { ascending: false });
@@ -284,6 +286,38 @@ export const useCollaborations = () => {
     }
   };
 
+  // Creator approves content in "brand films" mode
+  const creatorApproveContent = async (collaborationId: string, feedback?: string) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Non authentifié");
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/approve-content`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ collaborationId, feedback, mode: "creator_approve" }),
+        }
+      );
+
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "Erreur lors de la validation");
+      }
+
+      toast.success("Contenu validé ! Le paiement a été libéré.");
+      fetchCollaborations();
+    } catch (error) {
+      console.error("Error creator approving content:", error);
+      toast.error("Erreur lors de la validation");
+      throw error;
+    }
+  };
+
   // Submit publication link (network mode - step 2: creator publishes and submits link)
   const submitPublicationLink = async (collaborationId: string, publicationUrl: string) => {
     try {
@@ -440,6 +474,7 @@ export const useCollaborations = () => {
     approveContent,
     requestRevision,
     refundCollaboration,
+    creatorApproveContent,
     submitPublicationLink,
     approvePublication,
     verifyPublicationLink,
