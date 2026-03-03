@@ -115,6 +115,7 @@ export type Database = {
           agreed_amount: number
           approved_at: string | null
           auto_approve_at: string | null
+          brand_assets: string[] | null
           brand_feedback: string | null
           brand_id: string
           content_description: string | null
@@ -137,6 +138,7 @@ export type Database = {
           agreed_amount: number
           approved_at?: string | null
           auto_approve_at?: string | null
+          brand_assets?: string[] | null
           brand_feedback?: string | null
           brand_id: string
           content_description?: string | null
@@ -159,6 +161,7 @@ export type Database = {
           agreed_amount?: number
           approved_at?: string | null
           auto_approve_at?: string | null
+          brand_assets?: string[] | null
           brand_feedback?: string | null
           brand_id?: string
           content_description?: string | null
@@ -397,6 +400,7 @@ export type Database = {
           category: string
           content_type: string
           created_at: string
+          creative_brief: Json | null
           deadline: string | null
           delivery_mode: string
           description: string
@@ -415,6 +419,7 @@ export type Database = {
           category: string
           content_type: string
           created_at?: string
+          creative_brief?: Json | null
           deadline?: string | null
           delivery_mode?: string
           description: string
@@ -433,6 +438,7 @@ export type Database = {
           category?: string
           content_type?: string
           created_at?: string
+          creative_brief?: Json | null
           deadline?: string | null
           delivery_mode?: string
           description?: string

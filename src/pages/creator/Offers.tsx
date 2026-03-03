@@ -14,6 +14,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useApplyToOffer } from "@/hooks/useApplyToOffer";
 import { useNavigate } from "react-router-dom";
 import ReportDialog from "@/components/ReportDialog";
+import CreativeBriefDisplay from "@/components/collaboration/CreativeBriefDisplay";
 import logoKariteDor from "@/assets/logo-karite-dor.jpg";
 import logoTechAfrik from "@/assets/logo-techafrik.jpg";
 import logoNestleAfrique from "@/assets/logo-nestle-afrique.jpg";
@@ -37,6 +38,12 @@ interface Offer {
   created_at: string;
   brand_name?: string;
   isMock?: boolean;
+  creative_brief?: {
+    phone?: string;
+    address?: string;
+    hashtags?: string;
+    mentions?: string;
+  };
 }
 
 interface Application {
@@ -235,6 +242,7 @@ const CreatorOffers = () => {
           ...o,
           brand_name: profileMap.get(o.brand_id) || "Marque",
           isMock: false,
+          creative_brief: (o as any).creative_brief as Offer["creative_brief"],
         })) || [];
 
         setDbOffers(offersWithBrands);
@@ -685,9 +693,16 @@ const CreatorOffers = () => {
                 <p className="text-muted-foreground">{selectedOffer.description}</p>
               </div>
 
+              {/* Creative Brief */}
+              {selectedOffer.creative_brief && (
+                <div className="mb-6">
+                  <CreativeBriefDisplay brief={selectedOffer.creative_brief} />
+                </div>
+              )}
+
               {selectedOffer.isMock ? (
                 <Button 
-                  variant="gold" 
+                  variant="gold"
                   size="lg" 
                   className="w-full"
                   onClick={() => navigate("/auth?role=creator")}
