@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { MapPin, DollarSign, Calendar, Send, Users, Edit, Trash2, RefreshCw } from "lucide-react";
+import { MapPin, DollarSign, Calendar, Send, Users, Edit, Trash2, RefreshCw, Store, Video } from "lucide-react";
 import CreativeBriefDisplay from "@/components/collaboration/CreativeBriefDisplay";
 import { Button } from "@/components/ui/button";
 
@@ -19,6 +19,11 @@ interface OfferCardProps {
     status: string;
     applications_count?: number;
     creative_brief?: Record<string, string> | null;
+    presence_mode?: string;
+    filming_by?: string;
+    on_site_city?: string | null;
+    on_site_neighborhood?: string | null;
+    on_site_store_name?: string | null;
   };
   index: number;
   isOwner?: boolean;
@@ -156,7 +161,22 @@ const OfferCard = ({
           <span className="px-3 py-1 rounded-full text-xs font-medium bg-muted/30 border border-border text-muted-foreground">
             {offer.content_type}
           </span>
+          {offer.presence_mode === "on_site" && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-accent/10 border border-accent/30 text-accent">
+              <MapPin className="w-3 h-3" />
+              Sur place
+              {offer.filming_by === "brand" && " • 🎬 Marque filme"}
+            </span>
+          )}
         </div>
+
+        {/* On-site location */}
+        {offer.presence_mode === "on_site" && (offer.on_site_store_name || offer.on_site_city) && (
+          <div className="flex items-center gap-2 mb-2 text-xs text-muted-foreground">
+            <Store className="w-3.5 h-3.5" />
+            <span>{[offer.on_site_store_name, offer.on_site_neighborhood, offer.on_site_city].filter(Boolean).join(", ")}</span>
+          </div>
+        )}
 
         {/* Budget & Deadline */}
         <div className="space-y-1.5 mb-4">

@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { MapPin, DollarSign, Calendar, Send, Clock, ShieldAlert } from "lucide-react";
+import { MapPin, DollarSign, Calendar, Send, Clock, ShieldAlert, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -20,6 +20,11 @@ interface OfferCardProps {
     budget_max?: number;
     budget?: string;
     deadline?: string | null;
+    presence_mode?: string;
+    filming_by?: string;
+    on_site_city?: string | null;
+    on_site_neighborhood?: string | null;
+    on_site_store_name?: string | null;
   };
   index?: number;
   status?: {
@@ -147,7 +152,21 @@ const OfferCard = ({
               {contentType}
             </span>
           )}
+          {offer.presence_mode === "on_site" && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-accent/10 border border-accent/30 text-accent">
+              <MapPin className="w-3 h-3" />
+              Sur place
+            </span>
+          )}
         </div>
+
+        {/* On-site location for creator */}
+        {offer.presence_mode === "on_site" && (offer.on_site_store_name || offer.on_site_city) && (
+          <div className="flex items-center gap-2 mb-2 text-xs text-muted-foreground">
+            <Store className="w-3.5 h-3.5" />
+            <span>{[offer.on_site_store_name, offer.on_site_neighborhood, offer.on_site_city].filter(Boolean).join(", ")}</span>
+          </div>
+        )}
 
         {/* Budget and deadline */}
         <div className="space-y-1.5 mb-4">
