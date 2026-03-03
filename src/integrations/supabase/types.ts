@@ -49,6 +49,7 @@ export type Database = {
           id: string
           message: string | null
           offer_id: string
+          selected_slot: Json | null
           status: string
           updated_at: string
         }
@@ -59,6 +60,7 @@ export type Database = {
           id?: string
           message?: string | null
           offer_id: string
+          selected_slot?: Json | null
           status?: string
           updated_at?: string
         }
@@ -69,6 +71,7 @@ export type Database = {
           id?: string
           message?: string | null
           offer_id?: string
+          selected_slot?: Json | null
           status?: string
           updated_at?: string
         }
