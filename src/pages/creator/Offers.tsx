@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { CountryFlag } from "@/lib/flags";
 import { motion, AnimatePresence } from "framer-motion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Clock, MapPin, DollarSign, X, Loader2, Send, Flag, SlidersHorizontal, RotateCcw, ShieldAlert } from "lucide-react";
+import { Search, Clock, MapPin, DollarSign, X, Loader2, Send, Flag, SlidersHorizontal, RotateCcw, ShieldAlert, Store, Video, Calendar as CalendarIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -44,6 +44,12 @@ interface Offer {
     hashtags?: string;
     mentions?: string;
   };
+  presence_mode?: string;
+  filming_by?: string;
+  on_site_slots?: { date: string; start_time: string; end_time: string }[];
+  on_site_city?: string | null;
+  on_site_neighborhood?: string | null;
+  on_site_store_name?: string | null;
 }
 
 interface Application {
@@ -243,6 +249,7 @@ const CreatorOffers = () => {
           brand_name: profileMap.get(o.brand_id) || "Marque",
           isMock: false,
           creative_brief: (o as any).creative_brief as Offer["creative_brief"],
+          on_site_slots: (o as any).on_site_slots as Offer["on_site_slots"],
         })) || [];
 
         setDbOffers(offersWithBrands);
@@ -687,6 +694,56 @@ const CreatorOffers = () => {
                   </div>
                 )}
               </div>
+
+              {/* On-site info */}
+              {selectedOffer.presence_mode === "on_site" && (
+                <div className="mb-6 p-4 rounded-xl bg-accent/5 border border-accent/20">
+                  <div className="flex items-center gap-2 mb-3">
+                    <MapPin className="w-5 h-5 text-accent" />
+                    <h4 className="font-semibold text-accent">Collaboration sur place</h4>
+                  </div>
+
+                  {/* Location */}
+                  {(selectedOffer.on_site_store_name || selectedOffer.on_site_city) && (
+                    <div className="flex items-center gap-2 mb-3 text-sm text-muted-foreground">
+                      <Store className="w-4 h-4 flex-shrink-0" />
+                      <span>{[selectedOffer.on_site_store_name, selectedOffer.on_site_neighborhood, selectedOffer.on_site_city].filter(Boolean).join(", ")}</span>
+                    </div>
+                  )}
+
+                  {/* Filming by */}
+                  {selectedOffer.filming_by === "brand" && (
+                    <div className="flex items-center gap-2 mb-3 text-sm">
+                      <Video className="w-4 h-4 text-gold" />
+                      <span className="text-muted-foreground">Tournage assuré par la marque</span>
+                    </div>
+                  )}
+
+                  {/* Time slots */}
+                  {selectedOffer.on_site_slots && selectedOffer.on_site_slots.length > 0 && (
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                        Créneaux disponibles
+                      </p>
+                      <div className="space-y-2">
+                        {selectedOffer.on_site_slots.map((slot, i) => {
+                          const date = new Date(slot.date);
+                          const formattedDate = date.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
+                          return (
+                            <div key={i} className="flex items-center gap-3 bg-background/60 rounded-lg px-3 py-2">
+                              <CalendarIcon className="w-4 h-4 text-gold flex-shrink-0" />
+                              <span className="text-sm font-medium capitalize">{formattedDate}</span>
+                              <span className="text-xs text-muted-foreground ml-auto">
+                                {slot.start_time} — {slot.end_time}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="mb-6">
                 <h4 className="font-semibold mb-2">Description</h4>
