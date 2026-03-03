@@ -18,7 +18,8 @@ export const useApplyToOffer = () => {
   const applyToOffer = async (
     offerId: string,
     brandId: string,
-    message?: string
+    message?: string,
+    selectedSlot?: { date: string; start_time: string; end_time: string } | null
   ): Promise<ApplyResult> => {
     if (!user) {
       toast.error("Vous devez être connecté pour postuler");
@@ -110,6 +111,7 @@ export const useApplyToOffer = () => {
             status: "pending",
             message: message || null,
             conversation_id: conversationId,
+            selected_slot: selectedSlot || null,
             updated_at: new Date().toISOString(),
           })
           .eq("id", existingApplication.id);
@@ -139,6 +141,7 @@ export const useApplyToOffer = () => {
           creator_id: user.id,
           conversation_id: conversationId,
           message: message || null,
+          selected_slot: selectedSlot || null,
           status: "pending",
         });
 

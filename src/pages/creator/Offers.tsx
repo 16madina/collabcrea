@@ -214,6 +214,7 @@ const CreatorOffers = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
   const [applicationMessage, setApplicationMessage] = useState("");
+  const [selectedSlotIndex, setSelectedSlotIndex] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [showReportDialog, setShowReportDialog] = useState(false);
 
@@ -363,9 +364,27 @@ const CreatorOffers = () => {
 
   const handleApply = async () => {
     if (!selectedOffer || selectedOffer.isMock) return;
-    await applyToOffer(selectedOffer.id, selectedOffer.brand_id, applicationMessage);
+    
+    // Get selected slot if applicable
+    const selectedSlot = selectedOffer.presence_mode === "on_site" && 
+      selectedOffer.on_site_slots?.length && 
+      selectedSlotIndex !== null
+        ? selectedOffer.on_site_slots[selectedSlotIndex]
+        : null;
+
+    // Build message with slot info
+    let fullMessage = applicationMessage;
+    if (selectedSlot) {
+      const date = new Date(selectedSlot.date);
+      const formattedDate = date.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+      const slotInfo = `📅 Créneau choisi : ${formattedDate}, ${selectedSlot.start_time} — ${selectedSlot.end_time}`;
+      fullMessage = fullMessage ? `${slotInfo}\n\n${fullMessage}` : slotInfo;
+    }
+
+    await applyToOffer(selectedOffer.id, selectedOffer.brand_id, fullMessage, selectedSlot);
     setSelectedOffer(null);
     setApplicationMessage("");
+    setSelectedSlotIndex(null);
   };
 
   const getStatusStyle = (application: Application | undefined) => {
@@ -602,9 +621,9 @@ const CreatorOffers = () => {
                     label: "Nouveau",
                     style: "bg-green-500/20 text-green-400",
                   }}
-                  onClick={() => setSelectedOffer(offer)}
+                  onClick={() => { setSelectedOffer(offer); setSelectedSlotIndex(null); }}
                   showApplyButton={!application}
-                  onApply={() => setSelectedOffer(offer)}
+                  onApply={() => { setSelectedOffer(offer); setSelectedSlotIndex(null); }}
                   applyDisabled={!isCreatorVerified}
                   applyDisabledTooltip="Vérifiez votre identité pour postuler aux offres"
                 />
@@ -719,19 +738,38 @@ const CreatorOffers = () => {
                     </div>
                   )}
 
-                  {/* Time slots */}
+                   {/* Time slots - selectable */}
                   {selectedOffer.on_site_slots && selectedOffer.on_site_slots.length > 0 && (
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                        Créneaux disponibles
+                        {!getApplicationStatus(selectedOffer.id) ? "Choisissez un créneau" : "Créneaux disponibles"}
                       </p>
                       <div className="space-y-2">
                         {selectedOffer.on_site_slots.map((slot, i) => {
                           const date = new Date(slot.date);
                           const formattedDate = date.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
+                          const isSelected = selectedSlotIndex === i;
+                          const isSelectable = !getApplicationStatus(selectedOffer.id);
                           return (
-                            <div key={i} className="flex items-center gap-3 bg-background/60 rounded-lg px-3 py-2">
-                              <CalendarIcon className="w-4 h-4 text-gold flex-shrink-0" />
+                            <div 
+                              key={i} 
+                              onClick={() => isSelectable && setSelectedSlotIndex(isSelected ? null : i)}
+                              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all ${
+                                isSelectable ? "cursor-pointer" : ""
+                              } ${
+                                isSelected 
+                                  ? "bg-gold/15 border border-gold/40 ring-1 ring-gold/20" 
+                                  : "bg-background/60 border border-transparent hover:border-border"
+                              }`}
+                            >
+                              {isSelectable && (
+                                <div className={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
+                                  isSelected ? "border-gold bg-gold" : "border-muted-foreground/40"
+                                }`}>
+                                  {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-primary-foreground" />}
+                                </div>
+                              )}
+                              {!isSelectable && <CalendarIcon className="w-4 h-4 text-gold flex-shrink-0" />}
                               <span className="text-sm font-medium capitalize">{formattedDate}</span>
                               <span className="text-xs text-muted-foreground ml-auto">
                                 {slot.start_time} — {slot.end_time}
@@ -801,20 +839,34 @@ const CreatorOffers = () => {
                       </Tooltip>
                     </TooltipProvider>
                   ) : (
-                    <Button 
-                      variant="gold" 
-                      size="lg" 
-                      className="w-full"
-                      onClick={handleApply}
-                      disabled={isApplying}
-                    >
-                      {isApplying ? (
-                        <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                      ) : (
-                        <Send className="w-5 h-5 mr-2" />
+                    <>
+                      {selectedOffer.presence_mode === "on_site" && 
+                       selectedOffer.on_site_slots && 
+                       selectedOffer.on_site_slots.length > 0 && 
+                       selectedSlotIndex === null && (
+                        <p className="text-xs text-gold mb-2 text-center">
+                          ⬆️ Veuillez sélectionner un créneau ci-dessus
+                        </p>
                       )}
-                      Postuler
-                    </Button>
+                      <Button 
+                        variant="gold" 
+                        size="lg" 
+                        className="w-full"
+                        onClick={handleApply}
+                        disabled={isApplying || (
+                          selectedOffer.presence_mode === "on_site" && 
+                          !!selectedOffer.on_site_slots?.length && 
+                          selectedSlotIndex === null
+                        )}
+                      >
+                        {isApplying ? (
+                          <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                        ) : (
+                          <Send className="w-5 h-5 mr-2" />
+                        )}
+                        Postuler
+                      </Button>
+                    </>
                   )}
                 </>
               ) : (
