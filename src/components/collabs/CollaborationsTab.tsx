@@ -19,6 +19,8 @@ import {
   ExternalLink,
   ShieldCheck,
   Loader2,
+  Camera,
+  MapPin,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -29,6 +31,7 @@ import { useAuth } from "@/hooks/useAuth";
 import SubmitContentSheet from "@/components/collaboration/SubmitContentSheet";
 import InAppPaymentSheet from "@/components/collaboration/InAppPaymentSheet";
 import ReviewContentSheet from "@/components/collaboration/ReviewContentSheet";
+import BrandSubmitContentSheet from "@/components/collaboration/BrandSubmitContentSheet";
 import WatermarkOverlay from "@/components/collaboration/WatermarkOverlay";
 import ContentPreviewSheet from "@/components/collaboration/ContentPreviewSheet";
 import CreativeBriefDisplay from "@/components/collaboration/CreativeBriefDisplay";
@@ -107,7 +110,7 @@ const CountdownTimer = ({ deadline }: { deadline: string }) => {
     };
 
     updateCountdown();
-    const interval = setInterval(updateCountdown, 60000); // Update every minute
+    const interval = setInterval(updateCountdown, 60000);
 
     return () => clearInterval(interval);
   }, [deadline]);
@@ -133,19 +136,22 @@ interface CollaborationsTabProps {
 const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { collaborations, loading, refreshCollaborations, approvePublication, verifyPublicationLink } = useCollaborations();
+  const { collaborations, loading, refreshCollaborations, approvePublication, verifyPublicationLink, creatorApproveContent, requestRevision } = useCollaborations();
   const [selectedCollab, setSelectedCollab] = useState<Collaboration | null>(null);
-  const [sheetType, setSheetType] = useState<"submit" | "payment" | "review" | "publication_link" | null>(null);
+  const [sheetType, setSheetType] = useState<"submit" | "payment" | "review" | "publication_link" | "brand_submit" | null>(null);
   const [activeSubTab, setActiveSubTab] = useState("active");
   const [verificationResults, setVerificationResults] = useState<Record<string, any>>({});
   const [verifyingIds, setVerifyingIds] = useState<Set<string>>(new Set());
   const [previewCollab, setPreviewCollab] = useState<Collaboration | null>(null);
+  const [creatorApprovingIds, setCreatorApprovingIds] = useState<Set<string>>(new Set());
+
+  // Helper: is this a "brand films" collaboration?
+  const isBrandFilms = (collab: Collaboration) => collab.offer?.filming_by === "brand" && collab.offer?.presence_mode === "on_site";
 
   // Active = in_progress, content_submitted, pending_payment (unlock), in_review, revision_requested, pending_publication, publication_submitted
   const activeCollabs = collaborations.filter((c) =>
     ["in_progress", "content_submitted", "pending_payment", "in_review", "revision_requested", "pending_publication", "publication_submitted"].includes(c.status)
   );
-  // Completed = completed, refunded, expired, refused, cancelled
   const completedCollabs = collaborations.filter((c) =>
     ["completed", "refunded", "expired", "refused", "cancelled"].includes(c.status)
   );
@@ -160,8 +166,13 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
       return;
     }
 
+    if (actionOverride === "brand_submit") {
+      setSheetType("brand_submit");
+      return;
+    }
+
     if (collab.brand_id === user.id) {
-      if (collab.status === "content_submitted") {
+      if (collab.status === "content_submitted" && !isBrandFilms(collab)) {
         setSheetType("payment");
       } else if (collab.status === "in_review") {
         setSheetType("review");
@@ -177,12 +188,32 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
     }
   };
 
+  const handleCreatorApprove = async (collabId: string) => {
+    setCreatorApprovingIds(prev => new Set(prev).add(collabId));
+    try {
+      await creatorApproveContent(collabId);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setCreatorApprovingIds(prev => { const s = new Set(prev); s.delete(collabId); return s; });
+    }
+  };
+
+  const handleCreatorRequestRevision = async (collabId: string, feedbackText: string) => {
+    try {
+      await requestRevision(collabId, feedbackText);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const renderCollabCard = (collab: Collaboration) => {
     const deadline = parseISO(collab.deadline);
     const daysLeft = differenceInDays(deadline, new Date());
     const isExpired = isPast(deadline);
     const isCreator = user?.id === collab.creator_id;
     const isBrand = user?.id === collab.brand_id;
+    const brandFilms = isBrandFilms(collab);
 
     return (
       <Card key={collab.id} className="glass overflow-hidden">
@@ -198,7 +229,15 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
                   : `Créateur: ${collab.creator?.full_name || "N/A"}`}
               </p>
             </div>
-            {getStatusBadge(collab.status)}
+            <div className="flex flex-col items-end gap-1">
+              {getStatusBadge(collab.status)}
+              {brandFilms && (
+                <Badge variant="outline" className="text-[10px] border-blue-500/30 text-blue-500">
+                  <Camera className="w-3 h-3 mr-1" />
+                  Marque filme
+                </Badge>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center gap-4 text-sm">
@@ -220,14 +259,14 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
             <CreativeBriefDisplay brief={collab.offer.creative_brief} compact />
           )}
 
-          {collab.status === "in_progress" && !isExpired && (
+          {collab.status === "in_progress" && !isExpired && !brandFilms && (
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">Temps restant :</span>
               <CountdownTimer deadline={collab.deadline} />
             </div>
           )}
 
-          {collab.status === "in_progress" && isCreator && isExpired && (
+          {collab.status === "in_progress" && isCreator && isExpired && !brandFilms && (
             <div className="rounded-lg p-2 text-xs bg-destructive/10 text-destructive">
               <span className="flex items-center gap-1">
                 <AlertTriangle className="w-3 h-3" />
@@ -236,6 +275,176 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
             </div>
           )}
 
+          {/* ── BRAND FILMS MODE: Brand side ── */}
+          {brandFilms && collab.status === "in_progress" && isBrand && (
+            <div className="space-y-3">
+              <div className="rounded-xl p-3 bg-blue-500/10 border border-blue-500/20">
+                <div className="flex items-start gap-2">
+                  <Camera className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-blue-500 mb-1">Vous filmez le contenu</p>
+                    <p className="text-xs text-muted-foreground">
+                      Après le tournage en magasin, soumettez le contenu pour validation par le créateur.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <Button
+                variant="gold"
+                size="sm"
+                className="w-full"
+                onClick={() => handleAction(collab, "brand_submit")}
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Soumettre le contenu filmé
+              </Button>
+            </div>
+          )}
+
+          {/* BRAND FILMS MODE: Creator waiting for brand to film */}
+          {brandFilms && collab.status === "in_progress" && isCreator && (
+            <div className="flex items-center gap-2 text-blue-500 text-sm">
+              <Camera className="w-4 h-4" />
+              En attente du contenu filmé par la marque
+            </div>
+          )}
+
+          {/* BRAND FILMS MODE: Content submitted — creator reviews */}
+          {brandFilms && collab.status === "content_submitted" && isCreator && (
+            <div className="space-y-3">
+              {/* Auto-approve countdown */}
+              {collab.auto_approve_at && (
+                <div className="rounded-xl p-3 bg-orange-500/10 border border-orange-500/20">
+                  <div className="flex items-start gap-2">
+                    <Clock className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-orange-500 mb-1">Validation automatique</p>
+                      <p className="text-xs text-muted-foreground">
+                        Sans action de votre part, le contenu sera validé automatiquement le{" "}
+                        {format(parseISO(collab.auto_approve_at), "dd MMM yyyy à HH:mm", { locale: fr })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Show content preview */}
+              {collab.content_url && (
+                <div className="space-y-2">
+                  {(() => {
+                    let urls: string[] = [];
+                    try {
+                      const parsed = JSON.parse(collab.content_url);
+                      urls = Array.isArray(parsed) ? parsed : [collab.content_url];
+                    } catch {
+                      urls = [collab.content_url];
+                    }
+                    return urls.map((url, i) => {
+                      const isVideo = /\.(mp4|mov|webm|avi)$/i.test(url) || url.includes("/collaboration-content/");
+                      if (isVideo) {
+                        return (
+                          <div key={i} className="rounded-xl overflow-hidden bg-black">
+                            <video src={url} className="w-full h-40 object-contain" controls preload="metadata" />
+                          </div>
+                        );
+                      }
+                      return (
+                        <a key={i} href={url} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-3 glass rounded-xl p-3 hover:bg-muted/50 transition-colors">
+                          <ExternalLink className="w-5 h-5 text-gold flex-shrink-0" />
+                          <span className="flex-1 text-foreground truncate text-sm">{url}</span>
+                        </a>
+                      );
+                    });
+                  })()}
+                </div>
+              )}
+
+              {collab.content_description && (
+                <p className="text-sm text-muted-foreground line-clamp-2">{collab.content_description}</p>
+              )}
+
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 border-orange-500 text-orange-500 hover:bg-orange-500/10"
+                  onClick={() => {
+                    const fb = prompt("Décrivez les modifications souhaitées :");
+                    if (fb && fb.trim()) {
+                      handleCreatorRequestRevision(collab.id, fb.trim());
+                    }
+                  }}
+                >
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                  Modifier
+                </Button>
+                <Button
+                  variant="gold"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => handleCreatorApprove(collab.id)}
+                  disabled={creatorApprovingIds.has(collab.id)}
+                >
+                  {creatorApprovingIds.has(collab.id) ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                  )}
+                  Valider
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* BRAND FILMS MODE: Brand waiting for creator validation */}
+          {brandFilms && collab.status === "content_submitted" && isBrand && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-purple-500 text-sm">
+                <Clock className="w-4 h-4" />
+                En attente de validation par le créateur (48h)
+              </div>
+              {collab.auto_approve_at && (
+                <p className="text-xs text-muted-foreground">
+                  Auto-validation le {format(parseISO(collab.auto_approve_at), "dd MMM yyyy à HH:mm", { locale: fr })}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* BRAND FILMS: Revision requested — brand must resubmit */}
+          {brandFilms && collab.status === "revision_requested" && isBrand && (
+            <div className="space-y-3">
+              <div className="rounded-xl p-3 bg-orange-500/10 border border-orange-500/20">
+                <div className="flex items-start gap-2">
+                  <MessageSquare className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-orange-500 mb-1">Modification demandée par le créateur</p>
+                    <p className="text-sm text-foreground">{collab.brand_feedback}</p>
+                  </div>
+                </div>
+              </div>
+              <Button
+                variant="gold"
+                size="sm"
+                className="w-full"
+                onClick={() => handleAction(collab, "brand_submit")}
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Resoumettre le contenu
+              </Button>
+            </div>
+          )}
+
+          {/* BRAND FILMS: Revision requested — creator sees status */}
+          {brandFilms && collab.status === "revision_requested" && isCreator && (
+            <div className="flex items-center gap-2 text-orange-500 text-sm">
+              <RefreshCw className="w-4 h-4" />
+              Modification demandée — en attente du nouveau contenu
+            </div>
+          )}
+
+          {/* ── STANDARD MODE (creator films): existing flow ── */}
           {/* Refused status message */}
           {collab.status === "refused" && (
             <div className="flex items-center gap-2 text-red-500 text-sm">
@@ -244,8 +453,8 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
             </div>
           )}
 
-          {/* Revision requested - show feedback from brand */}
-          {collab.status === "revision_requested" && isCreator && (
+          {/* Standard: Revision requested - show feedback from brand */}
+          {!brandFilms && collab.status === "revision_requested" && isCreator && (
             <div className="space-y-3">
               <div className="rounded-xl p-3 bg-orange-500/10 border border-orange-500/20">
                 <div className="flex items-start gap-2">
@@ -268,7 +477,7 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
             </div>
           )}
 
-          {collab.status === "in_progress" && isCreator && !isExpired && (
+          {!brandFilms && collab.status === "in_progress" && isCreator && !isExpired && (
             <Button
               variant="gold"
               size="sm"
@@ -280,13 +489,11 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
             </Button>
           )}
 
-          {collab.status === "content_submitted" && isBrand && (
+          {!brandFilms && collab.status === "content_submitted" && isBrand && (
             <div className="space-y-3">
-              {/* Show preview or locked state based on whether already viewed */}
               {collab.content_url && (
                 <>
                   {!collab.preview_viewed_at ? (
-                    // Not yet viewed — allow one-time preview
                     <div className="space-y-2">
                       <WatermarkOverlay locked={true}>
                         <div className="w-full aspect-video bg-muted rounded-lg overflow-hidden flex items-center justify-center">
@@ -300,22 +507,9 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
                             }
                             const isVideo = /\.(mp4|mov|webm|avi)$/i.test(previewUrl) || previewUrl.includes("/collaboration-content/");
                             if (isVideo) {
-                              return (
-                                <video
-                                  src={previewUrl}
-                                  className="w-full h-full object-cover"
-                                  muted
-                                  playsInline
-                                />
-                              );
+                              return <video src={previewUrl} className="w-full h-full object-cover" muted playsInline />;
                             }
-                            return (
-                              <img
-                                src={previewUrl}
-                                alt="Aperçu du contenu"
-                                className="w-full h-full object-cover"
-                              />
-                            );
+                            return <img src={previewUrl} alt="Aperçu" className="w-full h-full object-cover" />;
                           })()}
                         </div>
                       </WatermarkOverlay>
@@ -330,7 +524,6 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
                       </Button>
                     </div>
                   ) : (
-                    // Already viewed — show thumbnail with watermark but no interaction
                     <WatermarkOverlay locked={true}>
                       <div className="w-full aspect-video bg-muted rounded-lg overflow-hidden flex items-center justify-center">
                         {(() => {
@@ -343,22 +536,9 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
                           }
                           const isVideo = /\.(mp4|mov|webm|avi)$/i.test(previewUrl) || previewUrl.includes("/collaboration-content/");
                           if (isVideo) {
-                            return (
-                              <video
-                                src={previewUrl}
-                                className="w-full h-full object-cover pointer-events-none"
-                                muted
-                                playsInline
-                              />
-                            );
+                            return <video src={previewUrl} className="w-full h-full object-cover pointer-events-none" muted playsInline />;
                           }
-                          return (
-                            <img
-                              src={previewUrl}
-                              alt="Aperçu du contenu"
-                              className="w-full h-full object-cover pointer-events-none"
-                            />
-                          );
+                          return <img src={previewUrl} alt="Aperçu" className="w-full h-full object-cover pointer-events-none" />;
                         })()}
                       </div>
                     </WatermarkOverlay>
@@ -366,9 +546,7 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
                 </>
               )}
               {collab.content_description && (
-                <p className="text-sm text-muted-foreground line-clamp-2">
-                  {collab.content_description}
-                </p>
+                <p className="text-sm text-muted-foreground line-clamp-2">{collab.content_description}</p>
               )}
               <Button
                 variant="gold"
@@ -382,7 +560,7 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
             </div>
           )}
 
-          {collab.status === "content_submitted" && isCreator && (
+          {!brandFilms && collab.status === "content_submitted" && isCreator && (
             <div className="flex items-center gap-2 text-purple-500 text-sm">
               <Lock className="w-4 h-4" />
               Contenu soumis — en attente du paiement de la marque
@@ -450,9 +628,7 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
                   className="flex items-center gap-3 glass rounded-xl p-3 hover:bg-muted/50 transition-colors"
                 >
                   <ExternalLink className="w-5 h-5 text-gold flex-shrink-0" />
-                  <span className="flex-1 text-foreground truncate text-sm">
-                    {(collab as any).publication_url}
-                  </span>
+                  <span className="flex-1 text-foreground truncate text-sm">{(collab as any).publication_url}</span>
                   <Badge variant="secondary" className="text-xs">Voir le post</Badge>
                 </a>
               )}
@@ -644,10 +820,7 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
       {selectedCollab && sheetType === "submit" && (
         <SubmitContentSheet
           open={true}
-          onOpenChange={() => {
-            setSelectedCollab(null);
-            setSheetType(null);
-          }}
+          onOpenChange={() => { setSelectedCollab(null); setSheetType(null); }}
           collaboration={selectedCollab}
           onSuccess={refreshCollaborations}
         />
@@ -656,10 +829,7 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
       {selectedCollab && sheetType === "payment" && (
         <InAppPaymentSheet
           open={true}
-          onOpenChange={() => {
-            setSelectedCollab(null);
-            setSheetType(null);
-          }}
+          onOpenChange={() => { setSelectedCollab(null); setSheetType(null); }}
           collaboration={selectedCollab}
           onSuccess={refreshCollaborations}
         />
@@ -668,10 +838,16 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
       {selectedCollab && sheetType === "review" && (
         <ReviewContentSheet
           open={true}
-          onOpenChange={() => {
-            setSelectedCollab(null);
-            setSheetType(null);
-          }}
+          onOpenChange={() => { setSelectedCollab(null); setSheetType(null); }}
+          collaboration={selectedCollab}
+          onSuccess={refreshCollaborations}
+        />
+      )}
+
+      {selectedCollab && sheetType === "brand_submit" && (
+        <BrandSubmitContentSheet
+          open={true}
+          onOpenChange={() => { setSelectedCollab(null); setSheetType(null); }}
           collaboration={selectedCollab}
           onSuccess={refreshCollaborations}
         />
@@ -680,10 +856,7 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
       {selectedCollab && sheetType === "publication_link" && (
         <SubmitContentSheet
           open={true}
-          onOpenChange={() => {
-            setSelectedCollab(null);
-            setSheetType(null);
-          }}
+          onOpenChange={() => { setSelectedCollab(null); setSheetType(null); }}
           collaboration={selectedCollab}
           onSuccess={refreshCollaborations}
           mode="publication_link"
@@ -698,7 +871,6 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
           }}
           collaboration={previewCollab}
           onViewed={() => {
-            // Update local state immediately so the button disappears
             setPreviewCollab(prev => prev ? { ...prev, preview_viewed_at: new Date().toISOString() } as any : null);
             refreshCollaborations();
           }}

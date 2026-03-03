@@ -37,21 +37,53 @@ serve(async (req) => {
     const { collaborationId, feedback, mode } = await req.json();
     if (!collaborationId) throw new Error("collaborationId is required");
 
-    // Fetch collaboration
+    // Fetch collaboration with offer details
     const { data: collab, error: collabError } = await supabaseClient
       .from("collaborations")
-      .select("*, offer:offers(delivery_mode, title)")
+      .select("*, offer:offers(delivery_mode, title, filming_by, presence_mode)")
       .eq("id", collaborationId)
       .single();
 
     if (collabError || !collab) throw new Error("Collaboration not found");
 
+    const deliveryMode = (collab as any).offer?.delivery_mode;
+    const filmingBy = (collab as any).offer?.filming_by;
+
+    // ── Creator approval mode (brand films) ──
+    if (mode === "creator_approve") {
+      // Verify user is the creator
+      if (collab.creator_id !== userId) {
+        throw new Error("Only the creator can approve in brand-films mode");
+      }
+
+      logStep("Creator approval mode (brand films)", { filmingBy });
+
+      // Complete collaboration + release payment
+      const { error: updateError } = await supabaseClient
+        .from("collaborations")
+        .update({
+          status: "completed",
+          approved_at: new Date().toISOString(),
+          brand_feedback: feedback || null,
+        })
+        .eq("id", collaborationId);
+
+      if (updateError) throw updateError;
+      logStep("Collaboration marked completed (creator approved)");
+
+      // Release payment to creator
+      await releasePayment(supabaseClient, collab);
+
+      return new Response(JSON.stringify({ success: true, status: "completed" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ── Brand approval modes ──
     // Verify user is the brand
     if (collab.brand_id !== userId) {
       throw new Error("Only the brand can approve content");
     }
-
-    const deliveryMode = (collab as any).offer?.delivery_mode;
 
     // Network mode: approve preview → pending_publication
     if (mode === "approve_preview" || (deliveryMode === "network" && mode !== "approve_publication")) {
@@ -84,73 +116,7 @@ serve(async (req) => {
     if (updateError) throw updateError;
     logStep("Collaboration marked completed");
 
-    // Get or create creator wallet
-    let { data: wallet } = await supabaseClient
-      .from("wallets")
-      .select("*")
-      .eq("user_id", collab.creator_id)
-      .maybeSingle();
-
-    if (!wallet) {
-      const { data: newWallet, error: walletError } = await supabaseClient
-        .from("wallets")
-        .insert({ user_id: collab.creator_id })
-        .select()
-        .single();
-      if (walletError) {
-        logStep("Warning: wallet creation failed", { error: walletError.message });
-      } else {
-        wallet = newWallet;
-      }
-    }
-
-    if (wallet) {
-      // Mark existing escrow transaction as completed
-      const { error: escrowUpdateError } = await supabaseClient
-        .from("transactions")
-        .update({ status: "completed", updated_at: new Date().toISOString() })
-        .eq("collaboration_id", collaborationId)
-        .eq("type", "escrow")
-        .eq("status", "pending");
-
-      if (escrowUpdateError) {
-        logStep("Warning: escrow transaction update failed", { error: escrowUpdateError.message });
-      } else {
-        logStep("Escrow transaction marked completed");
-      }
-
-      // Create release transaction
-      const { error: txError } = await supabaseClient.from("transactions").insert({
-        collaboration_id: collaborationId,
-        wallet_id: wallet.id,
-        user_id: collab.creator_id,
-        type: "release",
-        status: "completed",
-        amount: collab.creator_amount,
-        fee: 0,
-        net_amount: collab.creator_amount,
-        description: `Paiement pour collaboration`,
-      });
-
-      if (txError) {
-        logStep("Warning: transaction creation failed", { error: txError.message });
-      } else {
-        logStep("Release transaction created");
-      }
-
-      // Update wallet balance
-      const newBalance = (wallet.balance || 0) + collab.creator_amount;
-      const { error: walletUpdateError } = await supabaseClient
-        .from("wallets")
-        .update({ balance: newBalance, updated_at: new Date().toISOString() })
-        .eq("id", wallet.id);
-
-      if (walletUpdateError) {
-        logStep("Warning: wallet update failed", { error: walletUpdateError.message });
-      } else {
-        logStep("Wallet balance updated", { newBalance });
-      }
-    }
+    await releasePayment(supabaseClient, collab);
 
     return new Response(JSON.stringify({ success: true, status: "completed" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -164,3 +130,74 @@ serve(async (req) => {
     });
   }
 });
+
+// Helper: release payment to creator wallet
+async function releasePayment(supabaseClient: any, collab: any) {
+  // Get or create creator wallet
+  let { data: wallet } = await supabaseClient
+    .from("wallets")
+    .select("*")
+    .eq("user_id", collab.creator_id)
+    .maybeSingle();
+
+  if (!wallet) {
+    const { data: newWallet, error: walletError } = await supabaseClient
+      .from("wallets")
+      .insert({ user_id: collab.creator_id })
+      .select()
+      .single();
+    if (walletError) {
+      logStep("Warning: wallet creation failed", { error: walletError.message });
+    } else {
+      wallet = newWallet;
+    }
+  }
+
+  if (wallet) {
+    // Mark existing escrow transaction as completed
+    const { error: escrowUpdateError } = await supabaseClient
+      .from("transactions")
+      .update({ status: "completed", updated_at: new Date().toISOString() })
+      .eq("collaboration_id", collab.id)
+      .eq("type", "escrow")
+      .eq("status", "pending");
+
+    if (escrowUpdateError) {
+      logStep("Warning: escrow transaction update failed", { error: escrowUpdateError.message });
+    } else {
+      logStep("Escrow transaction marked completed");
+    }
+
+    // Create release transaction
+    const { error: txError } = await supabaseClient.from("transactions").insert({
+      collaboration_id: collab.id,
+      wallet_id: wallet.id,
+      user_id: collab.creator_id,
+      type: "release",
+      status: "completed",
+      amount: collab.creator_amount,
+      fee: 0,
+      net_amount: collab.creator_amount,
+      description: `Paiement pour collaboration`,
+    });
+
+    if (txError) {
+      logStep("Warning: transaction creation failed", { error: txError.message });
+    } else {
+      logStep("Release transaction created");
+    }
+
+    // Update wallet balance
+    const newBalance = (wallet.balance || 0) + collab.creator_amount;
+    const { error: walletUpdateError } = await supabaseClient
+      .from("wallets")
+      .update({ balance: newBalance, updated_at: new Date().toISOString() })
+      .eq("id", wallet.id);
+
+    if (walletUpdateError) {
+      logStep("Warning: wallet update failed", { error: walletUpdateError.message });
+    } else {
+      logStep("Wallet balance updated", { newBalance });
+    }
+  }
+}
