@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { MapPin, DollarSign, Calendar, Send, Users, Edit, Trash2, RefreshCw } from "lucide-react";
+import CreativeBriefDisplay from "@/components/collaboration/CreativeBriefDisplay";
 import { Button } from "@/components/ui/button";
 
 interface OfferCardProps {
@@ -17,6 +18,7 @@ interface OfferCardProps {
     logo_url: string | null;
     status: string;
     applications_count?: number;
+    creative_brief?: Record<string, string> | null;
   };
   index: number;
   isOwner?: boolean;
@@ -177,6 +179,13 @@ const OfferCard = ({
             )}
           </div>
         </div>
+
+        {/* Creative Brief */}
+        {isOwner && offer.creative_brief && (
+          <div className="mb-4">
+            <CreativeBriefDisplay brief={offer.creative_brief} compact />
+          </div>
+        )}
 
         {/* Action buttons */}
         {isOwner ? (
