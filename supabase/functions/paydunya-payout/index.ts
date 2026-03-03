@@ -217,7 +217,7 @@ Deno.serve(async (req) => {
 
     console.log("PayDunya Step 1 - get-invoice:", JSON.stringify(invoicePayload));
 
-    const baseUrl = "https://app.paydunya.com/sandbox-api/v1";
+    const baseUrl = "https://app.paydunya.com/api/v2";
 
     const invoiceResponse = await fetch(
       `${baseUrl}/disburse/get-invoice`,
@@ -276,9 +276,15 @@ Deno.serve(async (req) => {
         .update({ status: "pending", reviewed_by: null, reviewed_at: null })
         .eq("id", withdrawal_request_id);
 
-      const errorMsg = String(invoiceResult.response_text || invoiceResult.message || "Erreur lors de la création du décaissement");
+      // KYC not yet validated
+      const responseText = String(invoiceResult.response_text || invoiceResult.message || "");
+      const isKycError = String(invoiceResult.response_code) === "1001" || responseText.toLowerCase().includes("kyc");
+      const errorMsg = isKycError
+        ? "Le service de paiement est en cours d'activation. Veuillez réessayer dans quelques heures."
+        : `PayDunya: ${responseText || "Erreur lors de la création du décaissement"}`;
+
       return new Response(
-        JSON.stringify({ success: false, error: `PayDunya: ${errorMsg}`, paydunya_response: invoiceResult }),
+        JSON.stringify({ success: false, error: errorMsg, paydunya_response: invoiceResult }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
