@@ -31,6 +31,7 @@ import InAppPaymentSheet from "@/components/collaboration/InAppPaymentSheet";
 import ReviewContentSheet from "@/components/collaboration/ReviewContentSheet";
 import WatermarkOverlay from "@/components/collaboration/WatermarkOverlay";
 import ContentPreviewSheet from "@/components/collaboration/ContentPreviewSheet";
+import CreativeBriefDisplay from "@/components/collaboration/CreativeBriefDisplay";
 import { format, parseISO, differenceInDays, differenceInHours, differenceInMinutes, isPast } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
@@ -213,7 +214,12 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
             </div>
           </div>
 
-          {/* Real-time countdown for active collaborations */}
+          {/* Creative Brief - show for active collabs */}
+          {collab.offer?.creative_brief && isCreator && 
+           ["in_progress", "revision_requested", "pending_publication"].includes(collab.status) && (
+            <CreativeBriefDisplay brief={collab.offer.creative_brief} compact />
+          )}
+
           {collab.status === "in_progress" && !isExpired && (
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">Temps restant :</span>

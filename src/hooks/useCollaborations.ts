@@ -32,6 +32,12 @@ export interface Collaboration {
     content_type: string;
     logo_url: string | null;
     delivery_mode?: string;
+    creative_brief?: {
+      phone?: string;
+      address?: string;
+      hashtags?: string;
+      mentions?: string;
+    };
   };
   creator?: {
     full_name: string;
@@ -88,7 +94,7 @@ export const useCollaborations = () => {
         .from("collaborations")
         .select(`
           *,
-          offer:offers(id, title, category, content_type, logo_url, delivery_mode)
+          offer:offers(id, title, category, content_type, logo_url, delivery_mode, creative_brief)
         `)
         .or(`creator_id.eq.${user.id},brand_id.eq.${user.id}`)
         .order("created_at", { ascending: false });

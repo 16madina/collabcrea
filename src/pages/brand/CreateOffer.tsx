@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Loader2, X, Check, ImagePlus, Trash2, Eye, Calendar, MapPin, Tag, FileText } from "lucide-react";
+import { ArrowLeft, Loader2, X, Check, ImagePlus, Trash2, Eye, Calendar, MapPin, Tag, FileText, Phone, MapPinned, Hash, Type } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -85,6 +85,11 @@ const CreateOffer = () => {
     restrictions: "",
     expectations: "",
     delivery_mode: "private" as "private" | "network",
+    // Creative brief fields
+    brief_phone: "",
+    brief_address: "",
+    brief_hashtags: "",
+    brief_mentions: "",
   });
 
   // Load existing offer data when in edit mode
@@ -153,6 +158,9 @@ const CreateOffer = () => {
         setExistingImageUrls(images);
         setImagePreviewUrls(images);
 
+        // Load creative brief
+        const brief = (offer as any).creative_brief || {};
+
         setFormData({
           title: offer.title,
           description: description.trim(),
@@ -167,6 +175,10 @@ const CreateOffer = () => {
           restrictions,
           expectations,
           delivery_mode: (offer as any).delivery_mode || "private",
+          brief_phone: brief.phone || "",
+          brief_address: brief.address || "",
+          brief_hashtags: brief.hashtags || "",
+          brief_mentions: brief.mentions || "",
         });
       } catch (error) {
         console.error("Error loading offer:", error);
@@ -376,6 +388,13 @@ const CreateOffer = () => {
         fullDescription += `\n\n**Restrictions:**\n${formData.restrictions.trim()}`;
       }
 
+      // Build creative brief
+      const creativeBrief: Record<string, string> = {};
+      if (formData.brief_phone.trim()) creativeBrief.phone = formData.brief_phone.trim();
+      if (formData.brief_address.trim()) creativeBrief.address = formData.brief_address.trim();
+      if (formData.brief_hashtags.trim()) creativeBrief.hashtags = formData.brief_hashtags.trim();
+      if (formData.brief_mentions.trim()) creativeBrief.mentions = formData.brief_mentions.trim();
+
       const offerData = {
         title: formData.title.trim(),
         description: fullDescription,
@@ -389,6 +408,7 @@ const CreateOffer = () => {
         status,
         images: allImageUrls,
         delivery_mode: formData.delivery_mode,
+        creative_brief: Object.keys(creativeBrief).length > 0 ? creativeBrief : {},
       } as any;
 
       if (isEditMode && offerId) {
@@ -707,6 +727,77 @@ const CreateOffer = () => {
           />
         </div>
 
+        {/* Creative Brief Section */}
+        <div className="space-y-4 p-4 rounded-xl border border-gold/20 bg-gold/5">
+          <div className="flex items-center gap-2">
+            <FileText className="w-5 h-5 text-gold" />
+            <Label className="text-base font-semibold">Brief créatif</Label>
+          </div>
+          <p className="text-xs text-muted-foreground -mt-2">
+            Informations que le créateur devra intégrer dans son contenu
+          </p>
+
+          {/* Phone */}
+          <div className="space-y-2">
+            <Label htmlFor="brief_phone" className="flex items-center gap-1.5 text-sm">
+              <Phone className="w-3.5 h-3.5" />
+              Numéro de téléphone à afficher
+            </Label>
+            <Input
+              id="brief_phone"
+              placeholder="Ex: +225 07 00 00 00"
+              value={formData.brief_phone}
+              onChange={(e) => handleInputChange("brief_phone", e.target.value)}
+              className="h-11"
+            />
+          </div>
+
+          {/* Address */}
+          <div className="space-y-2">
+            <Label htmlFor="brief_address" className="flex items-center gap-1.5 text-sm">
+              <MapPinned className="w-3.5 h-3.5" />
+              Adresse / lieu à mentionner
+            </Label>
+            <Input
+              id="brief_address"
+              placeholder="Ex: Cocody, Abidjan - Près du carrefour Palmeraie"
+              value={formData.brief_address}
+              onChange={(e) => handleInputChange("brief_address", e.target.value)}
+              className="h-11"
+            />
+          </div>
+
+          {/* Hashtags */}
+          <div className="space-y-2">
+            <Label htmlFor="brief_hashtags" className="flex items-center gap-1.5 text-sm">
+              <Hash className="w-3.5 h-3.5" />
+              Hashtags & mentions obligatoires
+            </Label>
+            <Input
+              id="brief_hashtags"
+              placeholder="Ex: #MaMarque #Pub @mamarque_officiel"
+              value={formData.brief_hashtags}
+              onChange={(e) => handleInputChange("brief_hashtags", e.target.value)}
+              className="h-11"
+            />
+          </div>
+
+          {/* Mandatory text / Slogans */}
+          <div className="space-y-2">
+            <Label htmlFor="brief_mentions" className="flex items-center gap-1.5 text-sm">
+              <Type className="w-3.5 h-3.5" />
+              Textes & slogans obligatoires
+            </Label>
+            <Textarea
+              id="brief_mentions"
+              placeholder="Ex: 'Disponible dans toutes les boutiques', mention légale obligatoire..."
+              value={formData.brief_mentions}
+              onChange={(e) => handleInputChange("brief_mentions", e.target.value)}
+              className="min-h-[70px] resize-none"
+            />
+          </div>
+        </div>
+
         {/* Product Images Upload */}
         <div className="space-y-3">
           <Label>Photos du produit (max {MAX_IMAGES})</Label>
@@ -976,10 +1067,45 @@ const CreateOffer = () => {
                 <p className="text-foreground whitespace-pre-wrap">
                   {formData.restrictions}
                 </p>
+            </div>
+            )}
+
+            {/* Creative Brief Preview */}
+            {(formData.brief_phone || formData.brief_address || formData.brief_hashtags || formData.brief_mentions) && (
+              <div className="space-y-3 p-4 rounded-xl border border-gold/20 bg-gold/5">
+                <p className="text-sm font-semibold flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-gold" />
+                  Brief créatif
+                </p>
+                {formData.brief_phone && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Phone className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span>{formData.brief_phone}</span>
+                  </div>
+                )}
+                {formData.brief_address && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <MapPinned className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span>{formData.brief_address}</span>
+                  </div>
+                )}
+                {formData.brief_hashtags && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Hash className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className="text-gold">{formData.brief_hashtags}</span>
+                  </div>
+                )}
+                {formData.brief_mentions && (
+                  <div className="text-sm">
+                    <span className="text-muted-foreground flex items-center gap-1.5 mb-1">
+                      <Type className="w-3.5 h-3.5" /> Textes obligatoires
+                    </span>
+                    <p className="text-foreground whitespace-pre-wrap">{formData.brief_mentions}</p>
+                  </div>
+                )}
               </div>
             )}
 
-            {/* Close button */}
             <div className="sticky bottom-0 pt-4 bg-background">
               <Button
                 type="button"
