@@ -27,6 +27,7 @@ interface Offer {
   status: string;
   created_at: string;
   applications_count?: number;
+  creative_brief?: any;
 }
 
 type FilterStatus = "all" | "active" | "closed" | "draft" | "expired";
