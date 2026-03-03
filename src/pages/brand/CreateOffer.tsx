@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Loader2, X, Check, ImagePlus, Trash2, Eye, Calendar, MapPin, Tag, FileText, Phone, MapPinned, Hash, Type } from "lucide-react";
+import { ArrowLeft, Loader2, X, Check, ImagePlus, Trash2, Eye, Calendar, MapPin, Tag, FileText, Phone, MapPinned, Hash, Type, Store, Video, Plus, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -90,7 +90,37 @@ const CreateOffer = () => {
     brief_address: "",
     brief_hashtags: "",
     brief_mentions: "",
+    // On-site fields
+    presence_mode: "remote" as "remote" | "on_site",
+    filming_by: "creator" as "creator" | "brand",
+    on_site_slots: [] as { date: string; start_time: string; end_time: string }[],
+    on_site_city: "",
+    on_site_neighborhood: "",
+    on_site_store_name: "",
   });
+
+  const addTimeSlot = () => {
+    setFormData(prev => ({
+      ...prev,
+      on_site_slots: [...prev.on_site_slots, { date: "", start_time: "09:00", end_time: "17:00" }],
+    }));
+  };
+
+  const removeTimeSlot = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      on_site_slots: prev.on_site_slots.filter((_, i) => i !== index),
+    }));
+  };
+
+  const updateTimeSlot = (index: number, field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      on_site_slots: prev.on_site_slots.map((slot, i) => 
+        i === index ? { ...slot, [field]: value } : slot
+      ),
+    }));
+  };
 
   // Load existing offer data when in edit mode
   useEffect(() => {
@@ -179,6 +209,12 @@ const CreateOffer = () => {
           brief_address: brief.address || "",
           brief_hashtags: brief.hashtags || "",
           brief_mentions: brief.mentions || "",
+          presence_mode: (offer as any).presence_mode || "remote",
+          filming_by: (offer as any).filming_by || "creator",
+          on_site_slots: (offer as any).on_site_slots || [],
+          on_site_city: (offer as any).on_site_city || "",
+          on_site_neighborhood: (offer as any).on_site_neighborhood || "",
+          on_site_store_name: (offer as any).on_site_store_name || "",
         });
       } catch (error) {
         console.error("Error loading offer:", error);
@@ -336,6 +372,23 @@ const CreateOffer = () => {
       return;
     }
 
+    // On-site validation
+    if (formData.presence_mode === "on_site") {
+      if (!formData.on_site_city.trim()) {
+        toast.error("La ville est requise pour le mode sur place");
+        return;
+      }
+      if (formData.on_site_slots.length === 0) {
+        toast.error("Ajoutez au moins un créneau de disponibilité");
+        return;
+      }
+      const hasEmptySlot = formData.on_site_slots.some(s => !s.date);
+      if (hasEmptySlot) {
+        toast.error("Remplissez la date de chaque créneau");
+        return;
+      }
+    }
+
     let budgetMin = 0;
     let budgetMax = 0;
 
@@ -409,6 +462,12 @@ const CreateOffer = () => {
         images: allImageUrls,
         delivery_mode: formData.delivery_mode,
         creative_brief: Object.keys(creativeBrief).length > 0 ? creativeBrief : {},
+        presence_mode: formData.presence_mode,
+        filming_by: formData.filming_by,
+        on_site_slots: formData.presence_mode === "on_site" ? formData.on_site_slots : [],
+        on_site_city: formData.presence_mode === "on_site" ? formData.on_site_city || null : null,
+        on_site_neighborhood: formData.presence_mode === "on_site" ? formData.on_site_neighborhood || null : null,
+        on_site_store_name: formData.presence_mode === "on_site" ? formData.on_site_store_name || null : null,
       } as any;
 
       if (isEditMode && offerId) {
@@ -587,6 +646,160 @@ const CreateOffer = () => {
             </div>
           )}
         </div>
+
+        {/* Presence Mode - Remote vs On-site */}
+        <div className="space-y-3">
+          <Label>Mode de présence *</Label>
+          <p className="text-xs text-muted-foreground">
+            Le créateur doit-il se déplacer physiquement ?
+          </p>
+          <div className="flex gap-2">
+            {[
+              { value: "remote", label: "🏠 À distance", desc: "Le créateur travaille de chez lui" },
+              { value: "on_site", label: "📍 Sur place", desc: "Déplacement requis (magasin, événement...)" },
+            ].map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => handleInputChange("presence_mode", option.value)}
+                className={`flex-1 py-3 px-3 rounded-xl text-left transition-all ${
+                  formData.presence_mode === option.value
+                    ? "bg-gold/20 border-2 border-gold"
+                    : "bg-muted/50 border-2 border-transparent hover:border-gold/30"
+                }`}
+              >
+                <span className="text-sm font-medium block">{option.label}</span>
+                <span className="text-xs text-muted-foreground block mt-1">{option.desc}</span>
+              </button>
+            ))}
+          </div>
+
+          {formData.presence_mode === "on_site" && (
+            <div className="space-y-4 p-4 rounded-xl border border-gold/20 bg-gold/5 mt-3">
+              {/* Who films */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5">
+                  <Video className="w-4 h-4 text-gold" />
+                  Qui filme / produit le contenu ?
+                </Label>
+                <div className="flex gap-2">
+                  {[
+                    { value: "creator", label: "📱 Le créateur", desc: "Il filme et soumet" },
+                    { value: "brand", label: "🎬 La marque", desc: "Vous filmez, le créateur valide" },
+                  ].map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => handleInputChange("filming_by", option.value)}
+                      className={`flex-1 py-2.5 px-3 rounded-lg text-left transition-all ${
+                        formData.filming_by === option.value
+                          ? "bg-gold/20 border border-gold"
+                          : "bg-muted/30 border border-transparent hover:border-gold/30"
+                      }`}
+                    >
+                      <span className="text-sm font-medium block">{option.label}</span>
+                      <span className="text-[11px] text-muted-foreground block mt-0.5">{option.desc}</span>
+                    </button>
+                  ))}
+                </div>
+                {formData.filming_by === "brand" && (
+                  <div className="bg-accent/10 border border-accent/20 rounded-lg p-3 text-sm text-accent">
+                    <p className="font-medium mb-1">🎬 Mode « La marque filme »</p>
+                    <p className="text-xs">Après le rendez-vous, vous uploaderez la vidéo. Le créateur devra la valider avant que le paiement soit libéré.</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Store name */}
+              <div className="space-y-2">
+                <Label htmlFor="on_site_store_name" className="flex items-center gap-1.5 text-sm">
+                  <Store className="w-3.5 h-3.5" />
+                  Nom du lieu / magasin
+                </Label>
+                <Input
+                  id="on_site_store_name"
+                  placeholder="Ex: Salon Beauty Queen"
+                  value={formData.on_site_store_name}
+                  onChange={(e) => handleInputChange("on_site_store_name", e.target.value)}
+                  className="h-11"
+                />
+              </div>
+
+              {/* City */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="on_site_city" className="text-sm">Ville *</Label>
+                  <Input
+                    id="on_site_city"
+                    placeholder="Ex: Abidjan"
+                    value={formData.on_site_city}
+                    onChange={(e) => handleInputChange("on_site_city", e.target.value)}
+                    className="h-11"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="on_site_neighborhood" className="text-sm">Quartier</Label>
+                  <Input
+                    id="on_site_neighborhood"
+                    placeholder="Ex: Cocody"
+                    value={formData.on_site_neighborhood}
+                    onChange={(e) => handleInputChange("on_site_neighborhood", e.target.value)}
+                    className="h-11"
+                  />
+                </div>
+              </div>
+
+              {/* Time Slots */}
+              <div className="space-y-3">
+                <Label className="flex items-center gap-1.5">
+                  <Clock className="w-4 h-4 text-gold" />
+                  Créneaux de disponibilité
+                </Label>
+                {formData.on_site_slots.map((slot, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <Input
+                      type="date"
+                      value={slot.date}
+                      onChange={(e) => updateTimeSlot(index, "date", e.target.value)}
+                      className="h-10 flex-1"
+                    />
+                    <Input
+                      type="time"
+                      value={slot.start_time}
+                      onChange={(e) => updateTimeSlot(index, "start_time", e.target.value)}
+                      className="h-10 w-24"
+                    />
+                    <span className="text-muted-foreground text-xs">à</span>
+                    <Input
+                      type="time"
+                      value={slot.end_time}
+                      onChange={(e) => updateTimeSlot(index, "end_time", e.target.value)}
+                      className="h-10 w-24"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeTimeSlot(index)}
+                      className="p-1.5 text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addTimeSlot}
+                  className="gap-1.5 border-gold/40 text-gold hover:bg-gold/10"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Ajouter un créneau
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+
         <div className="space-y-3">
           <Label>Type de budget *</Label>
           <div className="flex gap-2">
@@ -1068,6 +1281,44 @@ const CreateOffer = () => {
                   {formData.restrictions}
                 </p>
             </div>
+            )}
+
+            {/* On-site Info Preview */}
+            {formData.presence_mode === "on_site" && (
+              <div className="space-y-3 p-4 rounded-xl border border-accent/20 bg-accent/5">
+                <p className="text-sm font-semibold flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-accent" />
+                  📍 Déplacement requis
+                </p>
+                <div className="space-y-2 text-sm">
+                  {formData.on_site_store_name && (
+                    <div className="flex items-center gap-2">
+                      <Store className="w-3.5 h-3.5 text-muted-foreground" />
+                      <span className="font-medium">{formData.on_site_store_name}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span>{[formData.on_site_neighborhood, formData.on_site_city].filter(Boolean).join(", ")}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Video className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span>{formData.filming_by === "brand" ? "🎬 La marque filme" : "📱 Le créateur filme"}</span>
+                  </div>
+                  {formData.on_site_slots.length > 0 && (
+                    <div className="space-y-1 mt-2">
+                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Clock className="w-3 h-3" /> Créneaux disponibles
+                      </span>
+                      {formData.on_site_slots.map((slot, i) => (
+                        <p key={i} className="text-xs bg-muted/30 rounded-lg px-2 py-1">
+                          {slot.date ? new Date(slot.date).toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" }) : "—"} • {slot.start_time} - {slot.end_time}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             )}
 
             {/* Creative Brief Preview */}

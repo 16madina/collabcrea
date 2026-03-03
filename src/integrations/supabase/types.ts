@@ -404,10 +404,16 @@ export type Database = {
           deadline: string | null
           delivery_mode: string
           description: string
+          filming_by: string
           id: string
           images: string[] | null
           location: string | null
           logo_url: string | null
+          on_site_city: string | null
+          on_site_neighborhood: string | null
+          on_site_slots: Json | null
+          on_site_store_name: string | null
+          presence_mode: string
           status: string
           title: string
           updated_at: string
@@ -423,10 +429,16 @@ export type Database = {
           deadline?: string | null
           delivery_mode?: string
           description: string
+          filming_by?: string
           id?: string
           images?: string[] | null
           location?: string | null
           logo_url?: string | null
+          on_site_city?: string | null
+          on_site_neighborhood?: string | null
+          on_site_slots?: Json | null
+          on_site_store_name?: string | null
+          presence_mode?: string
           status?: string
           title: string
           updated_at?: string
@@ -442,10 +454,16 @@ export type Database = {
           deadline?: string | null
           delivery_mode?: string
           description?: string
+          filming_by?: string
           id?: string
           images?: string[] | null
           location?: string | null
           logo_url?: string | null
+          on_site_city?: string | null
+          on_site_neighborhood?: string | null
+          on_site_slots?: Json | null
+          on_site_store_name?: string | null
+          presence_mode?: string
           status?: string
           title?: string
           updated_at?: string
