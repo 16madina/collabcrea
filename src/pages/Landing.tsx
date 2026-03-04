@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Sparkles, Users, HelpCircle, X, Briefcase, DollarSign, Calendar, MapPin, Send, Shield, Loader2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
@@ -135,10 +136,69 @@ const Landing = () => {
   const [activeTab, setActiveTab] = useState<TabType>("creators");
   const [selectedCreator, setSelectedCreator] = useState<(Creator & { userId: string }) | null>(null);
   const [showCreatorDetail, setShowCreatorDetail] = useState(false);
+  const [dbOffers, setDbOffers] = useState<any[]>([]);
+  const [offersLoading, setOffersLoading] = useState(false);
   const { isAdmin } = useAdmin();
   const { user } = useAuth();
   const { allCreators, loading } = useCreators();
   const navigate = useNavigate();
+
+  // Fetch real offers from database
+  useEffect(() => {
+    const fetchOffers = async () => {
+      setOffersLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("offers")
+          .select("*")
+          .eq("status", "active")
+          .order("created_at", { ascending: false });
+
+        if (!error && data && data.length > 0) {
+          // Get brand profiles
+          const brandIds = [...new Set(data.map(o => o.brand_id))];
+          const { data: profiles } = await supabase
+            .from("profiles")
+            .select("user_id, company_name, full_name, logo_url")
+            .in("user_id", brandIds);
+
+          const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+
+          const enriched = data.map(offer => {
+            const profile = profileMap.get(offer.brand_id);
+            const formatBudget = (min: number, max: number) => {
+              const fmt = (n: number) => n >= 1000000 ? `${(n/1000000).toFixed(1)}M` : n >= 1000 ? `${(n/1000).toFixed(0)}K` : n.toString();
+              return `${fmt(min)} - ${fmt(max)} FCFA`;
+            };
+            const formatDeadline = (d: string | null) => {
+              if (!d) return "Pas de deadline";
+              const date = new Date(d);
+              return `Avant le ${date.getDate()} ${date.toLocaleDateString('fr-FR', { month: 'short' })}`;
+            };
+            return {
+              id: offer.id,
+              brand: profile?.company_name || profile?.full_name || "Marque",
+              logo: profile?.logo_url || offer.logo_url,
+              location: offer.location || "Afrique",
+              title: offer.title,
+              category: offer.category,
+              contentType: offer.content_type,
+              budget: formatBudget(offer.budget_min, offer.budget_max),
+              deadline: formatDeadline(offer.deadline),
+              description: offer.description,
+              isReal: true,
+            };
+          });
+          setDbOffers(enriched);
+        }
+      } catch (e) {
+        console.error("Error fetching landing offers:", e);
+      } finally {
+        setOffersLoading(false);
+      }
+    };
+    fetchOffers();
+  }, []);
 
   const handleCreatorClick = (creator: Creator & { userId: string }) => {
     if (!creator.userId.startsWith("static-")) {
@@ -431,7 +491,7 @@ const Landing = () => {
 
                 {/* Grille des offres */}
                 <div className="grid grid-cols-1 gap-3">
-                  {allOffers.map((offer, index) => (
+                  {(dbOffers.length > 0 ? [...dbOffers, ...allOffers] : allOffers).map((offer, index) => (
                     <motion.div
                       key={offer.id}
                       initial={{ opacity: 0, y: 20 }}
