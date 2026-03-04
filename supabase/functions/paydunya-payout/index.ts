@@ -217,7 +217,10 @@ Deno.serve(async (req) => {
 
     console.log("PayDunya Step 1 - get-invoice:", JSON.stringify(invoicePayload));
 
-    const baseUrl = "https://app.paydunya.com/api/v2";
+    const isSandbox = privateKey.startsWith("test_");
+    const baseUrl = isSandbox
+      ? "https://app.paydunya.com/sandbox-api/v1"
+      : "https://app.paydunya.com/api/v2";
 
     const invoiceResponse = await fetch(
       `${baseUrl}/disburse/get-invoice`,
