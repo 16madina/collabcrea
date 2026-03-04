@@ -68,7 +68,7 @@ const ChatActionMenu = ({ otherUserId, otherUserName }: ChatActionMenuProps) => 
             <MoreVertical className="w-5 h-5 text-muted-foreground" />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuContent align="end" className="w-56 z-[70]">
           <DropdownMenuItem onClick={() => setShowReport(true)} className="text-destructive focus:text-destructive">
             <Flag className="w-4 h-4 mr-2" />
             Signaler cet utilisateur
