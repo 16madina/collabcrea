@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
-import { MapPin, Globe, ShieldCheck } from "lucide-react";
+import { MapPin, Globe, ShieldCheck, ExternalLink } from "lucide-react";
 import { FaYoutube, FaInstagram, FaTiktok, FaSnapchatGhost, FaFacebookF } from "react-icons/fa";
 import { CountryFlag } from "@/lib/flags";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
+
 
 interface ProfileData {
   full_name: string;
@@ -33,9 +35,11 @@ interface ChatProfileSheetProps {
   userId: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onViewFullProfile?: (userId: string, role: string) => void;
 }
 
-const ChatProfileSheet = ({ userId, open, onOpenChange }: ChatProfileSheetProps) => {
+const ChatProfileSheet = ({ userId, open, onOpenChange, onViewFullProfile }: ChatProfileSheetProps) => {
+  
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -195,6 +199,21 @@ const ChatProfileSheet = ({ userId, open, onOpenChange }: ChatProfileSheetProps)
                   ))}
                 </div>
               </div>
+            )}
+
+            {/* View full profile button */}
+            {onViewFullProfile && userId && (
+              <Button
+                variant="gold-outline"
+                className="w-full"
+                onClick={() => {
+                  onOpenChange(false);
+                  onViewFullProfile(userId, role || "creator");
+                }}
+              >
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Voir le profil complet
+              </Button>
             )}
           </div>
         ) : (
