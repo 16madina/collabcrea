@@ -218,9 +218,26 @@ Deno.serve(async (req) => {
     console.log("PayDunya Step 1 - get-invoice:", JSON.stringify(invoicePayload));
 
     const isSandbox = privateKey.startsWith("test_");
-    const baseUrl = isSandbox
-      ? "https://app.paydunya.com/sandbox-api/v1"
-      : "https://app.paydunya.com/api/v2";
+
+    // IMPORTANT: PayDunya disbursement API only works with LIVE keys on api/v2
+    // There is NO sandbox endpoint for disbursements
+    if (isSandbox) {
+      // Revert to pending
+      await supabaseAdmin
+        .from("withdrawal_requests")
+        .update({ status: "pending", reviewed_by: null, reviewed_at: null })
+        .eq("id", withdrawal_request_id);
+
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Le payout automatique nécessite des clés PayDunya LIVE. Vos clés actuelles sont en mode test (sandbox). Veuillez activer votre compte PayDunya en production ou utiliser le mode manuel.",
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const baseUrl = "https://app.paydunya.com/api/v2";
 
     const invoiceResponse = await fetch(
       `${baseUrl}/disburse/get-invoice`,
