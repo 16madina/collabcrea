@@ -55,19 +55,21 @@ const ChatProfileSheet = ({ userId, open, onOpenChange, onViewFullProfile }: Cha
     const fetchProfile = async () => {
       setLoading(true);
       try {
-        const [{ data: profileData }, { data: roleData }] = await Promise.all([
-          supabase
-            .from("profiles")
-            .select("full_name, company_name, company_description, avatar_url, logo_url, banner_url, bio, category, country, sector, website, followers, youtube_followers, instagram_followers, tiktok_followers, snapchat_followers, facebook_followers, identity_verified, residence_country")
-            .eq("user_id", userId)
-            .single(),
-          supabase
-            .from("user_roles")
-            .select("role")
-            .eq("user_id", userId)
-            .single(),
-        ]);
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("full_name, company_name, company_description, avatar_url, logo_url, banner_url, bio, category, country, sector, website, followers, youtube_followers, instagram_followers, tiktok_followers, snapchat_followers, facebook_followers, identity_verified, residence_country")
+          .eq("user_id", userId)
+          .single();
+        
         setProfile(profileData);
+
+        // Fetch role separately — may fail due to RLS (brand can't see other brand roles)
+        const { data: roleData } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", userId)
+          .maybeSingle();
+        
         setRole(roleData?.role || null);
       } catch (err) {
         console.error("Error fetching profile:", err);
