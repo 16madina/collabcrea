@@ -253,6 +253,16 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
             </div>
           </div>
 
+          {/* Selected slot for on-site collaborations */}
+          {collab.selected_slot && collab.offer?.presence_mode === "on_site" && (
+            <div className="flex items-center gap-2 rounded-lg p-2 bg-blue-500/10 text-sm">
+              <MapPin className="w-4 h-4 text-blue-500 flex-shrink-0" />
+              <span className="text-blue-500 font-medium">
+                {format(parseISO(collab.selected_slot.date), "EEE dd MMM", { locale: fr })} — {collab.selected_slot.start_time} - {collab.selected_slot.end_time}
+              </span>
+            </div>
+          )}
+
           {/* Creative Brief - show for active collabs */}
           {collab.offer?.creative_brief && isCreator && 
            ["in_progress", "revision_requested", "pending_publication"].includes(collab.status) && (
