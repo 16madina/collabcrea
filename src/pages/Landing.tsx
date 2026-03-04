@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Sparkles, Users, HelpCircle, X, Briefcase, DollarSign, Calendar, MapPin, Send, Shield, Loader2 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
 import CreatorCard from "@/components/CreatorCard";
@@ -138,8 +138,14 @@ const Landing = () => {
   const { isAdmin } = useAdmin();
   const { user } = useAuth();
   const { allCreators, loading } = useCreators();
+  const navigate = useNavigate();
 
   const handleCreatorClick = (creator: Creator & { userId: string }) => {
+    if (!creator.userId.startsWith("static-")) {
+      navigate(`/profile/${creator.userId}`);
+      return;
+    }
+
     setSelectedCreator(creator);
     setShowCreatorDetail(true);
   };
