@@ -53,35 +53,33 @@ const CreatorMessages = () => {
     }
   };
 
-  const handleViewFullProfile = async (userId: string, role: string) => {
-    if (role === "creator" || role === "brand") {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("user_id", userId)
-        .single();
-      if (profile) {
-        const nameParts = profile.full_name.split(" ");
-        setFullProfileCreator({
-          userId,
-          firstName: nameParts[0] || "",
-          lastName: nameParts.slice(1).join(" ") || "",
-          category: profile.category || profile.sector || "Lifestyle",
-          country: profile.country || "Afrique",
-          flag: "🌍",
-          image: profile.logo_url || profile.avatar_url || "/placeholder.svg",
-          bio: profile.bio || profile.company_description || undefined,
-          isVerified: profile.identity_verified === true,
-          socials: {
-            youtube: profile.youtube_followers || undefined,
-            instagram: profile.instagram_followers || undefined,
-            tiktok: profile.tiktok_followers || undefined,
-            snapchat: profile.snapchat_followers || undefined,
-            facebook: profile.facebook_followers || undefined,
-          },
-        });
-        setShowFullProfile(true);
-      }
+  const handleViewFullProfile = async (userId: string, _role: string) => {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("user_id", userId)
+      .single();
+    if (profile) {
+      const nameParts = profile.full_name.split(" ");
+      setFullProfileCreator({
+        userId,
+        firstName: profile.company_name || nameParts[0] || "",
+        lastName: profile.company_name ? "" : (nameParts.slice(1).join(" ") || ""),
+        category: profile.category || profile.sector || "Lifestyle",
+        country: profile.country || "Afrique",
+        flag: "🌍",
+        image: profile.logo_url || profile.avatar_url || "/placeholder.svg",
+        bio: profile.bio || profile.company_description || undefined,
+        isVerified: profile.identity_verified === true,
+        socials: {
+          youtube: profile.youtube_followers || undefined,
+          instagram: profile.instagram_followers || undefined,
+          tiktok: profile.tiktok_followers || undefined,
+          snapchat: profile.snapchat_followers || undefined,
+          facebook: profile.facebook_followers || undefined,
+        },
+      });
+      setShowFullProfile(true);
     }
   };
 
