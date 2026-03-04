@@ -153,8 +153,13 @@ const AcceptProposalSheet = ({
               <span className="text-muted-foreground whitespace-nowrap">FCFA</span>
             </div>
             <p className="text-xs text-muted-foreground">
-              Budget proposé : {formatCurrency(offer.budget_min)} - {formatCurrency(offer.budget_max)} · Minimum paiement : {formatCurrency(200)}
+              Budget proposé : {formatCurrency(offer.budget_min)} - {formatCurrency(offer.budget_max)}
             </p>
+            {agreedAmount < 200 && (
+              <p className="text-xs text-destructive flex items-center gap-1 mt-1">
+                ⚠️ Le montant minimum de paiement est de 200 FCFA
+              </p>
+            )}
           </div>
 
           <Separator />
