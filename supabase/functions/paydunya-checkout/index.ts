@@ -63,6 +63,10 @@ serve(async (req) => {
       throw new Error(`Statut invalide: ${collab.status}`);
     }
 
+    if (collab.agreed_amount < 200) {
+      throw new Error("Le montant minimum pour un paiement est de 200 FCFA");
+    }
+
     const [{ data: offer }, { data: creator }, { data: brand }] = await Promise.all([
       supabaseClient.from("offers").select("title, logo_url").eq("id", collab.offer_id).single(),
       supabaseClient.from("profiles").select("full_name").eq("user_id", collab.creator_id).single(),
