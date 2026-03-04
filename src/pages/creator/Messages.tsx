@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Send, ArrowLeft, Check, CheckCheck, MessageCircle } from "lucide-react";
 import ChatActionMenu from "@/components/chat/ChatActionMenu";
+import ChatProfileSheet from "@/components/chat/ChatProfileSheet";
 import { Input } from "@/components/ui/input";
 import BottomNav from "@/components/BottomNav";
 import { useConversations, Conversation } from "@/hooks/useConversations";
@@ -17,6 +18,7 @@ const CreatorMessages = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [newMessage, setNewMessage] = useState("");
+  const [showProfile, setShowProfile] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { messages, loading: messagesLoading, sendMessage } = useMessages(
@@ -99,7 +101,10 @@ const CreatorMessages = () => {
             >
               <ArrowLeft className="w-6 h-6 text-foreground" />
             </button>
-            <div className="relative">
+            <button
+              onClick={() => setShowProfile(true)}
+              className="relative cursor-pointer"
+            >
               {getAvatarUrl(selectedConversation) ? (
                 <img
                   src={getAvatarUrl(selectedConversation)!}
@@ -113,8 +118,11 @@ const CreatorMessages = () => {
                   </span>
                 </div>
               )}
-            </div>
-            <div className="flex-1 min-w-0">
+            </button>
+            <button
+              onClick={() => setShowProfile(true)}
+              className="flex-1 min-w-0 text-left cursor-pointer"
+            >
               <h2 className="font-semibold truncate">
                 {getDisplayName(selectedConversation)}
               </h2>
@@ -123,7 +131,7 @@ const CreatorMessages = () => {
                   {selectedConversation.subject}
                 </p>
               )}
-            </div>
+            </button>
             <ChatActionMenu
               otherUserId={selectedConversation.otherParticipant?.user_id || null}
               otherUserName={getDisplayName(selectedConversation)}
@@ -208,6 +216,12 @@ const CreatorMessages = () => {
             </button>
           </div>
         </div>
+
+        <ChatProfileSheet
+          userId={selectedConversation.otherParticipant?.user_id || null}
+          open={showProfile}
+          onOpenChange={setShowProfile}
+        />
       </div>
     );
   }
