@@ -24,6 +24,7 @@ import CreateOffer from "./pages/brand/CreateOffer";
 import CollabsHub from "./pages/CollabsHub";
 import AdminDashboard from "./pages/admin/Dashboard";
 import NotFound from "./pages/NotFound";
+import ProfileView from "./pages/ProfileView";
 import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import ChildSafety from "./pages/ChildSafety";
@@ -71,8 +72,9 @@ const AppContent = () => {
           <Route path="/contact" element={<Contact />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
-          <Route path="/child-safety" element={<ChildSafety />} />
-          
+           <Route path="/child-safety" element={<ChildSafety />} />
+           <Route path="/profile/:userId" element={<ProfileView />} />
+           
           {/* Creator Routes */}
           <Route path="/creator/dashboard" element={<Navigate to="/creator/profile" replace />} />
           <Route path="/creator/offers" element={<CreatorOffers />} />
