@@ -72,9 +72,9 @@ const AppContent = () => {
           <Route path="/contact" element={<Contact />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
-           <Route path="/child-safety" element={<ChildSafety />} />
-           <Route path="/profile/:userId" element={<ProfileView />} />
-           
+          <Route path="/child-safety" element={<ChildSafety />} />
+          <Route path="/profile/:userId" element={<ProfileView />} />
+          <Route path="/user-details/:userId" element={<ProfileView />} />
           {/* Creator Routes */}
           <Route path="/creator/dashboard" element={<Navigate to="/creator/profile" replace />} />
           <Route path="/creator/offers" element={<CreatorOffers />} />

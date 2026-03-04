@@ -63,7 +63,7 @@ const Explore = () => {
 
   const handleCreatorClick = (creator: Creator & { userId: string }) => {
     if (!creator.userId.startsWith("static-")) {
-      navigate(`/profile/${creator.userId}`);
+      navigate(`/user-details/${creator.userId}`);
       return;
     }
 

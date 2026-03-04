@@ -188,7 +188,7 @@ const BrandMarketplace = () => {
 
   const handleCreatorClick = (creator: Creator & { dbUserId?: string }) => {
     if (creator.dbUserId && !creator.dbUserId.startsWith("mock-")) {
-      navigate(`/profile/${creator.dbUserId}`);
+      navigate(`/user-details/${creator.dbUserId}`);
       return;
     }
 
