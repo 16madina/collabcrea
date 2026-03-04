@@ -49,6 +49,11 @@ export interface Collaboration {
     company_name: string | null;
     logo_url: string | null;
   };
+  selected_slot?: {
+    date: string;
+    start_time: string;
+    end_time: string;
+  } | null;
 }
 
 const PLATFORM_FEE_PERCENTAGE = 0.10; // 10%
@@ -106,7 +111,7 @@ export const useCollaborations = () => {
       // Fetch profiles for each collaboration
       const collabsWithProfiles = await Promise.all(
         (data || []).map(async (collab) => {
-          const [creatorRes, brandRes] = await Promise.all([
+          const [creatorRes, brandRes, applicationRes] = await Promise.all([
             supabase
               .from("profiles")
               .select("full_name, avatar_url")
@@ -117,12 +122,20 @@ export const useCollaborations = () => {
               .select("company_name, logo_url")
               .eq("user_id", collab.brand_id)
               .single(),
+            collab.conversation_id
+              ? supabase
+                  .from("applications")
+                  .select("selected_slot")
+                  .eq("conversation_id", collab.conversation_id)
+                  .maybeSingle()
+              : Promise.resolve({ data: null }),
           ]);
 
           return {
             ...collab,
             creator: creatorRes.data,
             brand: brandRes.data,
+            selected_slot: applicationRes.data?.selected_slot as Collaboration["selected_slot"],
           };
         })
       );
