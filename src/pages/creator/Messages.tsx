@@ -51,7 +51,7 @@ const CreatorMessages = () => {
   };
 
   const handleViewFullProfile = (userId: string, _role: string) => {
-    navigate(`/user-details/${userId}`);
+    navigate(`/user-details/${userId}?from=chat`);
   };
 
   const getDisplayName = (conv: Conversation) => {

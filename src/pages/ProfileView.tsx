@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, Globe, ShieldCheck, Star, User, CreditCard, Image } from "lucide-react";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { ArrowLeft, MapPin, Globe, ShieldCheck, Star, User, CreditCard, Image, MessageCircle } from "lucide-react";
 import { FaYoutube, FaInstagram, FaTiktok, FaSnapchatGhost, FaFacebookF } from "react-icons/fa";
 import { supabase } from "@/integrations/supabase/client";
 import { CountryFlag } from "@/lib/flags";
@@ -36,6 +36,8 @@ interface ProfileData {
 const ProfileView = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const fromChat = searchParams.get("from") === "chat";
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -122,6 +124,17 @@ const ProfileView = () => {
         >
           <ArrowLeft className="w-5 h-5 text-foreground" />
         </button>
+
+        {/* Return to chat button */}
+        {fromChat && (
+          <button
+            onClick={() => navigate(-1)}
+            className="absolute top-[max(env(safe-area-inset-top),0.75rem)] right-4 flex items-center gap-1.5 px-3 h-10 rounded-full bg-gold/90 backdrop-blur-sm text-primary-foreground text-xs font-semibold z-10"
+          >
+            <MessageCircle className="w-4 h-4" />
+            Conversation
+          </button>
+        )}
 
         {/* Info overlay on hero */}
         <div className="absolute bottom-4 left-6 right-6">
