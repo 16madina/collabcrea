@@ -23,7 +23,31 @@ Deno.serve(async (req) => {
   );
 
   try {
-    const body = await req.json();
+    let body: Record<string, unknown>;
+    const contentType = req.headers.get("content-type") || "";
+
+    if (contentType.includes("application/json")) {
+      body = await req.json();
+    } else {
+      // PayDunya sends IPN as application/x-www-form-urlencoded
+      const text = await req.text();
+      try {
+        body = JSON.parse(text);
+      } catch {
+        // Parse URL-encoded form data
+        const params = new URLSearchParams(text);
+        body = {};
+        for (const [key, value] of params.entries()) {
+          // Handle nested keys like data[response_code]
+          const match = key.match(/^data\[(.+)\]$/);
+          if (match) {
+            body[match[1]] = value;
+          } else {
+            body[key] = value;
+          }
+        }
+      }
+    }
     console.log("PayDunya IPN received:", JSON.stringify(body));
 
     const responseCode = body.response_code || null;
