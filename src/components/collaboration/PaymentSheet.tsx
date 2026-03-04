@@ -11,11 +11,9 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import {
   Loader2,
-  CreditCard,
   Shield,
   Lock,
   CheckCircle,
-  Wallet,
   ExternalLink,
   Phone,
 } from "lucide-react";
@@ -38,15 +36,14 @@ const PaymentSheet = ({
   open,
   onOpenChange,
   collaboration,
-  onSuccess,
 }: PaymentSheetProps) => {
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
 
-  const handleFincraPayment = async () => {
+  const handlePaydunyaPayment = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("fincra-checkout", {
+      const { data, error } = await supabase.functions.invoke("paydunya-checkout", {
         body: { collaborationId: collaboration.id },
       });
 
@@ -63,7 +60,6 @@ const PaymentSheet = ({
       }
 
       if (data?.url) {
-        // Redirect to Fincra checkout
         window.location.href = data.url;
       } else {
         toast.error("URL de paiement non reçue");
@@ -78,7 +74,7 @@ const PaymentSheet = ({
 
   const handlePayment = async () => {
     if (paymentMethod === "mobile_money") {
-      await handleFincraPayment();
+      await handlePaydunyaPayment();
     }
   };
 
@@ -107,12 +103,11 @@ const PaymentSheet = ({
             Paiement sécurisé
           </SheetTitle>
           <SheetDescription>
-            Payez en toute sécurité via Mobile Money
+            Payez en toute sécurité via PayDunya
           </SheetDescription>
         </SheetHeader>
 
         <div className="space-y-6 overflow-y-auto max-h-[calc(85vh-200px)]">
-          {/* Collaboration Summary */}
           <div className="glass rounded-xl p-4 space-y-3">
             <div className="flex items-start justify-between">
               <div>
@@ -129,7 +124,6 @@ const PaymentSheet = ({
             </div>
           </div>
 
-          {/* Amount Breakdown */}
           <div className="glass rounded-xl p-4 space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Montant de la collaboration</span>
@@ -144,20 +138,18 @@ const PaymentSheet = ({
             </div>
           </div>
 
-          {/* Security Info */}
           <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4">
             <div className="flex gap-3">
               <Shield className="w-5 h-5 text-green-500 flex-shrink-0" />
               <div className="text-sm">
-                <p className="font-medium text-foreground mb-1">Paiement sécurisé via Fincra</p>
+                <p className="font-medium text-foreground mb-1">Paiement sécurisé via PayDunya</p>
                 <p className="text-muted-foreground text-xs">
-                  Votre argent est conservé en séquestre jusqu'à ce que le créateur livre le contenu et que vous l'approuviez. En cas de non-livraison, vous êtes intégralement remboursé.
+                  Votre argent est conservé en séquestre jusqu'à ce que le créateur livre le contenu et que vous l'approuviez.
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Payment Methods */}
           <div className="space-y-3">
             <h3 className="font-semibold">Méthode de paiement</h3>
             <div className="space-y-2">
@@ -188,10 +180,8 @@ const PaymentSheet = ({
                           </Badge>
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        {method.description}
-                      </p>
-                      {"badges" in method && method.badges && (
+                      <p className="text-xs text-muted-foreground">{method.description}</p>
+                      {method.badges && (
                         <div className="flex flex-wrap gap-1.5 mt-1.5">
                           {method.badges.map((badge) => (
                             <span
@@ -214,7 +204,6 @@ const PaymentSheet = ({
           </div>
         </div>
 
-        {/* Submit Button */}
         <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-background via-background to-transparent">
           <Button
             variant="gold"
@@ -231,7 +220,7 @@ const PaymentSheet = ({
             Payer {formatCurrency(collaboration.agreed_amount)}
           </Button>
           <p className="text-xs text-muted-foreground text-center mt-2">
-            Vous serez redirigé vers la page de paiement sécurisée Fincra
+            Vous serez redirigé vers la page de paiement sécurisée PayDunya
           </p>
         </div>
       </SheetContent>

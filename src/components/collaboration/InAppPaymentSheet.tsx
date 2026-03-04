@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Sheet,
   SheetContent,
@@ -9,7 +9,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, Lock, Shield, Phone, ExternalLink, DollarSign, RefreshCw } from "lucide-react";
+import { Loader2, Lock, Shield, Phone, ExternalLink, DollarSign } from "lucide-react";
 import { Collaboration } from "@/hooks/useCollaborations";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -25,42 +25,19 @@ const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("fr-FR").format(amount) + " FCFA";
 };
 
-const formatUSD = (amount: number) => {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
-};
-
-// Fallback rate, will be replaced by live rate from backend
-const DEFAULT_USD_TO_XOF = 615;
-
 const InAppPaymentSheet = ({
   open,
   onOpenChange,
   collaboration,
-  onSuccess,
 }: InAppPaymentSheetProps) => {
   const [loading, setLoading] = useState(false);
-  const [liveRate, setLiveRate] = useState<number | null>(null);
 
   const amountFCFA = collaboration.agreed_amount;
-  const rate = liveRate || DEFAULT_USD_TO_XOF;
-  const amountUSD = Math.round((amountFCFA / rate) * 100) / 100;
 
-  // Fetch live exchange rate on mount
-  useEffect(() => {
-    fetch("https://open.er-api.com/v6/latest/USD")
-      .then(r => r.json())
-      .then(data => {
-        if (data?.result === "success" && data.rates?.XOF) {
-          setLiveRate(data.rates.XOF);
-        }
-      })
-      .catch(() => {});
-  }, []);
-
-  const handleFincraCheckout = async () => {
+  const handlePaydunyaCheckout = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("fincra-checkout", {
+      const { data, error } = await supabase.functions.invoke("paydunya-checkout", {
         body: { collaborationId: collaboration.id },
       });
 
@@ -105,7 +82,6 @@ const InAppPaymentSheet = ({
         </SheetHeader>
 
         <div className="space-y-6 overflow-y-auto max-h-[calc(85vh-200px)]">
-          {/* Collaboration Summary */}
           <div className="glass rounded-xl p-4 space-y-3">
             <div className="flex items-start justify-between">
               <div>
@@ -122,7 +98,6 @@ const InAppPaymentSheet = ({
             </div>
           </div>
 
-          {/* Amount Breakdown */}
           <div className="glass rounded-xl p-4 space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Montant de la collaboration</span>
@@ -133,29 +108,17 @@ const InAppPaymentSheet = ({
               <span className="font-semibold text-foreground">Total à payer</span>
               <div className="text-right">
                 <span className="text-xl font-bold text-gold">
-                  {formatUSD(amountUSD)}
+                  {formatCurrency(amountFCFA)}
                 </span>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  ≈ {formatCurrency(amountFCFA)}
-                </p>
               </div>
             </div>
           </div>
 
-          {/* Exchange rate info */}
-          <div className="flex items-center gap-2 px-1">
-            <RefreshCw className="w-3.5 h-3.5 text-muted-foreground" />
-            <p className="text-xs text-muted-foreground">
-              Taux {liveRate ? "en temps réel" : "indicatif"} : 1 USD ≈ {Math.round(rate)} FCFA{!liveRate && ". Le montant final peut varier légèrement."}
-            </p>
-          </div>
-
-          {/* Security Info */}
           <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4">
             <div className="flex gap-3">
               <Shield className="w-5 h-5 text-green-500 flex-shrink-0" />
               <div className="text-sm">
-                <p className="font-medium text-foreground mb-1">Paiement sécurisé via Fincra</p>
+                <p className="font-medium text-foreground mb-1">Paiement sécurisé via PayDunya</p>
                 <p className="text-muted-foreground text-xs">
                   En payant, vous débloquez le contenu original du créateur. Vous pourrez ensuite l'approuver ou demander des modifications.
                 </p>
@@ -163,7 +126,6 @@ const InAppPaymentSheet = ({
             </div>
           </div>
 
-          {/* Payment methods info */}
           <div className="space-y-3">
             <p className="text-sm font-medium text-muted-foreground">Méthodes de paiement acceptées</p>
             <div className="glass rounded-xl p-4 space-y-3">
@@ -200,13 +162,12 @@ const InAppPaymentSheet = ({
           </div>
         </div>
 
-        {/* Submit Button */}
         <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-background via-background to-transparent">
           <Button
             variant="gold"
             size="lg"
             className="w-full"
-            onClick={handleFincraCheckout}
+            onClick={handlePaydunyaCheckout}
             disabled={loading}
           >
             {loading ? (
@@ -214,10 +175,10 @@ const InAppPaymentSheet = ({
             ) : (
               <ExternalLink className="w-5 h-5 mr-2" />
             )}
-            Payer {formatUSD(amountUSD)}
+            Payer {formatCurrency(amountFCFA)}
           </Button>
           <p className="text-xs text-muted-foreground text-center mt-2">
-            Soit ≈ {formatCurrency(amountFCFA)} • Paiement sécurisé Fincra
+            Paiement sécurisé PayDunya
           </p>
         </div>
       </SheetContent>
