@@ -207,8 +207,12 @@ const ChatProfileSheet = ({ userId, open, onOpenChange, onViewFullProfile }: Cha
                 variant="gold-outline"
                 className="w-full"
                 onClick={() => {
+                  const uid = userId;
+                  const r = role || "creator";
                   onOpenChange(false);
-                  onViewFullProfile(userId, role || "creator");
+                  setTimeout(() => {
+                    onViewFullProfile(uid, r);
+                  }, 300);
                 }}
               >
                 <ExternalLink className="w-4 h-4 mr-2" />
