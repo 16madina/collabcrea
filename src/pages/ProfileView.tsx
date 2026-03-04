@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, Globe, ShieldCheck } from "lucide-react";
+import { ArrowLeft, MapPin, Globe, ShieldCheck, Star, User, CreditCard, Image } from "lucide-react";
 import { FaYoutube, FaInstagram, FaTiktok, FaSnapchatGhost, FaFacebookF } from "react-icons/fa";
 import { supabase } from "@/integrations/supabase/client";
 import { CountryFlag } from "@/lib/flags";
@@ -80,118 +80,145 @@ const ProfileView = () => {
   }
 
   const displayName = profile.company_name || profile.full_name;
-  const avatarUrl = profile.logo_url || profile.avatar_url;
   const isBrand = role === "brand";
+  // For creators, use avatar as hero image; for brands use logo
+  const heroImage = isBrand
+    ? (profile.banner_url || profile.logo_url)
+    : (profile.avatar_url || profile.banner_url);
+  const avatarUrl = isBrand ? (profile.logo_url || profile.avatar_url) : profile.avatar_url;
 
   const socials = [
-    { icon: FaYoutube, value: profile.youtube_followers, color: "text-red-500", label: "YouTube" },
-    { icon: FaInstagram, value: profile.instagram_followers, color: "text-pink-500", label: "Instagram" },
-    { icon: FaTiktok, value: profile.tiktok_followers, color: "text-foreground", label: "TikTok" },
-    { icon: FaFacebookF, value: profile.facebook_followers, color: "text-blue-500", label: "Facebook" },
-    { icon: FaSnapchatGhost, value: profile.snapchat_followers, color: "text-yellow-400", label: "Snapchat" },
+    { icon: FaYoutube, value: profile.youtube_followers, color: "text-red-500", bg: "bg-[#FF0000]", label: "YouTube" },
+    { icon: FaInstagram, value: profile.instagram_followers, color: "text-pink-500", bg: "bg-gradient-to-br from-[#f09433] via-[#dc2743] to-[#bc1888]", label: "Instagram" },
+    { icon: FaTiktok, value: profile.tiktok_followers, color: "text-foreground", bg: "bg-black", label: "TikTok" },
+    { icon: FaFacebookF, value: profile.facebook_followers, color: "text-blue-500", bg: "bg-[#1877F2]", label: "Facebook" },
+    { icon: FaSnapchatGhost, value: profile.snapchat_followers, color: "text-yellow-400", bg: "bg-[#FFFC00]", label: "Snapchat", iconColor: "text-black" },
   ].filter((s) => s.value);
 
   const pricing = Array.isArray(profile.pricing) ? profile.pricing : [];
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Banner */}
+      {/* Hero photo - like CreatorDetailSheet */}
       <div className="relative">
-        {profile.banner_url ? (
-          <img src={profile.banner_url} alt="Banner" className="w-full h-44 object-cover" />
+        {heroImage ? (
+          <div className="aspect-[4/3] overflow-hidden">
+            <img src={heroImage} alt={displayName} className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+          </div>
         ) : (
-          <div className="w-full h-44 bg-gradient-to-r from-gold/30 to-gold/10" />
+          <div className="aspect-[4/3] bg-gradient-to-br from-gold/30 via-purple-500/20 to-gold/10 flex items-center justify-center">
+            <div className="w-32 h-32 rounded-full bg-gold/20 flex items-center justify-center">
+              <span className="text-gold font-bold text-5xl">{displayName.charAt(0).toUpperCase()}</span>
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+          </div>
         )}
+
+        {/* Back button */}
         <button
           onClick={() => navigate(-1)}
-          className="absolute top-[max(env(safe-area-inset-top),0.75rem)] left-4 w-10 h-10 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center"
+          className="absolute top-[max(env(safe-area-inset-top),0.75rem)] left-4 w-10 h-10 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center z-10"
         >
           <ArrowLeft className="w-5 h-5 text-foreground" />
         </button>
-        <div className="absolute -bottom-12 left-6">
-          <div className="w-24 h-24 rounded-full border-4 border-background overflow-hidden bg-muted">
-            {avatarUrl ? (
-              <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full bg-gold/20 flex items-center justify-center">
-                <span className="text-gold font-bold text-3xl">{displayName.charAt(0).toUpperCase()}</span>
-              </div>
+
+        {/* Info overlay on hero */}
+        <div className="absolute bottom-4 left-6 right-6">
+          <div className="flex items-center gap-2 mb-2">
+            {!isBrand && profile.category && (
+              <span className="px-3 py-1 rounded-full text-xs font-medium bg-gold text-primary-foreground">
+                {profile.category}
+              </span>
+            )}
+            {isBrand && profile.sector && (
+              <span className="px-3 py-1 rounded-full text-xs font-medium bg-gold text-primary-foreground">
+                {profile.sector}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <h1 className="font-display text-2xl font-bold text-foreground">{displayName}</h1>
+            {profile.identity_verified && <ShieldCheck className="w-5 h-5 text-gold fill-gold/20" />}
+          </div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+            {profile.country && (
+              <>
+                <CountryFlag country={profile.country} size={18} />
+                <MapPin className="w-3 h-3" />
+                <span>{profile.country}</span>
+              </>
             )}
           </div>
         </div>
       </div>
 
-      {/* Info */}
-      <div className="px-6 pt-16 pb-6 space-y-4">
-        <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold text-foreground">{displayName}</h1>
-          {profile.identity_verified && <ShieldCheck className="w-5 h-5 text-gold fill-gold/20" />}
-        </div>
+      {/* Content - Tabs for creators, simple info for brands */}
+      {!isBrand && userId ? (
+        <div className="px-6 pt-4 pb-8">
+          <Tabs defaultValue="info" className="w-full">
+            <TabsList className="w-full grid grid-cols-3 bg-muted/50 p-1 rounded-xl mb-4">
+              <TabsTrigger value="info" className="rounded-lg data-[state=active]:bg-gold data-[state=active]:text-primary-foreground">
+                <User className="w-4 h-4 mr-1.5" />
+                Infos
+              </TabsTrigger>
+              <TabsTrigger value="portfolio" className="rounded-lg data-[state=active]:bg-gold data-[state=active]:text-primary-foreground">
+                <Image className="w-4 h-4 mr-1.5" />
+                Portfolio
+              </TabsTrigger>
+              <TabsTrigger value="pricing" className="rounded-lg data-[state=active]:bg-gold data-[state=active]:text-primary-foreground">
+                <CreditCard className="w-4 h-4 mr-1.5" />
+                Tarifs
+              </TabsTrigger>
+            </TabsList>
 
-        <div className="flex items-center gap-2 flex-wrap">
-          {isBrand && profile.sector && <Badge variant="secondary">{profile.sector}</Badge>}
-          {!isBrand && profile.category && <Badge variant="secondary">{profile.category}</Badge>}
-          {profile.country && (
-            <span className="flex items-center gap-1 text-sm text-muted-foreground">
-              <MapPin className="w-3.5 h-3.5" />
-              <CountryFlag country={profile.country} size={14} />
-              {profile.country}
-            </span>
-          )}
-        </div>
+            {/* Info Tab */}
+            <TabsContent value="info" className="space-y-6">
+              {profile.bio && (
+                <div>
+                  <h3 className="font-semibold text-foreground mb-2">À propos</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{profile.bio}</p>
+                </div>
+              )}
 
-        {profile.website && (
-          <a
-            href={profile.website.startsWith("http") ? profile.website : `https://${profile.website}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1 text-sm text-gold hover:underline"
-          >
-            <Globe className="w-3.5 h-3.5" />
-            {profile.website}
-          </a>
-        )}
+              {profile.website && (
+                <a
+                  href={profile.website.startsWith("http") ? profile.website : `https://${profile.website}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-sm text-gold hover:underline"
+                >
+                  <Globe className="w-3.5 h-3.5" />
+                  {profile.website}
+                </a>
+              )}
 
-        {/* Bio / Description */}
-        {(isBrand ? profile.company_description : profile.bio) && (
-          <div className="space-y-1">
-            <h3 className="text-sm font-semibold text-foreground">{isBrand ? "À propos" : "Bio"}</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {isBrand ? profile.company_description : profile.bio}
-            </p>
-          </div>
-        )}
-
-        {/* Social stats (creators only) */}
-        {!isBrand && socials.length > 0 && (
-          <div className="space-y-2">
-            <h3 className="text-sm font-semibold text-foreground">Réseaux sociaux</h3>
-            <div className="grid grid-cols-2 gap-2">
-              {socials.map((social) => (
-                <div key={social.label} className="glass-card p-3 flex items-center gap-3 rounded-xl">
-                  <social.icon className={`w-5 h-5 ${social.color}`} />
-                  <div>
-                    <p className="text-xs text-muted-foreground">{social.label}</p>
-                    <p className="text-sm font-semibold text-foreground">{social.value}</p>
+              {socials.length > 0 && (
+                <div>
+                  <h3 className="font-semibold text-foreground mb-3 italic">Réseaux sociaux</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    {socials.map((social) => (
+                      <div key={social.label} className="glass rounded-xl p-3 flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-full ${social.bg} flex items-center justify-center`}>
+                          <social.icon className={`w-5 h-5 ${social.iconColor || "text-white"}`} />
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">{social.label}</p>
+                          <p className="font-semibold text-foreground">{social.value}</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
+              )}
+            </TabsContent>
 
-      {/* Tabs for creators */}
-      {!isBrand && userId && (
-        <div className="px-6 pb-8">
-          <Tabs defaultValue="portfolio" className="w-full">
-            <TabsList className="w-full mb-4">
-              <TabsTrigger value="portfolio" className="flex-1">Portfolio</TabsTrigger>
-              <TabsTrigger value="pricing" className="flex-1">Tarifs</TabsTrigger>
-            </TabsList>
+            {/* Portfolio Tab */}
             <TabsContent value="portfolio">
               <PortfolioTab userId={userId} />
             </TabsContent>
+
+            {/* Pricing Tab */}
             <TabsContent value="pricing">
               {pricing.length > 0 ? (
                 <RateCardDisplay
@@ -204,6 +231,27 @@ const ProfileView = () => {
               )}
             </TabsContent>
           </Tabs>
+        </div>
+      ) : (
+        /* Brand info section */
+        <div className="px-6 pt-4 pb-8 space-y-4">
+          {profile.website && (
+            <a
+              href={profile.website.startsWith("http") ? profile.website : `https://${profile.website}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-sm text-gold hover:underline"
+            >
+              <Globe className="w-3.5 h-3.5" />
+              {profile.website}
+            </a>
+          )}
+          {profile.company_description && (
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">À propos</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">{profile.company_description}</p>
+            </div>
+          )}
         </div>
       )}
     </div>
