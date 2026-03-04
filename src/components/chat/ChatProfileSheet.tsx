@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
-import { MapPin, Globe, Star, ShieldCheck } from "lucide-react";
+import { MapPin, Globe, ShieldCheck } from "lucide-react";
 import { FaYoutube, FaInstagram, FaTiktok, FaSnapchatGhost, FaFacebookF } from "react-icons/fa";
 import { CountryFlag } from "@/lib/flags";
 import { Badge } from "@/components/ui/badge";
+import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 
 interface ProfileData {
   full_name: string;
@@ -37,31 +38,41 @@ interface ChatProfileSheetProps {
 const ChatProfileSheet = ({ userId, open, onOpenChange }: ChatProfileSheetProps) => {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [role, setRole] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!userId || !open) return;
-
-    const fetch = async () => {
+    if (!userId || !open) {
+      // Reset when closed so next open shows loading
+      setProfile(null);
       setLoading(true);
-      const [{ data: profileData }, { data: roleData }] = await Promise.all([
-        supabase
-          .from("profiles")
-          .select("full_name, company_name, company_description, avatar_url, logo_url, banner_url, bio, category, country, sector, website, followers, youtube_followers, instagram_followers, tiktok_followers, snapchat_followers, facebook_followers, identity_verified, residence_country")
-          .eq("user_id", userId)
-          .single(),
-        supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", userId)
-          .single(),
-      ]);
-      setProfile(profileData);
-      setRole(roleData?.role || null);
-      setLoading(false);
+      return;
+    }
+
+    const fetchProfile = async () => {
+      setLoading(true);
+      try {
+        const [{ data: profileData }, { data: roleData }] = await Promise.all([
+          supabase
+            .from("profiles")
+            .select("full_name, company_name, company_description, avatar_url, logo_url, banner_url, bio, category, country, sector, website, followers, youtube_followers, instagram_followers, tiktok_followers, snapchat_followers, facebook_followers, identity_verified, residence_country")
+            .eq("user_id", userId)
+            .single(),
+          supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", userId)
+            .single(),
+        ]);
+        setProfile(profileData);
+        setRole(roleData?.role || null);
+      } catch (err) {
+        console.error("Error fetching profile:", err);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    fetch();
+    fetchProfile();
   }, [userId, open]);
 
   const displayName = profile?.company_name || profile?.full_name || "Utilisateur";
@@ -78,7 +89,11 @@ const ChatProfileSheet = ({ userId, open, onOpenChange }: ChatProfileSheetProps)
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="rounded-t-3xl max-h-[85vh] overflow-y-auto">
+      <SheetContent side="bottom" className="rounded-t-3xl max-h-[85vh] overflow-y-auto z-[80]">
+        <VisuallyHidden.Root>
+          <SheetTitle>Profil utilisateur</SheetTitle>
+        </VisuallyHidden.Root>
+
         {loading ? (
           <div className="flex justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gold" />
