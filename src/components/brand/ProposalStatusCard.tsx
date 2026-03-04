@@ -46,6 +46,7 @@ type ProposalStatus = "pending" | "accepted" | "refused";
 const ProposalStatusCard = ({ offerId, conversationId, onPaymentSuccess }: ProposalStatusCardProps) => {
   const [offer, setOffer] = useState<Offer | null>(null);
   const [collaboration, setCollaboration] = useState<CollaborationData | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<{ date: string; start_time: string; end_time: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [proposalStatus, setProposalStatus] = useState<ProposalStatus>("pending");
   const [showPaymentSheet, setShowPaymentSheet] = useState(false);
@@ -69,6 +70,17 @@ const ProposalStatusCard = ({ offerId, conversationId, onPaymentSuccess }: Propo
           .select("id, status, agreed_amount, creator_amount, platform_fee, creator_id, brand_id, deadline, offer_id, conversation_id")
           .eq("conversation_id", conversationId)
           .maybeSingle();
+
+        // Fetch application's selected_slot
+        const { data: appData } = await supabase
+          .from("applications")
+          .select("selected_slot")
+          .eq("conversation_id", conversationId)
+          .maybeSingle();
+
+        if (appData?.selected_slot) {
+          setSelectedSlot(appData.selected_slot as any);
+        }
 
         if (collabData) {
           setCollaboration(collabData);
@@ -258,6 +270,16 @@ const ProposalStatusCard = ({ offerId, conversationId, onPaymentSuccess }: Propo
                 </span>
               )}
             </div>
+
+            {/* Selected slot display */}
+            {selectedSlot && (
+              <div className="flex items-center gap-1.5 mt-1.5 text-xs text-blue-500 font-medium">
+                <MapPin className="w-3 h-3" />
+                <span>
+                  {format(new Date(selectedSlot.date), "EEE dd MMM", { locale: fr })} — {selectedSlot.start_time} - {selectedSlot.end_time}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
