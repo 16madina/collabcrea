@@ -156,8 +156,9 @@ export const useCollaborations = () => {
     deadline: string,
     conversationId?: string
   ) => {
-    const platformFee = Math.round(agreedAmount * PLATFORM_FEE_PERCENTAGE);
-    const creatorAmount = agreedAmount - platformFee;
+    const safeAgreedAmount = Math.max(200, Math.round(agreedAmount));
+    const platformFee = Math.round(safeAgreedAmount * PLATFORM_FEE_PERCENTAGE);
+    const creatorAmount = safeAgreedAmount - platformFee;
 
     try {
       const { data, error } = await supabase
@@ -166,7 +167,7 @@ export const useCollaborations = () => {
           offer_id: offerId,
           creator_id: creatorId,
           brand_id: brandId,
-          agreed_amount: agreedAmount,
+          agreed_amount: safeAgreedAmount,
           platform_fee: platformFee,
           creator_amount: creatorAmount,
           deadline: deadline,

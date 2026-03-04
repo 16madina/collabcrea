@@ -57,9 +57,12 @@ const AcceptProposalSheet = ({
 }: AcceptProposalSheetProps) => {
   const { createCollaboration } = useCollaborations();
   const [loading, setLoading] = useState(false);
-  const [agreedAmount, setAgreedAmount] = useState(
-    Math.round((offer.budget_min + offer.budget_max) / 2)
-  );
+  const minimumAmount = Math.max(200, offer.budget_min);
+  const maximumAmount = Math.max(offer.budget_max, minimumAmount);
+  const [agreedAmount, setAgreedAmount] = useState(() => {
+    const suggested = Math.round((offer.budget_min + offer.budget_max) / 2);
+    return Math.min(maximumAmount, Math.max(minimumAmount, suggested));
+  });
 
   const platformFee = Math.round(agreedAmount * PLATFORM_FEE);
   const creatorAmount = agreedAmount - platformFee;
@@ -138,15 +141,19 @@ const AcceptProposalSheet = ({
               <Input
                 type="number"
                 value={agreedAmount}
-                onChange={(e) => setAgreedAmount(Number(e.target.value))}
-                min={offer.budget_min}
-                max={offer.budget_max}
+                onChange={(e) => {
+                  const next = Number(e.target.value);
+                  if (Number.isNaN(next)) return;
+                  setAgreedAmount(Math.min(maximumAmount, Math.max(minimumAmount, next)));
+                }}
+                min={minimumAmount}
+                max={maximumAmount}
                 className="text-lg font-semibold"
               />
               <span className="text-muted-foreground whitespace-nowrap">FCFA</span>
             </div>
             <p className="text-xs text-muted-foreground">
-              Budget proposé : {formatCurrency(offer.budget_min)} - {formatCurrency(offer.budget_max)}
+              Budget proposé : {formatCurrency(offer.budget_min)} - {formatCurrency(offer.budget_max)} · Minimum paiement : {formatCurrency(200)}
             </p>
           </div>
 

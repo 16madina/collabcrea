@@ -63,8 +63,34 @@ serve(async (req) => {
       throw new Error(`Statut invalide: ${collab.status}`);
     }
 
-    if (collab.agreed_amount < 200) {
-      throw new Error("Le montant minimum pour un paiement est de 200 FCFA");
+    let effectiveAgreedAmount = Number(collab.agreed_amount || 0);
+    let effectivePlatformFee = Number(collab.platform_fee || 0);
+    let effectiveCreatorAmount = Number(collab.creator_amount || 0);
+
+    if (effectiveAgreedAmount < 200) {
+      effectiveAgreedAmount = 200;
+      effectivePlatformFee = Math.round(effectiveAgreedAmount * 0.1);
+      effectiveCreatorAmount = effectiveAgreedAmount - effectivePlatformFee;
+
+      const { error: normalizeError } = await supabaseClient
+        .from("collaborations")
+        .update({
+          agreed_amount: effectiveAgreedAmount,
+          platform_fee: effectivePlatformFee,
+          creator_amount: effectiveCreatorAmount,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", collaborationId);
+
+      if (normalizeError) {
+        throw new Error(`Impossible de normaliser le montant: ${normalizeError.message}`);
+      }
+
+      logStep("Amount auto-normalized to PayDunya minimum", {
+        collaborationId,
+        previousAmount: collab.agreed_amount,
+        normalizedAmount: effectiveAgreedAmount,
+      });
     }
 
     const [{ data: offer }, { data: creator }, { data: brand }] = await Promise.all([
@@ -88,12 +114,12 @@ serve(async (req) => {
           {
             name: offer?.title || "Collaboration",
             quantity: 1,
-            unit_price: collab.agreed_amount,
-            total_price: collab.agreed_amount,
+            unit_price: effectiveAgreedAmount,
+            total_price: effectiveAgreedAmount,
             description: `Créateur: ${creator?.full_name || "Créateur"}`,
           },
         ],
-        total_amount: collab.agreed_amount,
+        total_amount: effectiveAgreedAmount,
         description: `Paiement collaboration - ${offer?.title || "Collaboration"}`,
       },
       store: {
@@ -117,7 +143,7 @@ serve(async (req) => {
 
     logStep("Creating PayDunya checkout", {
       collaborationId,
-      amountFCFA: collab.agreed_amount,
+      amountFCFA: effectiveAgreedAmount,
       status: collab.status,
       sandbox: isSandbox,
     });
@@ -167,7 +193,7 @@ serve(async (req) => {
         url: checkoutUrl,
         token: invoiceToken,
         reference,
-        amountFCFA: collab.agreed_amount,
+        amountFCFA: effectiveAgreedAmount,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
