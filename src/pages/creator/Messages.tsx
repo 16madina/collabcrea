@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Search, Send, ArrowLeft, Check, CheckCheck, MessageCircle } from "lucide-react";
 import ChatActionMenu from "@/components/chat/ChatActionMenu";
 import ChatProfileSheet from "@/components/chat/ChatProfileSheet";
+import CreatorDetailSheet from "@/components/CreatorDetailSheet";
+import type { Creator } from "@/components/CreatorDetailSheet";
 import { Input } from "@/components/ui/input";
 import BottomNav from "@/components/BottomNav";
 import { useConversations, Conversation } from "@/hooks/useConversations";
@@ -11,6 +13,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import ProposalCard from "@/components/creator/ProposalCard";
+import { supabase } from "@/integrations/supabase/client";
 
 const CreatorMessages = () => {
   const { user } = useAuth();
@@ -19,6 +22,8 @@ const CreatorMessages = () => {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [newMessage, setNewMessage] = useState("");
   const [showProfile, setShowProfile] = useState(false);
+  const [fullProfileCreator, setFullProfileCreator] = useState<(Creator & { userId: string }) | null>(null);
+  const [showFullProfile, setShowFullProfile] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { messages, loading: messagesLoading, sendMessage } = useMessages(
@@ -45,6 +50,38 @@ const CreatorMessages = () => {
     const success = await sendMessage(newMessage);
     if (success) {
       setNewMessage("");
+    }
+  };
+
+  const handleViewFullProfile = async (userId: string, role: string) => {
+    if (role === "creator" || role === "brand") {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", userId)
+        .single();
+      if (profile) {
+        const nameParts = profile.full_name.split(" ");
+        setFullProfileCreator({
+          userId,
+          firstName: nameParts[0] || "",
+          lastName: nameParts.slice(1).join(" ") || "",
+          category: profile.category || profile.sector || "Lifestyle",
+          country: profile.country || "Afrique",
+          flag: "🌍",
+          image: profile.logo_url || profile.avatar_url || "/placeholder.svg",
+          bio: profile.bio || profile.company_description || undefined,
+          isVerified: profile.identity_verified === true,
+          socials: {
+            youtube: profile.youtube_followers || undefined,
+            instagram: profile.instagram_followers || undefined,
+            tiktok: profile.tiktok_followers || undefined,
+            snapchat: profile.snapchat_followers || undefined,
+            facebook: profile.facebook_followers || undefined,
+          },
+        });
+        setShowFullProfile(true);
+      }
     }
   };
 
@@ -221,6 +258,14 @@ const CreatorMessages = () => {
           userId={selectedConversation.otherParticipant?.user_id || null}
           open={showProfile}
           onOpenChange={setShowProfile}
+          onViewFullProfile={handleViewFullProfile}
+        />
+
+        <CreatorDetailSheet
+          creator={fullProfileCreator}
+          creatorUserId={fullProfileCreator?.userId || null}
+          open={showFullProfile}
+          onOpenChange={setShowFullProfile}
         />
       </div>
     );
