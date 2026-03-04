@@ -172,7 +172,9 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
     }
 
     if (collab.brand_id === user.id) {
-      if (collab.status === "content_submitted" && !isBrandFilms(collab)) {
+      if (collab.status === "pending_payment") {
+        setSheetType("payment");
+      } else if (collab.status === "content_submitted" && !isBrandFilms(collab)) {
         setSheetType("payment");
       } else if (collab.status === "in_review") {
         setSheetType("review");
@@ -267,6 +269,39 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
           {collab.offer?.creative_brief && isCreator && 
            ["in_progress", "revision_requested", "pending_publication"].includes(collab.status) && (
             <CreativeBriefDisplay brief={collab.offer.creative_brief} compact />
+          )}
+
+          {/* ── PENDING PAYMENT: Brand must pay first ── */}
+          {collab.status === "pending_payment" && isBrand && (
+            <div className="space-y-3">
+              <div className="rounded-xl p-3 bg-orange-500/10 border border-orange-500/20">
+                <div className="flex items-start gap-2">
+                  <CreditCard className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-orange-500 mb-1">Paiement requis</p>
+                    <p className="text-xs text-muted-foreground">
+                      Effectuez le paiement pour démarrer la collaboration. Le montant sera mis en séquestre jusqu'à la livraison.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <Button
+                variant="gold"
+                size="sm"
+                className="w-full"
+                onClick={() => handleAction(collab)}
+              >
+                <CreditCard className="w-4 h-4 mr-2" />
+                Effectuer le paiement ({formatCurrency(collab.agreed_amount)})
+              </Button>
+            </div>
+          )}
+
+          {collab.status === "pending_payment" && isCreator && (
+            <div className="flex items-center gap-2 text-orange-500 text-sm">
+              <Clock className="w-4 h-4" />
+              En attente du paiement de la marque
+            </div>
           )}
 
           {collab.status === "in_progress" && !isExpired && !brandFilms && (
