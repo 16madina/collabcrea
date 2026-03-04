@@ -398,6 +398,10 @@ const CreateOffer = () => {
         toast.error("Le budget fixe doit être un nombre valide");
         return;
       }
+      if (fixed < 200) {
+        toast.error("Le montant minimum est de 200 FCFA");
+        return;
+      }
       budgetMin = fixed;
       budgetMax = fixed;
     } else if (formData.budget_type === "range") {
@@ -405,6 +409,10 @@ const CreateOffer = () => {
       budgetMax = parseInt(formData.budget_max);
       if (isNaN(budgetMin) || isNaN(budgetMax)) {
         toast.error("Le budget doit être un nombre valide");
+        return;
+      }
+      if (budgetMin < 200) {
+        toast.error("Le montant minimum est de 200 FCFA");
         return;
       }
       if (budgetMin > budgetMax) {
@@ -825,30 +833,37 @@ const CreateOffer = () => {
 
           {/* Budget Fields based on type */}
           {formData.budget_type === "range" && (
-            <div className="grid grid-cols-2 gap-4 mt-3">
-              <div>
-                <Input
-                  type="number"
-                  placeholder="Minimum (FCFA)"
-                  value={formData.budget_min}
-                  onChange={(e) => handleInputChange("budget_min", e.target.value)}
-                  className="h-12"
-                />
+            <div className="space-y-2 mt-3">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Input
+                    type="number"
+                    placeholder="Minimum (FCFA)"
+                    value={formData.budget_min}
+                    onChange={(e) => handleInputChange("budget_min", e.target.value)}
+                    className="h-12"
+                  />
+                </div>
+                <div>
+                  <Input
+                    type="number"
+                    placeholder="Maximum (FCFA)"
+                    value={formData.budget_max}
+                    onChange={(e) => handleInputChange("budget_max", e.target.value)}
+                    className="h-12"
+                  />
+                </div>
               </div>
-              <div>
-                <Input
-                  type="number"
-                  placeholder="Maximum (FCFA)"
-                  value={formData.budget_max}
-                  onChange={(e) => handleInputChange("budget_max", e.target.value)}
-                  className="h-12"
-                />
-              </div>
+              {formData.budget_min && parseInt(formData.budget_min) > 0 && parseInt(formData.budget_min) < 200 && (
+                <p className="text-xs text-destructive flex items-center gap-1">
+                  ⚠️ Le montant minimum de paiement est de 200 FCFA
+                </p>
+              )}
             </div>
           )}
 
           {formData.budget_type === "fixed" && (
-            <div className="mt-3">
+            <div className="mt-3 space-y-2">
               <Input
                 type="number"
                 placeholder="Montant fixe (FCFA)"
@@ -856,6 +871,11 @@ const CreateOffer = () => {
                 onChange={(e) => handleInputChange("budget_fixed", e.target.value)}
                 className="h-12"
               />
+              {formData.budget_fixed && parseInt(formData.budget_fixed) > 0 && parseInt(formData.budget_fixed) < 200 && (
+                <p className="text-xs text-destructive flex items-center gap-1">
+                  ⚠️ Le montant minimum de paiement est de 200 FCFA
+                </p>
+              )}
             </div>
           )}
 
