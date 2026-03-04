@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { CountryFlag } from "@/lib/flags";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Loader2, BadgeCheck, SlidersHorizontal, X, RotateCcw } from "lucide-react";
@@ -45,6 +46,7 @@ const Explore = () => {
   const [showCreatorDetail, setShowCreatorDetail] = useState(false);
   
   const { allCreators, loading } = useCreators();
+  const navigate = useNavigate();
 
   const filteredCreators = allCreators.filter((creator) => {
     const matchesSearch =
@@ -60,6 +62,11 @@ const Explore = () => {
   });
 
   const handleCreatorClick = (creator: Creator & { userId: string }) => {
+    if (!creator.userId.startsWith("static-")) {
+      navigate(`/profile/${creator.userId}`);
+      return;
+    }
+
     setSelectedCreator(creator);
     setShowCreatorDetail(true);
   };
