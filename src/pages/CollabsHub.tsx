@@ -22,10 +22,12 @@ const CollabsHub = () => {
   const isCreator = window.location.pathname.includes("/creator");
   const userRole = isCreator ? "creator" : "brand";
 
-  // Handle Fincra payment callback
+  // Handle PayDunya payment callback
   useEffect(() => {
     const payment = searchParams.get("payment");
     const collaborationId = searchParams.get("collaboration");
+    const provider = searchParams.get("provider");
+    const token = searchParams.get("token");
     const rawReference = searchParams.get("reference");
 
     const normalizedReference = (() => {
@@ -35,18 +37,23 @@ const CollabsHub = () => {
       return (nested?.[1] ?? decoded).split("?")[0].split("&")[0];
     })();
     
-    if (payment === "success" && normalizedReference && collaborationId) {
-      // Verify payment with Fincra
+    if (payment === "success" && collaborationId && (provider === "paydunya" || !!token)) {
       const verifyPayment = async () => {
         try {
-          const { data, error } = await supabase.functions.invoke("fincra-verify-payment", {
-            body: { reference: normalizedReference, collaborationId },
+          const { data, error } = await supabase.functions.invoke("paydunya-verify-payment", {
+            body: { token, reference: normalizedReference, collaborationId },
           });
 
-          if (data?.paymentStatus === "success") {
-            toast.success("Paiement confirmé ! Le contenu est maintenant en revue.");
+          if (error) throw error;
+
+          if (data?.verified) {
+            if (data?.nextStatus === "in_progress") {
+              toast.success("Paiement confirmé ! La collaboration est lancée.");
+            } else {
+              toast.success("Paiement confirmé ! Le contenu est maintenant en revue.");
+            }
           } else {
-            toast.info("Paiement en cours de traitement. Vous serez notifié une fois confirmé.");
+            toast.info("Paiement reçu, vérification en cours...");
           }
         } catch (err) {
           console.error("Verify error:", err);
