@@ -132,16 +132,16 @@ const CreatorCard = ({ creator, index = 0, variant = "grid", onClick }: CreatorC
       {/* Infos */}
       <div className="p-3">
         {/* Pays + Bouton Voir profil sur la même ligne */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-            <span className="flex items-center gap-0.5">
+        <div className="flex items-center justify-between gap-1">
+          <div className="flex items-center gap-1 min-w-0">
+            <span className="flex items-center gap-0.5 flex-shrink-0">
               {creator.residenceFlag ? (
-                <><CountryFlag country={creator.residenceCountry} size={16} /><span className="text-muted-foreground text-xs">-</span><CountryFlag country={creator.country} size={16} /></>
+                <><CountryFlag country={creator.residenceCountry} size={14} /><span className="text-muted-foreground text-[9px]">-</span><CountryFlag country={creator.country} size={14} /></>
               ) : (
                 <CountryFlag country={creator.country} size={16} />
               )}
             </span>
-            <span>{creator.country}</span>
+            <span className={`font-semibold text-foreground truncate ${creator.residenceFlag ? 'text-xs' : 'text-sm'}`}>{creator.country}</span>
           </div>
           
           <button
