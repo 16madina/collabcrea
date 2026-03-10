@@ -1,14 +1,33 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, MapPin, Globe, ShieldCheck, Star, User, CreditCard, Image, MessageCircle } from "lucide-react";
+import { ArrowLeft, MapPin, Globe, ShieldCheck, Star, User, CreditCard, Image, MessageCircle, Flag, Ban, AlertTriangle, MoreVertical } from "lucide-react";
 import { FaYoutube, FaInstagram, FaTiktok, FaSnapchatGhost, FaFacebookF } from "react-icons/fa";
 import { supabase } from "@/integrations/supabase/client";
 import { CountryFlag } from "@/lib/flags";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import ReportDialog from "@/components/ReportDialog";
 import PortfolioTab from "@/components/creator/tabs/PortfolioTab";
 import RateCardDisplay from "@/components/creator/RateCardDisplay";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 interface ProfileData {
   full_name: string;
