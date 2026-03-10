@@ -342,6 +342,43 @@ const ProfileView = () => {
         </div>
       )}
     </div>
+
+      {/* Report Dialog */}
+      <ReportDialog
+        open={showReport}
+        onOpenChange={setShowReport}
+        reportType="user"
+        targetUserId={userId}
+        targetName={displayName}
+      />
+
+      {/* Block Confirm Dialog */}
+      <AlertDialog open={showBlockConfirm} onOpenChange={setShowBlockConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+              Bloquer {displayName} ?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Cet utilisateur ne pourra plus vous envoyer de messages ni vous contacter.
+              Vous pouvez le débloquer à tout moment depuis vos paramètres.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={blocking}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBlock}
+              disabled={blocking}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              <Ban className="w-4 h-4 mr-2" />
+              Bloquer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   );
 };
 
