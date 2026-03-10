@@ -1456,13 +1456,13 @@ const StepFour = ({
       />
       <label htmlFor="terms" className="text-sm text-muted-foreground leading-tight cursor-pointer">
         J'accepte les{" "}
-        <Link to="/terms" className="text-gold hover:underline">
+        <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">
           conditions d'utilisation
-        </Link>{" "}
+        </a>{" "}
         et la{" "}
-        <Link to="/privacy" className="text-gold hover:underline">
+        <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">
           politique de confidentialité
-        </Link>
+        </a>
       </label>
     </div>
     {errors.acceptTerms && (
