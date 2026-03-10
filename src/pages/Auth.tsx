@@ -1403,6 +1403,7 @@ interface StepFourProps {
   setShowPassword: (v: boolean) => void;
   showConfirmPassword: boolean;
   setShowConfirmPassword: (v: boolean) => void;
+  onOpenLegal: (slug: string) => void;
 }
 
 const StepFour = ({
@@ -1413,6 +1414,7 @@ const StepFour = ({
   setShowPassword,
   showConfirmPassword,
   setShowConfirmPassword,
+  onOpenLegal,
 }: StepFourProps) => (
   <motion.div
     initial={{ opacity: 0, x: 20 }}
