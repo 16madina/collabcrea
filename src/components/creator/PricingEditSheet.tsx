@@ -141,8 +141,9 @@ const PricingEditSheet = ({ isOpen, onClose, initialPricing, initialCurrency, on
   useEffect(() => {
     if (isOpen) {
       setPricing(initialPricing || []);
+      setSelectedCurrency(initialCurrency || "XOF");
     }
-  }, [isOpen, initialPricing]);
+  }, [isOpen, initialPricing, initialCurrency]);
 
   // Reset content type when platform changes
   useEffect(() => {
