@@ -15,12 +15,6 @@ import { useAuth } from "@/hooks/useAuth";
 import heroImage from "@/assets/hero-creator.jpg";
 import logoCollabCrea from "@/assets/logo-collabcrea.png";
 import logoCollabCreaFull from "@/assets/logo-collabcrea-full-new.png";
-import logoKariteDor from "@/assets/logo-karite-dor.jpg";
-import logoTechAfrik from "@/assets/logo-techafrik.jpg";
-import logoNestleAfrique from "@/assets/logo-nestle-afrique.jpg";
-import logoNikeAfrique from "@/assets/logo-nike-afrique.jpg";
-import logoLorealAfrique from "@/assets/logo-loreal-afrique.jpg";
-import logoMtn from "@/assets/logo-mtn.jpg";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 30 },
