@@ -111,6 +111,7 @@ interface PricingEditSheetProps {
   isOpen: boolean;
   onClose: () => void;
   initialPricing: PricingItem[] | null;
+  initialCurrency?: string;
   onUpdate: () => void;
 }
 
