@@ -4,6 +4,25 @@ import { FaYoutube, FaInstagram, FaTiktok, FaSnapchatGhost, FaFacebookF } from "
 import type { Creator } from "./CreatorDetailSheet";
 import { CountryFlag } from "@/lib/flags";
 
+// Abréviations pour les noms de pays longs
+const shortCountryName: Record<string, string> = {
+  "Côte d'Ivoire": "Côte d'Iv.",
+  "Burkina Faso": "Burkina F.",
+  "Afrique du Sud": "Afr. du Sud",
+  "Guinée Équatoriale": "Guinée Éq.",
+  "Guinée-Bissau": "G.-Bissau",
+  "São Tomé-et-Príncipe": "São Tomé",
+  "Centrafrique": "Centrafr.",
+  "Soudan du Sud": "Soudan S.",
+  "Émirats Arabes Unis": "É.A.U.",
+  "Arabie Saoudite": "Arabie S.",
+};
+
+function getShortName(country: string | undefined): string {
+  if (!country) return "Afrique";
+  return shortCountryName[country] || country;
+}
+
 interface CreatorCardProps {
   creator: Creator;
   index?: number;
@@ -54,7 +73,7 @@ const CreatorCard = ({ creator, index = 0, variant = "grid", onClick }: CreatorC
                 <CountryFlag country={creator.country} size={14} />
               )}
             </span>
-            <span className={`font-semibold text-foreground truncate ${creator.residenceFlag ? 'text-[11px]' : 'text-sm'}`}>{creator.country}</span>
+            <span className={`font-semibold text-foreground truncate ${creator.residenceFlag ? 'text-[11px]' : 'text-sm'}`}>{getShortName(creator.country)}</span>
           </div>
           
           {/* Réseaux sociaux */}
@@ -141,7 +160,7 @@ const CreatorCard = ({ creator, index = 0, variant = "grid", onClick }: CreatorC
                 <CountryFlag country={creator.country} size={16} />
               )}
             </span>
-            <span className={`font-semibold text-foreground truncate ${creator.residenceFlag ? 'text-xs' : 'text-sm'}`}>{creator.country}</span>
+            <span className={`font-semibold text-foreground truncate ${creator.residenceFlag ? 'text-xs' : 'text-sm'}`}>{getShortName(creator.country)}</span>
           </div>
           
           <button
