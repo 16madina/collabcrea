@@ -4,6 +4,7 @@ import { Plus, Sparkles, Download, Share2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import html2canvas from "html2canvas";
+import { getCurrencySymbol } from "@/components/creator/PricingEditSheet";
 
 interface PricingItem {
   type: string;
