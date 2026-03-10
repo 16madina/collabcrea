@@ -708,7 +708,7 @@ const PricingEditSheet = ({ isOpen, onClose, initialPricing, initialCurrency, on
                       </p>
                       <div className="flex items-center gap-2">
                         <span className="text-gold font-semibold text-xs">
-                          {item.price.toLocaleString()}f
+                          {item.price.toLocaleString()}{getCurrencySymbol(selectedCurrency)}
                         </span>
                         <button
                           type="button"
