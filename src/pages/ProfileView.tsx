@@ -178,16 +178,37 @@ const ProfileView = () => {
           <ArrowLeft className="w-5 h-5 text-foreground" />
         </button>
 
-        {/* Return to chat button */}
-        {fromChat && (
-          <button
-            onClick={() => navigate(-1)}
-            className="absolute top-[max(env(safe-area-inset-top),0.75rem)] right-4 flex items-center gap-1.5 px-3 h-10 rounded-full bg-gold/90 backdrop-blur-sm text-primary-foreground text-xs font-semibold z-10"
-          >
-            <MessageCircle className="w-4 h-4" />
-            Conversation
-          </button>
-        )}
+        {/* Action menu (report/block) + Return to chat */}
+        <div className="absolute top-[max(env(safe-area-inset-top),0.75rem)] right-4 flex items-center gap-2 z-10">
+          {fromChat && (
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-1.5 px-3 h-10 rounded-full bg-gold/90 backdrop-blur-sm text-primary-foreground text-xs font-semibold"
+            >
+              <MessageCircle className="w-4 h-4" />
+              Conversation
+            </button>
+          )}
+          {user && !isOwnProfile && userId && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="w-10 h-10 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center">
+                  <MoreVertical className="w-5 h-5 text-foreground" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 z-[70]">
+                <DropdownMenuItem onClick={() => setShowReport(true)} className="text-destructive focus:text-destructive">
+                  <Flag className="w-4 h-4 mr-2" />
+                  Signaler cet utilisateur
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowBlockConfirm(true)} className="text-destructive focus:text-destructive">
+                  <Ban className="w-4 h-4 mr-2" />
+                  Bloquer cet utilisateur
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
 
         {/* Info overlay on hero */}
         <div className="absolute bottom-4 left-6 right-6">
