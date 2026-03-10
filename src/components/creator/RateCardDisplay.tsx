@@ -48,7 +48,11 @@ const RateCardDisplay = ({
 
   const formatPrice = (price: number | string) => {
     const numPrice = typeof price === "string" ? parseInt(price.replace(/\D/g, "")) : price;
-    if (isNaN(numPrice)) return price;
+    if (isNaN(numPrice)) return String(price);
+    const symbol = getCurrencySymbol(currency);
+    if (symbol === "€" || symbol === "$") {
+      return numPrice.toLocaleString("fr-FR") + symbol;
+    }
     return numPrice.toLocaleString("fr-FR") + "f";
   };
 
