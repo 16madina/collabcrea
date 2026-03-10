@@ -145,12 +145,6 @@ const CreatorProfile = () => {
             .from("profiles")
             .update({ email_verified: true })
             .eq("user_id", user.id);
-          
-          // Show confirmation banner
-          if (!emailConfirmationShown.current) {
-            emailConfirmationShown.current = true;
-            setShowEmailConfirmation(true);
-          }
 
           // Send welcome email
           if (dbProfile?.full_name) {
@@ -167,9 +161,16 @@ const CreatorProfile = () => {
               console.error("Failed to send welcome email:", emailError);
             }
           }
-          
-          fetchProfile();
         }
+
+        // Always show confirmation & refresh profile when param is present
+        if (!emailConfirmationShown.current) {
+          emailConfirmationShown.current = true;
+          setShowEmailConfirmation(true);
+          toast.success("Email vérifié avec succès !");
+        }
+        
+        await fetchProfile();
         
         // Clean URL parameter
         setSearchParams((prev) => {
