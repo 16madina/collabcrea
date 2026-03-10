@@ -1497,11 +1497,11 @@ const StepFour = ({
       />
       <label htmlFor="terms" className="text-sm text-muted-foreground leading-tight cursor-pointer">
         J'accepte les{" "}
-        <button type="button" onClick={(e) => { e.preventDefault(); openLegalDialog("terms"); }} className="text-gold hover:underline inline">
+        <button type="button" onClick={(e) => { e.preventDefault(); onOpenLegal("terms"); }} className="text-gold hover:underline inline">
           conditions d'utilisation
         </button>{" "}
         et la{" "}
-        <button type="button" onClick={(e) => { e.preventDefault(); openLegalDialog("privacy"); }} className="text-gold hover:underline inline">
+        <button type="button" onClick={(e) => { e.preventDefault(); onOpenLegal("privacy"); }} className="text-gold hover:underline inline">
           politique de confidentialité
         </button>
       </label>
@@ -1509,24 +1509,6 @@ const StepFour = ({
     {errors.acceptTerms && (
       <p className="text-destructive text-xs">{errors.acceptTerms}</p>
     )}
-
-    <Dialog open={!!legalDialogSlug} onOpenChange={(open) => { if (!open) { setLegalDialogSlug(null); setLegalContent(null); } }}>
-      <DialogContent className="max-w-lg max-h-[80vh] p-0">
-        <DialogHeader className="p-6 pb-0">
-          <DialogTitle>{legalContent?.title || "Chargement..."}</DialogTitle>
-          <DialogDescription>Consultez ce document puis fermez pour revenir à votre inscription.</DialogDescription>
-        </DialogHeader>
-        <ScrollArea className="px-6 pb-6 max-h-[60vh]">
-          {legalContent ? (
-            <div className="prose prose-sm dark:prose-invert max-w-none">
-              <ReactMarkdown>{legalContent.content}</ReactMarkdown>
-            </div>
-          ) : (
-            <p className="text-muted-foreground text-sm">Chargement...</p>
-          )}
-        </ScrollArea>
-      </DialogContent>
-    </Dialog>
   </motion.div>
 );
 
