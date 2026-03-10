@@ -324,7 +324,29 @@ const PricingEditSheet = ({ isOpen, onClose, initialPricing, initialCurrency, on
           </SheetTitle>
         </SheetHeader>
 
-        <div className="overflow-y-auto h-[calc(100%-140px)] space-y-4 pb-4">
+          {/* Currency Selector */}
+          <div className="flex items-center gap-2 mb-2">
+            <Label className="text-xs text-muted-foreground shrink-0">Devise :</Label>
+            <div className="flex gap-1.5">
+              {currencies.map((cur) => (
+                <button
+                  key={cur.code}
+                  type="button"
+                  onClick={() => setSelectedCurrency(cur.code)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1 ${
+                    selectedCurrency === cur.code
+                      ? "bg-gold text-background"
+                      : "bg-muted hover:bg-muted/80"
+                  }`}
+                >
+                  <span>{cur.flag}</span>
+                  <span>{cur.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+        <div className="overflow-y-auto h-[calc(100%-180px)] space-y-4 pb-4">
           {/* Tabs for Service vs Pack */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-4">
