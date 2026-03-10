@@ -601,7 +601,7 @@ const PricingEditSheet = ({ isOpen, onClose, initialPricing, initialCurrency, on
                   </div>
 
                   <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Prix du pack (FCFA)</Label>
+                    <Label className="text-xs text-muted-foreground">Prix du pack ({getCurrencyLabel(selectedCurrency)})</Label>
                     <div className="flex gap-2">
                       <Input
                         type="number"
