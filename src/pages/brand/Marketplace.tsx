@@ -185,13 +185,10 @@ const BrandMarketplace = () => {
   });
 
   const handleCreatorClick = (creator: Creator & { dbUserId?: string }) => {
-    if (creator.dbUserId && !creator.dbUserId.startsWith("mock-")) {
+    if (creator.dbUserId) {
       navigate(`/user-details/${creator.dbUserId}`);
       return;
     }
-
-    setSelectedCreator(creator);
-    setSelectedCreatorUserId(creator.dbUserId || null);
   };
 
   if (authLoading || loading) {
