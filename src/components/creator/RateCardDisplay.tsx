@@ -9,6 +9,7 @@ interface PricingItem {
 
 interface RateCardDisplayProps {
   pricing: PricingItem[] | null;
+  currency?: string;
   avatarUrl?: string | null;
   fullName?: string;
   showEditButton?: boolean;
