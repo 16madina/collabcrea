@@ -1,4 +1,5 @@
 import { Sparkles } from "lucide-react";
+import { getCurrencySymbol } from "@/components/creator/PricingEditSheet";
 
 interface PricingItem {
   type: string;
