@@ -636,7 +636,7 @@ const PricingEditSheet = ({ isOpen, onClose, initialPricing, initialCurrency, on
                     {packDescription && (
                       <p className="text-xs text-muted-foreground mt-1">{packDescription}</p>
                     )}
-                    <p className="text-violet font-bold mt-1">{packPrice.toLocaleString()}f</p>
+                    <p className="text-violet font-bold mt-1">{packPrice.toLocaleString()}{getCurrencySymbol(selectedCurrency)}</p>
                   </motion.div>
                 )}
               </div>
