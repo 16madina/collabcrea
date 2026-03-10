@@ -839,6 +839,7 @@ interface SignupFormProps {
   onBack: () => void;
   onSubmit: () => void;
   onSwitchToLogin: () => void;
+  onOpenLegal: (slug: string) => void;
 }
 
 const SignupForm = ({
