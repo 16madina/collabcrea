@@ -201,13 +201,7 @@ const Landing = () => {
   }, []);
 
   const handleCreatorClick = (creator: Creator & { userId: string }) => {
-    if (!creator.userId.startsWith("static-")) {
-      navigate(`/user-details/${creator.userId}`);
-      return;
-    }
-
-    setSelectedCreator(creator);
-    setShowCreatorDetail(true);
+    navigate(`/user-details/${creator.userId}`);
   };
 
   return (
