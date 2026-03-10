@@ -160,7 +160,7 @@ const CreatorCard = ({ creator, index = 0, variant = "grid", onClick }: CreatorC
                 <CountryFlag country={creator.country} size={16} />
               )}
             </span>
-            <span className={`font-semibold text-foreground truncate ${creator.residenceFlag ? 'text-xs' : 'text-sm'}`}>{creator.country}</span>
+            <span className={`font-semibold text-foreground truncate ${creator.residenceFlag ? 'text-xs' : 'text-sm'}`}>{getShortName(creator.country)}</span>
           </div>
           
           <button
