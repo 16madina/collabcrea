@@ -8,7 +8,7 @@ import OfferCard from "@/components/brand/OfferCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import { mockOffers } from "@/data/offers";
+
 import { toast } from "sonner";
 
 interface Offer {
