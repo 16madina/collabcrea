@@ -681,10 +681,29 @@ const Auth = () => {
                 setFormData(initialFormData);
                 setStep(1);
               }}
+              onOpenLegal={openLegalDialog}
             />
           )}
         </AnimatePresence>
       </div>
+
+      <Dialog open={!!legalDialogSlug} onOpenChange={(open) => { if (!open) { setLegalDialogSlug(null); setLegalContent(null); } }}>
+        <DialogContent className="max-w-lg max-h-[80vh] p-0">
+          <DialogHeader className="p-6 pb-0">
+            <DialogTitle>{legalContent?.title || "Chargement..."}</DialogTitle>
+            <DialogDescription>Consultez ce document puis fermez pour revenir à votre inscription.</DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="px-6 pb-6 max-h-[60vh]">
+            {legalContent ? (
+              <div className="prose prose-sm dark:prose-invert max-w-none">
+                <ReactMarkdown>{legalContent.content}</ReactMarkdown>
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-sm">Chargement...</p>
+            )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
