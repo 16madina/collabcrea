@@ -8,7 +8,7 @@ import CreatorDetailSheet, { Creator } from "@/components/CreatorDetailSheet";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import { allCreators } from "@/data/creators";
+
 
 const categories = [
   "Tous",
@@ -169,9 +169,7 @@ const BrandMarketplace = () => {
     };
   });
 
-  // Combine real creators with mock data (real ones first, then mock to fill)
-  const mockCreators = allCreators.map((c, i) => ({ ...c, dbUserId: `mock-${i}` }));
-  const displayCreators = [...convertedCreators, ...mockCreators];
+  const displayCreators = convertedCreators;
 
   const filteredCreators = displayCreators.filter((creator) => {
     const fullName = `${creator.firstName} ${creator.lastName}`.toLowerCase();
@@ -187,13 +185,10 @@ const BrandMarketplace = () => {
   });
 
   const handleCreatorClick = (creator: Creator & { dbUserId?: string }) => {
-    if (creator.dbUserId && !creator.dbUserId.startsWith("mock-")) {
+    if (creator.dbUserId) {
       navigate(`/user-details/${creator.dbUserId}`);
       return;
     }
-
-    setSelectedCreator(creator);
-    setSelectedCreatorUserId(creator.dbUserId || null);
   };
 
   if (authLoading || loading) {
