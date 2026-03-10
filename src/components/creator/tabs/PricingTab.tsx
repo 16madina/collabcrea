@@ -54,6 +54,10 @@ const PricingTab = ({
   }, {} as Record<string, PricingItem[]>) : {};
 
   const formatPrice = (price: number) => {
+    const symbol = getCurrencySymbol(currency);
+    if (symbol === "€" || symbol === "$") {
+      return price.toLocaleString("fr-FR") + symbol;
+    }
     return price.toLocaleString("fr-FR") + "f";
   };
 
