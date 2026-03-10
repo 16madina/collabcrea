@@ -153,6 +153,7 @@ const ProfileView = () => {
   const pricing = Array.isArray(profile.pricing) ? profile.pricing : [];
 
   return (
+    <>
     <div className="min-h-screen bg-background">
       {/* Hero photo - like CreatorDetailSheet */}
       <div className="relative">
