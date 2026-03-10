@@ -115,11 +115,12 @@ interface PricingEditSheetProps {
   onUpdate: () => void;
 }
 
-const PricingEditSheet = ({ isOpen, onClose, initialPricing, onUpdate }: PricingEditSheetProps) => {
+const PricingEditSheet = ({ isOpen, onClose, initialPricing, initialCurrency, onUpdate }: PricingEditSheetProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [pricing, setPricing] = useState<PricingItem[]>(initialPricing || []);
+  const [selectedCurrency, setSelectedCurrency] = useState(initialCurrency || "XOF");
   const [activeTab, setActiveTab] = useState("service");
   
   // New pricing form state
