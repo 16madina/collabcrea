@@ -253,11 +253,14 @@ const PricingEditSheet = ({ isOpen, onClose, initialPricing, initialCurrency, on
     setIsLoading(true);
 
     try {
-      const pricingJson = pricing.map(item => ({
-        type: item.type,
-        price: item.price,
-        description: item.description,
-      }));
+      const pricingData = {
+        currency: selectedCurrency,
+        items: pricing.map(item => ({
+          type: item.type,
+          price: item.price,
+          description: item.description,
+        })),
+      };
 
       const { error } = await supabase
         .from("profiles")
