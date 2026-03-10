@@ -8,7 +8,7 @@ import CreatorDetailSheet, { Creator } from "@/components/CreatorDetailSheet";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import { allCreators } from "@/data/creators";
+
 
 const categories = [
   "Tous",
