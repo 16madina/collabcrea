@@ -529,7 +529,7 @@ const PricingEditSheet = ({ isOpen, onClose, initialPricing, initialCurrency, on
                       exit={{ opacity: 0, height: 0 }}
                       className="space-y-2 overflow-hidden"
                     >
-                      <Label className="text-xs text-muted-foreground">Prix (FCFA)</Label>
+                      <Label className="text-xs text-muted-foreground">Prix ({getCurrencyLabel(selectedCurrency)})</Label>
                       <div className="flex gap-2">
                         <Input
                           type="number"
