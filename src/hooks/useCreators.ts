@@ -171,30 +171,11 @@ export function useCreators() {
     fetchCreators();
   }, []);
 
-  // Combine real creators with static ones (real ones first)
-  const allCreators = useMemo(() => {
-    // Static creators don't have userId, so we add a fake one
-    const staticWithId = staticCreators.map((c, i) => ({
-      ...c,
-      userId: `static-${i}`,
-    }));
-
-    // Real creators first, then fill with static if needed
-    if (dbCreators.length === 0) {
-      return staticWithId;
-    }
-
-    // Return real creators + static ones to ensure variety
-    return [...dbCreators, ...staticWithId];
-  }, [dbCreators]);
-
-  // Only real creators from DB
-  const realCreators = dbCreators;
+  const allCreators = useMemo(() => dbCreators, [dbCreators]);
 
   return {
     allCreators,
-    realCreators,
-    staticCreators: staticCreators.map((c, i) => ({ ...c, userId: `static-${i}` })),
+    realCreators: dbCreators,
     loading,
     error,
     hasRealCreators: dbCreators.length > 0,
