@@ -14,6 +14,7 @@ interface PricingItem {
 
 interface PricingTabProps {
   pricing: PricingItem[] | null;
+  currency?: string;
   onEditPricing: () => void;
   avatarUrl?: string | null;
   fullName?: string;
