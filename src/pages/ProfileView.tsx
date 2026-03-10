@@ -87,6 +87,36 @@ const ProfileView = () => {
     fetch();
   }, [userId]);
 
+  const handleBlock = async () => {
+    if (!user || !userId) return;
+    setBlocking(true);
+    try {
+      const { error } = await supabase.from("blocked_users").insert({
+        blocker_id: user.id,
+        blocked_id: userId,
+      });
+      if (error) {
+        if (error.code === "23505") {
+          toast.info("Cet utilisateur est déjà bloqué");
+        } else {
+          throw error;
+        }
+      } else {
+        toast.success("Utilisateur bloqué", {
+          description: `${profile?.full_name || "Cet utilisateur"} ne pourra plus vous contacter`,
+        });
+      }
+    } catch (err) {
+      console.error("Error blocking user:", err);
+      toast.error("Erreur lors du blocage");
+    } finally {
+      setBlocking(false);
+      setShowBlockConfirm(false);
+    }
+  };
+
+  const isOwnProfile = user?.id === userId;
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
