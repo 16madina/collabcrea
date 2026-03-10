@@ -404,76 +404,90 @@ const Landing = () => {
                 </div>
 
                 {/* Grille des offres */}
-                <div className="grid grid-cols-1 gap-3">
-                  {(dbOffers.length > 0 ? [...dbOffers, ...allOffers] : allOffers).map((offer, index) => (
-                    <motion.div
-                      key={offer.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: index * 0.05 }}
-                      className="relative rounded-xl sm:rounded-2xl overflow-hidden"
-                      style={{
-                        background: 'linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--card)) 100%)',
-                      }}
-                    >
-                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-gold via-gold/60 to-gold/20" />
-                      
-                      <div className="p-3 sm:p-4 pl-4 sm:pl-5">
-                        <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-                          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-lg overflow-hidden shadow-lg flex-shrink-0">
-                            <img src={offer.logo} alt={offer.brand} className="w-full h-full object-cover" />
-                          </div>
-                          <div>
-                            <h4 className="font-semibold text-xs sm:text-sm text-gold">
-                              {offer.brand}
-                            </h4>
-                            <div className="flex items-center gap-1 text-[9px] sm:text-[11px] text-muted-foreground">
-                              <MapPin className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                              {offer.location}
+                {offersLoading ? (
+                  <div className="flex items-center justify-center py-8 sm:py-12">
+                    <Loader2 className="w-6 h-6 sm:w-8 sm:h-8 text-gold animate-spin" />
+                  </div>
+                ) : dbOffers.length > 0 ? (
+                  <div className="grid grid-cols-1 gap-3">
+                    {dbOffers.map((offer, index) => (
+                      <motion.div
+                        key={offer.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: index * 0.05 }}
+                        className="relative rounded-xl sm:rounded-2xl overflow-hidden"
+                        style={{
+                          background: 'linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--card)) 100%)',
+                        }}
+                      >
+                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-gold via-gold/60 to-gold/20" />
+                        
+                        <div className="p-3 sm:p-4 pl-4 sm:pl-5">
+                          <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                            {offer.logo && (
+                              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-lg overflow-hidden shadow-lg flex-shrink-0">
+                                <img src={offer.logo} alt={offer.brand} className="w-full h-full object-cover" />
+                              </div>
+                            )}
+                            <div>
+                              <h4 className="font-semibold text-xs sm:text-sm text-gold">
+                                {offer.brand}
+                              </h4>
+                              <div className="flex items-center gap-1 text-[9px] sm:text-[11px] text-muted-foreground">
+                                <MapPin className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                                {offer.location}
+                              </div>
                             </div>
                           </div>
-                        </div>
 
-                        <h3 className="font-display font-bold text-gold-gradient text-sm sm:text-base mb-1.5 sm:mb-2">
-                          {offer.title}
-                        </h3>
+                          <h3 className="font-display font-bold text-gold-gradient text-sm sm:text-base mb-1.5 sm:mb-2">
+                            {offer.title}
+                          </h3>
 
-                        <p className="text-[10px] sm:text-xs text-muted-foreground mb-2 sm:mb-3 leading-relaxed line-clamp-2">
-                          {offer.description}
-                        </p>
+                          <p className="text-[10px] sm:text-xs text-muted-foreground mb-2 sm:mb-3 leading-relaxed line-clamp-2">
+                            {offer.description}
+                          </p>
 
-                        <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-2 sm:mb-3">
-                          <span className="inline-flex items-center gap-1 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium bg-gold/10 border border-gold/30 text-gold">
-                            <span>👤</span>
-                            {offer.category}
-                          </span>
-                          <span className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium bg-muted/30 border border-border text-muted-foreground">
-                            {offer.contentType}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center justify-between mb-2 sm:mb-3">
-                          <div className="flex items-center gap-1.5 sm:gap-2">
-                            <DollarSign className="w-3 h-3 sm:w-4 sm:h-4 text-gold" />
-                            <span className="font-semibold text-gold text-xs sm:text-sm">{offer.budget}</span>
+                          <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-2 sm:mb-3">
+                            <span className="inline-flex items-center gap-1 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium bg-gold/10 border border-gold/30 text-gold">
+                              <span>👤</span>
+                              {offer.category}
+                            </span>
+                            <span className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium bg-muted/30 border border-border text-muted-foreground">
+                              {offer.contentType}
+                            </span>
                           </div>
-                          <div className="flex items-center gap-1 sm:gap-2 text-muted-foreground">
-                            <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
-                            <span className="text-[10px] sm:text-sm">{offer.deadline}</span>
-                          </div>
-                        </div>
 
-                        <Link to="/auth?role=creator" className="block">
-                          <button className="w-full py-2 sm:py-3 rounded-lg sm:rounded-xl border-2 border-gold/60 text-foreground text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 sm:gap-2 hover:bg-gold/10 hover:border-gold transition-all">
-                            <Send className="w-3 h-3 sm:w-4 sm:h-4" />
-                            Postuler
-                          </button>
-                        </Link>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
+                          <div className="flex items-center justify-between mb-2 sm:mb-3">
+                            <div className="flex items-center gap-1.5 sm:gap-2">
+                              <DollarSign className="w-3 h-3 sm:w-4 sm:h-4 text-gold" />
+                              <span className="font-semibold text-gold text-xs sm:text-sm">{offer.budget}</span>
+                            </div>
+                            <div className="flex items-center gap-1 sm:gap-2 text-muted-foreground">
+                              <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
+                              <span className="text-[10px] sm:text-sm">{offer.deadline}</span>
+                            </div>
+                          </div>
+
+                          <Link to="/auth?role=creator" className="block">
+                            <button className="w-full py-2 sm:py-3 rounded-lg sm:rounded-xl border-2 border-gold/60 text-foreground text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 sm:gap-2 hover:bg-gold/10 hover:border-gold transition-all">
+                              <Send className="w-3 h-3 sm:w-4 sm:h-4" />
+                              Postuler
+                            </button>
+                          </Link>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 sm:py-12">
+                    <Briefcase className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+                    <p className="text-muted-foreground text-sm">Aucune offre disponible pour le moment</p>
+                    <p className="text-muted-foreground/60 text-xs mt-1">Les marques publient régulièrement de nouvelles opportunités</p>
+                  </div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
