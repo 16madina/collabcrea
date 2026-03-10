@@ -1,6 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, Link } from "react-router-dom";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useLegalPages } from "@/hooks/useLegalPages";
+import ReactMarkdown from "react-markdown";
 import { 
   ArrowLeft, 
   ArrowRight,
@@ -191,6 +195,19 @@ const Auth = () => {
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [loginErrors, setLoginErrors] = useState<{ email?: string; password?: string }>({});
+  const [legalDialogSlug, setLegalDialogSlug] = useState<string | null>(null);
+  const [legalContent, setLegalContent] = useState<{ title: string; content: string } | null>(null);
+  const { getPage } = useLegalPages();
+
+  const openLegalDialog = useCallback(async (slug: string) => {
+    setLegalDialogSlug(slug);
+    const page = await getPage(slug);
+    if (page) {
+      setLegalContent({ title: page.title, content: page.content });
+    } else {
+      setLegalContent({ title: slug === "terms" ? "Conditions d'utilisation" : "Politique de confidentialité", content: "Contenu non disponible." });
+    }
+  }, [getPage]);
 
   const phoneCode = getPhoneCodeByCountry(formData.residenceCountry);
 
@@ -664,10 +681,29 @@ const Auth = () => {
                 setFormData(initialFormData);
                 setStep(1);
               }}
+              onOpenLegal={openLegalDialog}
             />
           )}
         </AnimatePresence>
       </div>
+
+      <Dialog open={!!legalDialogSlug} onOpenChange={(open) => { if (!open) { setLegalDialogSlug(null); setLegalContent(null); } }}>
+        <DialogContent className="max-w-lg max-h-[80vh] p-0">
+          <DialogHeader className="p-6 pb-0">
+            <DialogTitle>{legalContent?.title || "Chargement..."}</DialogTitle>
+            <DialogDescription>Consultez ce document puis fermez pour revenir à votre inscription.</DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="px-6 pb-6 max-h-[60vh]">
+            {legalContent ? (
+              <div className="prose prose-sm dark:prose-invert max-w-none">
+                <ReactMarkdown>{legalContent.content}</ReactMarkdown>
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-sm">Chargement...</p>
+            )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
@@ -803,6 +839,7 @@ interface SignupFormProps {
   onBack: () => void;
   onSubmit: () => void;
   onSwitchToLogin: () => void;
+  onOpenLegal: (slug: string) => void;
 }
 
 const SignupForm = ({
@@ -820,6 +857,7 @@ const SignupForm = ({
   onBack,
   onSubmit,
   onSwitchToLogin,
+  onOpenLegal,
 }: SignupFormProps) => (
   <motion.div
     initial={{ opacity: 0, x: 20 }}
@@ -891,6 +929,7 @@ const SignupForm = ({
             setShowPassword={setShowPassword}
             showConfirmPassword={showConfirmPassword}
             setShowConfirmPassword={setShowConfirmPassword}
+            onOpenLegal={onOpenLegal}
           />
         )}
       </AnimatePresence>
@@ -1364,6 +1403,7 @@ interface StepFourProps {
   setShowPassword: (v: boolean) => void;
   showConfirmPassword: boolean;
   setShowConfirmPassword: (v: boolean) => void;
+  onOpenLegal: (slug: string) => void;
 }
 
 const StepFour = ({
@@ -1374,6 +1414,7 @@ const StepFour = ({
   setShowPassword,
   showConfirmPassword,
   setShowConfirmPassword,
+  onOpenLegal,
 }: StepFourProps) => (
   <motion.div
     initial={{ opacity: 0, x: 20 }}
@@ -1456,13 +1497,13 @@ const StepFour = ({
       />
       <label htmlFor="terms" className="text-sm text-muted-foreground leading-tight cursor-pointer">
         J'accepte les{" "}
-        <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">
+        <button type="button" onClick={(e) => { e.preventDefault(); onOpenLegal("terms"); }} className="text-gold hover:underline inline">
           conditions d'utilisation
-        </a>{" "}
+        </button>{" "}
         et la{" "}
-        <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">
+        <button type="button" onClick={(e) => { e.preventDefault(); onOpenLegal("privacy"); }} className="text-gold hover:underline inline">
           politique de confidentialité
-        </a>
+        </button>
       </label>
     </div>
     {errors.acceptTerms && (
