@@ -26,6 +26,7 @@ interface PricingTabProps {
 
 const PricingTab = ({ 
   pricing, 
+  currency = "XOF",
   onEditPricing, 
   avatarUrl, 
   fullName, 
