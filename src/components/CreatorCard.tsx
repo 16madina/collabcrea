@@ -4,6 +4,25 @@ import { FaYoutube, FaInstagram, FaTiktok, FaSnapchatGhost, FaFacebookF } from "
 import type { Creator } from "./CreatorDetailSheet";
 import { CountryFlag } from "@/lib/flags";
 
+// Abréviations pour les noms de pays longs
+const shortCountryName: Record<string, string> = {
+  "Côte d'Ivoire": "Côte d'Iv.",
+  "Burkina Faso": "Burkina F.",
+  "Afrique du Sud": "Afr. du Sud",
+  "Guinée Équatoriale": "Guinée Éq.",
+  "Guinée-Bissau": "G.-Bissau",
+  "São Tomé-et-Príncipe": "São Tomé",
+  "Centrafrique": "Centrafr.",
+  "Soudan du Sud": "Soudan S.",
+  "Émirats Arabes Unis": "É.A.U.",
+  "Arabie Saoudite": "Arabie S.",
+};
+
+function getShortName(country: string | undefined): string {
+  if (!country) return "Afrique";
+  return shortCountryName[country] || country;
+}
+
 interface CreatorCardProps {
   creator: Creator;
   index?: number;
