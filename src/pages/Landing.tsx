@@ -15,12 +15,6 @@ import { useAuth } from "@/hooks/useAuth";
 import heroImage from "@/assets/hero-creator.jpg";
 import logoCollabCrea from "@/assets/logo-collabcrea.png";
 import logoCollabCreaFull from "@/assets/logo-collabcrea-full-new.png";
-import logoKariteDor from "@/assets/logo-karite-dor.jpg";
-import logoTechAfrik from "@/assets/logo-techafrik.jpg";
-import logoNestleAfrique from "@/assets/logo-nestle-afrique.jpg";
-import logoNikeAfrique from "@/assets/logo-nike-afrique.jpg";
-import logoLorealAfrique from "@/assets/logo-loreal-afrique.jpg";
-import logoMtn from "@/assets/logo-mtn.jpg";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 30 },
@@ -54,80 +48,6 @@ const howItWorks = [
   },
 ];
 
-const allOffers = [
-  {
-    id: 1,
-    brand: "Karité d'Or",
-    logo: logoKariteDor,
-    location: "Côte d'Ivoire",
-    title: "Campagne beauté naturelle",
-    category: "Beauté",
-    contentType: "Reel",
-    budget: "150K - 300K FCFA",
-    deadline: "Avant le 28 févr.",
-    description: "Recherche créateurs beauté pour promouvoir notre nouvelle gamme de soins au karité.",
-  },
-  {
-    id: 2,
-    brand: "TechAfrik",
-    logo: logoTechAfrik,
-    location: "Nigeria",
-    title: "Tech Review Smartphone",
-    category: "Tech",
-    contentType: "Vidéo YouTube",
-    budget: "200K - 500K FCFA",
-    deadline: "Avant le 27 févr.",
-    description: "Besoin de YouTubers tech pour unboxing et review de notre nouveau smartphone.",
-  },
-  {
-    id: 3,
-    brand: "Nestlé Afrique",
-    logo: logoNestleAfrique,
-    location: "Sénégal",
-    title: "Recettes créatives Nescafé",
-    category: "Cuisine",
-    contentType: "Reel",
-    budget: "400K - 800K FCFA",
-    deadline: "Avant le 5 mars",
-    description: "Partagez des recettes originales avec nos produits café.",
-  },
-  {
-    id: 4,
-    brand: "Nike Afrique",
-    logo: logoNikeAfrique,
-    location: "Ghana",
-    title: "Challenge fitness viral",
-    category: "Fitness",
-    contentType: "TikTok",
-    budget: "800K - 1.5M FCFA",
-    deadline: "Avant le 15 mars",
-    description: "Lancez un challenge fitness avec nos nouveaux équipements.",
-  },
-  {
-    id: 5,
-    brand: "L'Oréal Afrique",
-    logo: logoLorealAfrique,
-    location: "Cameroun",
-    title: "Tutoriel maquillage",
-    category: "Beauté",
-    contentType: "Vidéo YouTube",
-    budget: "350K - 700K FCFA",
-    deadline: "Avant le 10 mars",
-    description: "Créez des tutoriels avec notre nouvelle gamme de maquillage.",
-  },
-  {
-    id: 6,
-    brand: "MTN",
-    logo: logoMtn,
-    location: "Côte d'Ivoire",
-    title: "Campagne Mobile Money",
-    category: "Tech",
-    contentType: "Story",
-    budget: "600K - 1.2M FCFA",
-    deadline: "Avant le 20 mars",
-    description: "Promouvoir notre service de paiement mobile auprès des jeunes.",
-  },
-];
 
 type TabType = "creators" | "offers";
 
@@ -308,7 +228,7 @@ const Landing = () => {
                 </Button>
               </Link>
               <div className="glass rounded-md sm:rounded-lg px-1.5 sm:px-2 py-1 sm:py-1.5 text-center mt-1 w-full">
-                <p className="text-sm sm:text-base font-bold text-gold-gradient">10K+</p>
+                <p className="text-sm sm:text-base font-bold text-gold-gradient">{allCreators.length > 0 ? `${allCreators.length}` : "—"}</p>
                 <p className="text-[8px] sm:text-[10px] text-muted-foreground">Créateurs</p>
               </div>
             </div>
@@ -326,8 +246,8 @@ const Landing = () => {
                 </Button>
               </Link>
               <div className="glass rounded-md sm:rounded-lg px-1.5 sm:px-2 py-1 sm:py-1.5 text-center mt-1 w-full">
-                <p className="text-sm sm:text-base font-bold text-gold-gradient">500+</p>
-                <p className="text-[8px] sm:text-[10px] text-muted-foreground">Marques</p>
+                <p className="text-sm sm:text-base font-bold text-gold-gradient">{dbOffers.length > 0 ? `${dbOffers.length}` : "—"}</p>
+                <p className="text-[8px] sm:text-[10px] text-muted-foreground">Offres</p>
               </div>
             </div>
 
@@ -343,7 +263,7 @@ const Landing = () => {
                 <span className="truncate">Comment?</span>
               </Button>
               <div className="glass rounded-md sm:rounded-lg px-1.5 sm:px-2 py-1 sm:py-1.5 text-center mt-1 w-full">
-                <p className="text-sm sm:text-base font-bold text-gold-gradient">54+</p>
+                <p className="text-sm sm:text-base font-bold text-gold-gradient">20+</p>
                 <p className="text-[8px] sm:text-[10px] text-muted-foreground">Pays</p>
               </div>
             </div>
@@ -484,76 +404,90 @@ const Landing = () => {
                 </div>
 
                 {/* Grille des offres */}
-                <div className="grid grid-cols-1 gap-3">
-                  {(dbOffers.length > 0 ? [...dbOffers, ...allOffers] : allOffers).map((offer, index) => (
-                    <motion.div
-                      key={offer.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: index * 0.05 }}
-                      className="relative rounded-xl sm:rounded-2xl overflow-hidden"
-                      style={{
-                        background: 'linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--card)) 100%)',
-                      }}
-                    >
-                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-gold via-gold/60 to-gold/20" />
-                      
-                      <div className="p-3 sm:p-4 pl-4 sm:pl-5">
-                        <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-                          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-lg overflow-hidden shadow-lg flex-shrink-0">
-                            <img src={offer.logo} alt={offer.brand} className="w-full h-full object-cover" />
-                          </div>
-                          <div>
-                            <h4 className="font-semibold text-xs sm:text-sm text-gold">
-                              {offer.brand}
-                            </h4>
-                            <div className="flex items-center gap-1 text-[9px] sm:text-[11px] text-muted-foreground">
-                              <MapPin className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                              {offer.location}
+                {offersLoading ? (
+                  <div className="flex items-center justify-center py-8 sm:py-12">
+                    <Loader2 className="w-6 h-6 sm:w-8 sm:h-8 text-gold animate-spin" />
+                  </div>
+                ) : dbOffers.length > 0 ? (
+                  <div className="grid grid-cols-1 gap-3">
+                    {dbOffers.map((offer, index) => (
+                      <motion.div
+                        key={offer.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: index * 0.05 }}
+                        className="relative rounded-xl sm:rounded-2xl overflow-hidden"
+                        style={{
+                          background: 'linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--card)) 100%)',
+                        }}
+                      >
+                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-gold via-gold/60 to-gold/20" />
+                        
+                        <div className="p-3 sm:p-4 pl-4 sm:pl-5">
+                          <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                            {offer.logo && (
+                              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-lg overflow-hidden shadow-lg flex-shrink-0">
+                                <img src={offer.logo} alt={offer.brand} className="w-full h-full object-cover" />
+                              </div>
+                            )}
+                            <div>
+                              <h4 className="font-semibold text-xs sm:text-sm text-gold">
+                                {offer.brand}
+                              </h4>
+                              <div className="flex items-center gap-1 text-[9px] sm:text-[11px] text-muted-foreground">
+                                <MapPin className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                                {offer.location}
+                              </div>
                             </div>
                           </div>
-                        </div>
 
-                        <h3 className="font-display font-bold text-gold-gradient text-sm sm:text-base mb-1.5 sm:mb-2">
-                          {offer.title}
-                        </h3>
+                          <h3 className="font-display font-bold text-gold-gradient text-sm sm:text-base mb-1.5 sm:mb-2">
+                            {offer.title}
+                          </h3>
 
-                        <p className="text-[10px] sm:text-xs text-muted-foreground mb-2 sm:mb-3 leading-relaxed line-clamp-2">
-                          {offer.description}
-                        </p>
+                          <p className="text-[10px] sm:text-xs text-muted-foreground mb-2 sm:mb-3 leading-relaxed line-clamp-2">
+                            {offer.description}
+                          </p>
 
-                        <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-2 sm:mb-3">
-                          <span className="inline-flex items-center gap-1 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium bg-gold/10 border border-gold/30 text-gold">
-                            <span>👤</span>
-                            {offer.category}
-                          </span>
-                          <span className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium bg-muted/30 border border-border text-muted-foreground">
-                            {offer.contentType}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center justify-between mb-2 sm:mb-3">
-                          <div className="flex items-center gap-1.5 sm:gap-2">
-                            <DollarSign className="w-3 h-3 sm:w-4 sm:h-4 text-gold" />
-                            <span className="font-semibold text-gold text-xs sm:text-sm">{offer.budget}</span>
+                          <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-2 sm:mb-3">
+                            <span className="inline-flex items-center gap-1 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium bg-gold/10 border border-gold/30 text-gold">
+                              <span>👤</span>
+                              {offer.category}
+                            </span>
+                            <span className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium bg-muted/30 border border-border text-muted-foreground">
+                              {offer.contentType}
+                            </span>
                           </div>
-                          <div className="flex items-center gap-1 sm:gap-2 text-muted-foreground">
-                            <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
-                            <span className="text-[10px] sm:text-sm">{offer.deadline}</span>
-                          </div>
-                        </div>
 
-                        <Link to="/auth?role=creator" className="block">
-                          <button className="w-full py-2 sm:py-3 rounded-lg sm:rounded-xl border-2 border-gold/60 text-foreground text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 sm:gap-2 hover:bg-gold/10 hover:border-gold transition-all">
-                            <Send className="w-3 h-3 sm:w-4 sm:h-4" />
-                            Postuler
-                          </button>
-                        </Link>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
+                          <div className="flex items-center justify-between mb-2 sm:mb-3">
+                            <div className="flex items-center gap-1.5 sm:gap-2">
+                              <DollarSign className="w-3 h-3 sm:w-4 sm:h-4 text-gold" />
+                              <span className="font-semibold text-gold text-xs sm:text-sm">{offer.budget}</span>
+                            </div>
+                            <div className="flex items-center gap-1 sm:gap-2 text-muted-foreground">
+                              <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
+                              <span className="text-[10px] sm:text-sm">{offer.deadline}</span>
+                            </div>
+                          </div>
+
+                          <Link to="/auth?role=creator" className="block">
+                            <button className="w-full py-2 sm:py-3 rounded-lg sm:rounded-xl border-2 border-gold/60 text-foreground text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 sm:gap-2 hover:bg-gold/10 hover:border-gold transition-all">
+                              <Send className="w-3 h-3 sm:w-4 sm:h-4" />
+                              Postuler
+                            </button>
+                          </Link>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 sm:py-12">
+                    <Briefcase className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+                    <p className="text-muted-foreground text-sm">Aucune offre disponible pour le moment</p>
+                    <p className="text-muted-foreground/60 text-xs mt-1">Les marques publient régulièrement de nouvelles opportunités</p>
+                  </div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>

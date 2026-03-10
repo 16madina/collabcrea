@@ -8,7 +8,7 @@ import OfferCard from "@/components/brand/OfferCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import { mockOffers } from "@/data/offers";
+
 import { toast } from "sonner";
 
 interface Offer {
@@ -120,25 +120,7 @@ const BrandOffers = () => {
     };
   }, [user]);
 
-  const convertedMockOffers: Offer[] = mockOffers.map(m => ({
-    id: m.id,
-    brand_id: m.brand_id,
-    brand_name: m.brand,
-    title: m.title,
-    description: m.description,
-    category: m.category,
-    content_type: m.content_type,
-    budget_min: m.budget_min,
-    budget_max: m.budget_max,
-    deadline: m.deadline,
-    location: m.location,
-    logo_url: m.logo_url,
-    status: m.status,
-    created_at: m.created_at,
-    applications_count: 0,
-  }));
-
-  const offers = dbOffers.length > 0 ? dbOffers : convertedMockOffers;
+  const offers = dbOffers;
 
   const filteredOffers = offers.filter((offer) => {
     const matchesSearch = 

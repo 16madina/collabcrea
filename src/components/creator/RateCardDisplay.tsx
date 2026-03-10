@@ -200,9 +200,12 @@ const RateCardDisplay = ({
         {/* Footer */}
         {hasPricing && (
           <div className="mt-auto pt-4">
-            <div className="text-center">
+            <div className="text-center space-y-1">
               <p className="text-white/60 text-xs italic">
-                *Tarifs négociables selon le projet
+                *Tarifs indicatifs — Les collaborations sont négociées directement entre créateurs et marques via la messagerie de la plateforme.
+              </p>
+              <p className="text-white/40 text-[10px]">
+                CollabCréa facilite la mise en relation. Aucun achat direct via l'application.
               </p>
             </div>
           </div>
