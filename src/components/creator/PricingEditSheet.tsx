@@ -561,7 +561,7 @@ const PricingEditSheet = ({ isOpen, onClose, initialPricing, initialCurrency, on
                   >
                     <span className="text-muted-foreground">Aperçu: </span>
                     <span className="font-medium">{generateTypeString()}</span>
-                    <span className="text-gold font-semibold"> — {price.toLocaleString()}f</span>
+                    <span className="text-gold font-semibold"> — {price.toLocaleString()}{getCurrencySymbol(selectedCurrency)}</span>
                   </motion.div>
                 )}
               </div>
