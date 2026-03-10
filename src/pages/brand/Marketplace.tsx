@@ -169,9 +169,7 @@ const BrandMarketplace = () => {
     };
   });
 
-  // Combine real creators with mock data (real ones first, then mock to fill)
-  const mockCreators = allCreators.map((c, i) => ({ ...c, dbUserId: `mock-${i}` }));
-  const displayCreators = [...convertedCreators, ...mockCreators];
+  const displayCreators = convertedCreators;
 
   const filteredCreators = displayCreators.filter((creator) => {
     const fullName = `${creator.firstName} ${creator.lastName}`.toLowerCase();
