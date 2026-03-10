@@ -35,6 +35,21 @@ interface PricingItem {
   description: string;
 }
 
+// Supported currencies
+const currencies = [
+  { code: "XOF", label: "FCFA", symbol: "f", flag: "🇨🇮" },
+  { code: "EUR", label: "EUR", symbol: "€", flag: "🇪🇺" },
+  { code: "USD", label: "USD", symbol: "$", flag: "🇺🇸" },
+];
+
+export const getCurrencySymbol = (currencyCode: string) => {
+  return currencies.find(c => c.code === currencyCode)?.symbol || "f";
+};
+
+export const getCurrencyLabel = (currencyCode: string) => {
+  return currencies.find(c => c.code === currencyCode)?.label || "FCFA";
+};
+
 // Platform options
 const platforms = [
   { id: "snapchat", name: "Snap", icon: SnapchatIcon },
