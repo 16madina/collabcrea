@@ -21,6 +21,7 @@ const platformOrder = ["Snap", "TikTok", "Instagram", "YouTube", "Autres"];
 
 const RateCardDisplay = ({ 
   pricing, 
+  currency = "XOF",
   avatarUrl, 
   fullName,
   showEditButton = false,
