@@ -56,10 +56,14 @@ const ProfileView = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { user } = useAuth();
   const fromChat = searchParams.get("from") === "chat";
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showReport, setShowReport] = useState(false);
+  const [showBlockConfirm, setShowBlockConfirm] = useState(false);
+  const [blocking, setBlocking] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
