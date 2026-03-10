@@ -265,7 +265,7 @@ const PricingEditSheet = ({ isOpen, onClose, initialPricing, initialCurrency, on
       const { error } = await supabase
         .from("profiles")
         .update({
-          pricing: pricingJson as unknown as null,
+          pricing: pricingData as unknown as null,
         })
         .eq("user_id", user.id);
 
