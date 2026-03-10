@@ -195,6 +195,19 @@ const Auth = () => {
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [loginErrors, setLoginErrors] = useState<{ email?: string; password?: string }>({});
+  const [legalDialogSlug, setLegalDialogSlug] = useState<string | null>(null);
+  const [legalContent, setLegalContent] = useState<{ title: string; content: string } | null>(null);
+  const { getPage } = useLegalPages();
+
+  const openLegalDialog = useCallback(async (slug: string) => {
+    setLegalDialogSlug(slug);
+    const page = await getPage(slug);
+    if (page) {
+      setLegalContent({ title: page.title, content: page.content });
+    } else {
+      setLegalContent({ title: slug === "terms" ? "Conditions d'utilisation" : "Politique de confidentialité", content: "Contenu non disponible." });
+    }
+  }, [getPage]);
 
   const phoneCode = getPhoneCodeByCountry(formData.residenceCountry);
 
