@@ -929,6 +929,7 @@ const SignupForm = ({
             setShowPassword={setShowPassword}
             showConfirmPassword={showConfirmPassword}
             setShowConfirmPassword={setShowConfirmPassword}
+            onOpenLegal={onOpenLegal}
           />
         )}
       </AnimatePresence>
