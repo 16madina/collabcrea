@@ -246,8 +246,8 @@ const Landing = () => {
                 </Button>
               </Link>
               <div className="glass rounded-md sm:rounded-lg px-1.5 sm:px-2 py-1 sm:py-1.5 text-center mt-1 w-full">
-                <p className="text-sm sm:text-base font-bold text-gold-gradient">500+</p>
-                <p className="text-[8px] sm:text-[10px] text-muted-foreground">Marques</p>
+                <p className="text-sm sm:text-base font-bold text-gold-gradient">{dbOffers.length > 0 ? `${dbOffers.length}` : "—"}</p>
+                <p className="text-[8px] sm:text-[10px] text-muted-foreground">Offres</p>
               </div>
             </div>
 
