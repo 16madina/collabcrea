@@ -1,14 +1,33 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, MapPin, Globe, ShieldCheck, Star, User, CreditCard, Image, MessageCircle } from "lucide-react";
+import { ArrowLeft, MapPin, Globe, ShieldCheck, Star, User, CreditCard, Image, MessageCircle, Flag, Ban, AlertTriangle, MoreVertical } from "lucide-react";
 import { FaYoutube, FaInstagram, FaTiktok, FaSnapchatGhost, FaFacebookF } from "react-icons/fa";
 import { supabase } from "@/integrations/supabase/client";
 import { CountryFlag } from "@/lib/flags";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import ReportDialog from "@/components/ReportDialog";
 import PortfolioTab from "@/components/creator/tabs/PortfolioTab";
 import RateCardDisplay from "@/components/creator/RateCardDisplay";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 interface ProfileData {
   full_name: string;
@@ -37,10 +56,14 @@ const ProfileView = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { user } = useAuth();
   const fromChat = searchParams.get("from") === "chat";
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showReport, setShowReport] = useState(false);
+  const [showBlockConfirm, setShowBlockConfirm] = useState(false);
+  const [blocking, setBlocking] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
@@ -63,6 +86,36 @@ const ProfileView = () => {
     };
     fetch();
   }, [userId]);
+
+  const handleBlock = async () => {
+    if (!user || !userId) return;
+    setBlocking(true);
+    try {
+      const { error } = await supabase.from("blocked_users").insert({
+        blocker_id: user.id,
+        blocked_id: userId,
+      });
+      if (error) {
+        if (error.code === "23505") {
+          toast.info("Cet utilisateur est déjà bloqué");
+        } else {
+          throw error;
+        }
+      } else {
+        toast.success("Utilisateur bloqué", {
+          description: `${profile?.full_name || "Cet utilisateur"} ne pourra plus vous contacter`,
+        });
+      }
+    } catch (err) {
+      console.error("Error blocking user:", err);
+      toast.error("Erreur lors du blocage");
+    } finally {
+      setBlocking(false);
+      setShowBlockConfirm(false);
+    }
+  };
+
+  const isOwnProfile = user?.id === userId;
 
   if (loading) {
     return (
@@ -100,6 +153,7 @@ const ProfileView = () => {
   const pricing = Array.isArray(profile.pricing) ? profile.pricing : [];
 
   return (
+    <>
     <div className="min-h-screen bg-background">
       {/* Hero photo - like CreatorDetailSheet */}
       <div className="relative">
@@ -125,16 +179,37 @@ const ProfileView = () => {
           <ArrowLeft className="w-5 h-5 text-foreground" />
         </button>
 
-        {/* Return to chat button */}
-        {fromChat && (
-          <button
-            onClick={() => navigate(-1)}
-            className="absolute top-[max(env(safe-area-inset-top),0.75rem)] right-4 flex items-center gap-1.5 px-3 h-10 rounded-full bg-gold/90 backdrop-blur-sm text-primary-foreground text-xs font-semibold z-10"
-          >
-            <MessageCircle className="w-4 h-4" />
-            Conversation
-          </button>
-        )}
+        {/* Action menu (report/block) + Return to chat */}
+        <div className="absolute top-[max(env(safe-area-inset-top),0.75rem)] right-4 flex items-center gap-2 z-10">
+          {fromChat && (
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-1.5 px-3 h-10 rounded-full bg-gold/90 backdrop-blur-sm text-primary-foreground text-xs font-semibold"
+            >
+              <MessageCircle className="w-4 h-4" />
+              Conversation
+            </button>
+          )}
+          {user && !isOwnProfile && userId && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="w-10 h-10 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center">
+                  <MoreVertical className="w-5 h-5 text-foreground" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 z-[70]">
+                <DropdownMenuItem onClick={() => setShowReport(true)} className="text-destructive focus:text-destructive">
+                  <Flag className="w-4 h-4 mr-2" />
+                  Signaler cet utilisateur
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowBlockConfirm(true)} className="text-destructive focus:text-destructive">
+                  <Ban className="w-4 h-4 mr-2" />
+                  Bloquer cet utilisateur
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
 
         {/* Info overlay on hero */}
         <div className="absolute bottom-4 left-6 right-6">
@@ -268,6 +343,43 @@ const ProfileView = () => {
         </div>
       )}
     </div>
+
+      {/* Report Dialog */}
+      <ReportDialog
+        open={showReport}
+        onOpenChange={setShowReport}
+        reportType="user"
+        targetUserId={userId}
+        targetName={displayName}
+      />
+
+      {/* Block Confirm Dialog */}
+      <AlertDialog open={showBlockConfirm} onOpenChange={setShowBlockConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+              Bloquer {displayName} ?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Cet utilisateur ne pourra plus vous envoyer de messages ni vous contacter.
+              Vous pouvez le débloquer à tout moment depuis vos paramètres.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={blocking}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBlock}
+              disabled={blocking}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              <Ban className="w-4 h-4 mr-2" />
+              Bloquer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
 
