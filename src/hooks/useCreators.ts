@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { allCreators as staticCreators } from "@/data/creators";
 import type { Creator } from "@/components/CreatorDetailSheet";
 
 interface ProfileWithRole {
