@@ -129,6 +129,7 @@ function mapProfileToCreator(profile: ProfileWithRole): Creator & { userId: stri
       facebook: profile.facebook_followers || undefined,
     },
     pricing,
+    pricingCurrency,
   };
 }
 
