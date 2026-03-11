@@ -84,14 +84,25 @@ function mapProfileToCreator(profile: ProfileWithRole): Creator & { userId: stri
   const firstName = nameParts[0] || "Créateur";
   const lastName = nameParts.slice(1).join(" ") || "";
 
-  // Parse pricing from JSON
+  // Parse pricing from JSON - handle both old array and new {currency, items} format
   let pricing: Creator["pricing"] = undefined;
-  if (profile.pricing && Array.isArray(profile.pricing)) {
-    pricing = (profile.pricing as Array<{ type?: string; price?: string; description?: string }>).map((p) => ({
-      type: p.type || "",
-      price: p.price || "",
-      description: p.description || "",
-    }));
+  let pricingCurrency = "XOF";
+  if (profile.pricing) {
+    if (Array.isArray(profile.pricing)) {
+      pricing = (profile.pricing as Array<{ type?: string; price?: string; description?: string }>).map((p) => ({
+        type: p.type || "",
+        price: p.price || "",
+        description: p.description || "",
+      }));
+    } else if (typeof profile.pricing === "object" && profile.pricing !== null && "items" in (profile.pricing as object)) {
+      const pricingObj = profile.pricing as { currency?: string; items?: Array<{ type?: string; price?: string; description?: string }> };
+      pricingCurrency = pricingObj.currency || "XOF";
+      pricing = (pricingObj.items || []).map((p) => ({
+        type: p.type || "",
+        price: p.price || "",
+        description: p.description || "",
+      }));
+    }
   }
 
   // Get residence flag only if different from origin
