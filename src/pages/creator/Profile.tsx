@@ -46,6 +46,7 @@ const parsePricingData = (raw: unknown): { items: PricingItem[] | null; currency
   return { items: null, currency: "XOF" };
 };
 
+interface ProfileData {
   full_name: string;
   bio: string | null;
   category: string | null;
