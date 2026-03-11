@@ -484,6 +484,16 @@ const CreatorProfile = () => {
             />
           )}
 
+          {activeTab === "pricing" && (
+            <PricingTab
+              pricing={profileData?.pricing || null}
+              currency={profileData?.pricingCurrency}
+              onEditPricing={() => setShowPricingSheet(true)}
+              avatarUrl={profileData?.avatar_url}
+              fullName={profileData?.full_name}
+            />
+          )}
+
           {activeTab === "offers" && (
             <OffersTab applications={[]} />
           )}
