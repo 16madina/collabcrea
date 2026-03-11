@@ -41,6 +41,7 @@ export interface Creator {
   isVerified?: boolean;
   socials: CreatorSocials;
   pricing?: CreatorPricing[];
+  pricingCurrency?: string;
 }
 
 interface CreatorDetailSheetProps {
