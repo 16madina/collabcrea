@@ -321,6 +321,7 @@ const ProfileView = () => {
               {pricing.length > 0 ? (
                 <RateCardDisplay
                   pricing={pricing}
+                  currency={pricingCurrency}
                   avatarUrl={avatarUrl || undefined}
                   fullName={displayName}
                 />
