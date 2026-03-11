@@ -35,7 +35,17 @@ interface PricingItem {
   description: string;
 }
 
-interface ProfileData {
+// Parse pricing data - handles both old array format and new {currency, items} format
+const parsePricingData = (raw: unknown): { items: PricingItem[] | null; currency: string } => {
+  if (!raw) return { items: null, currency: "XOF" };
+  if (Array.isArray(raw)) return { items: raw as PricingItem[], currency: "XOF" };
+  if (typeof raw === "object" && raw !== null && "items" in raw) {
+    const obj = raw as { currency?: string; items?: PricingItem[] };
+    return { items: obj.items || null, currency: obj.currency || "XOF" };
+  }
+  return { items: null, currency: "XOF" };
+};
+
   full_name: string;
   bio: string | null;
   category: string | null;
