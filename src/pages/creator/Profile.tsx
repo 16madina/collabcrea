@@ -509,6 +509,7 @@ const CreatorProfile = () => {
         isOpen={showPricingSheet}
         onClose={() => setShowPricingSheet(false)}
         initialPricing={profileData?.pricing || null}
+        initialCurrency={profileData?.pricingCurrency}
         onUpdate={fetchProfile}
       />
 
