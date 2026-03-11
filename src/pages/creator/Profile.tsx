@@ -47,6 +47,7 @@ interface ProfileData {
   snapchat_followers: string | null;
   facebook_followers: string | null;
   pricing: PricingItem[] | null;
+  pricingCurrency: string;
   email_verified: boolean;
   identity_verified: boolean;
   identity_document_url: string | null;
