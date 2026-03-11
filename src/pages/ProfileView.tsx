@@ -150,7 +150,17 @@ const ProfileView = () => {
     { icon: FaSnapchatGhost, value: profile.snapchat_followers, color: "text-yellow-400", bg: "bg-[#FFFC00]", label: "Snapchat", iconColor: "text-black" },
   ].filter((s) => s.value);
 
-  const pricing = Array.isArray(profile.pricing) ? profile.pricing : [];
+  // Handle both old array format and new {currency, items} format
+  const parsedPricing = (() => {
+    if (!profile.pricing) return { items: [], currency: "XOF" };
+    if (Array.isArray(profile.pricing)) return { items: profile.pricing, currency: "XOF" };
+    if (typeof profile.pricing === "object" && "items" in profile.pricing) {
+      return { items: profile.pricing.items || [], currency: profile.pricing.currency || "XOF" };
+    }
+    return { items: [], currency: "XOF" };
+  })();
+  const pricing = parsedPricing.items;
+  const pricingCurrency = parsedPricing.currency;
 
   return (
     <>
@@ -311,6 +321,7 @@ const ProfileView = () => {
               {pricing.length > 0 ? (
                 <RateCardDisplay
                   pricing={pricing}
+                  currency={pricingCurrency}
                   avatarUrl={avatarUrl || undefined}
                   fullName={displayName}
                 />

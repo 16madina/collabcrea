@@ -1,4 +1,5 @@
 import { Sparkles } from "lucide-react";
+import { getCurrencySymbol } from "@/components/creator/PricingEditSheet";
 
 interface PricingItem {
   type: string;
@@ -8,6 +9,7 @@ interface PricingItem {
 
 interface RateCardDisplayProps {
   pricing: PricingItem[] | null;
+  currency?: string;
   avatarUrl?: string | null;
   fullName?: string;
   showEditButton?: boolean;
@@ -19,6 +21,7 @@ const platformOrder = ["Snap", "TikTok", "Instagram", "YouTube", "Autres"];
 
 const RateCardDisplay = ({ 
   pricing, 
+  currency = "XOF",
   avatarUrl, 
   fullName,
   showEditButton = false,
@@ -45,7 +48,11 @@ const RateCardDisplay = ({
 
   const formatPrice = (price: number | string) => {
     const numPrice = typeof price === "string" ? parseInt(price.replace(/\D/g, "")) : price;
-    if (isNaN(numPrice)) return price;
+    if (isNaN(numPrice)) return String(price);
+    const symbol = getCurrencySymbol(currency);
+    if (symbol === "€" || symbol === "$") {
+      return numPrice.toLocaleString("fr-FR") + symbol;
+    }
     return numPrice.toLocaleString("fr-FR") + "f";
   };
 

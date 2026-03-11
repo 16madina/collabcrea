@@ -4,6 +4,7 @@ import { Plus, Sparkles, Download, Share2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import html2canvas from "html2canvas";
+import { getCurrencySymbol } from "@/components/creator/PricingEditSheet";
 
 interface PricingItem {
   type: string;
@@ -13,6 +14,7 @@ interface PricingItem {
 
 interface PricingTabProps {
   pricing: PricingItem[] | null;
+  currency?: string;
   onEditPricing: () => void;
   avatarUrl?: string | null;
   fullName?: string;
@@ -24,6 +26,7 @@ interface PricingTabProps {
 
 const PricingTab = ({ 
   pricing, 
+  currency = "XOF",
   onEditPricing, 
   avatarUrl, 
   fullName, 
@@ -51,6 +54,10 @@ const PricingTab = ({
   }, {} as Record<string, PricingItem[]>) : {};
 
   const formatPrice = (price: number) => {
+    const symbol = getCurrencySymbol(currency);
+    if (symbol === "€" || symbol === "$") {
+      return price.toLocaleString("fr-FR") + symbol;
+    }
     return price.toLocaleString("fr-FR") + "f";
   };
 

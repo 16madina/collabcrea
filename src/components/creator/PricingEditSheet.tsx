@@ -35,6 +35,21 @@ interface PricingItem {
   description: string;
 }
 
+// Supported currencies
+const currencies = [
+  { code: "XOF", label: "FCFA", symbol: "f", flag: "🇨🇮" },
+  { code: "EUR", label: "EUR", symbol: "€", flag: "🇪🇺" },
+  { code: "USD", label: "USD", symbol: "$", flag: "🇺🇸" },
+];
+
+export const getCurrencySymbol = (currencyCode: string) => {
+  return currencies.find(c => c.code === currencyCode)?.symbol || "f";
+};
+
+export const getCurrencyLabel = (currencyCode: string) => {
+  return currencies.find(c => c.code === currencyCode)?.label || "FCFA";
+};
+
 // Platform options
 const platforms = [
   { id: "snapchat", name: "Snap", icon: SnapchatIcon },
@@ -96,14 +111,16 @@ interface PricingEditSheetProps {
   isOpen: boolean;
   onClose: () => void;
   initialPricing: PricingItem[] | null;
+  initialCurrency?: string;
   onUpdate: () => void;
 }
 
-const PricingEditSheet = ({ isOpen, onClose, initialPricing, onUpdate }: PricingEditSheetProps) => {
+const PricingEditSheet = ({ isOpen, onClose, initialPricing, initialCurrency, onUpdate }: PricingEditSheetProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [pricing, setPricing] = useState<PricingItem[]>(initialPricing || []);
+  const [selectedCurrency, setSelectedCurrency] = useState(initialCurrency || "XOF");
   const [activeTab, setActiveTab] = useState("service");
   
   // New pricing form state
@@ -124,8 +141,9 @@ const PricingEditSheet = ({ isOpen, onClose, initialPricing, onUpdate }: Pricing
   useEffect(() => {
     if (isOpen) {
       setPricing(initialPricing || []);
+      setSelectedCurrency(initialCurrency || "XOF");
     }
-  }, [isOpen, initialPricing]);
+  }, [isOpen, initialPricing, initialCurrency]);
 
   // Reset content type when platform changes
   useEffect(() => {
@@ -235,16 +253,19 @@ const PricingEditSheet = ({ isOpen, onClose, initialPricing, onUpdate }: Pricing
     setIsLoading(true);
 
     try {
-      const pricingJson = pricing.map(item => ({
-        type: item.type,
-        price: item.price,
-        description: item.description,
-      }));
+      const pricingData = {
+        currency: selectedCurrency,
+        items: pricing.map(item => ({
+          type: item.type,
+          price: item.price,
+          description: item.description,
+        })),
+      };
 
       const { error } = await supabase
         .from("profiles")
         .update({
-          pricing: pricingJson as unknown as null,
+          pricing: pricingData as unknown as null,
         })
         .eq("user_id", user.id);
 
@@ -303,7 +324,29 @@ const PricingEditSheet = ({ isOpen, onClose, initialPricing, onUpdate }: Pricing
           </SheetTitle>
         </SheetHeader>
 
-        <div className="overflow-y-auto h-[calc(100%-140px)] space-y-4 pb-4">
+          {/* Currency Selector */}
+          <div className="flex items-center gap-2 mb-2">
+            <Label className="text-xs text-muted-foreground shrink-0">Devise :</Label>
+            <div className="flex gap-1.5">
+              {currencies.map((cur) => (
+                <button
+                  key={cur.code}
+                  type="button"
+                  onClick={() => setSelectedCurrency(cur.code)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1 ${
+                    selectedCurrency === cur.code
+                      ? "bg-gold text-background"
+                      : "bg-muted hover:bg-muted/80"
+                  }`}
+                >
+                  <span>{cur.flag}</span>
+                  <span>{cur.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+        <div className="overflow-y-auto h-[calc(100%-180px)] space-y-4 pb-4">
           {/* Tabs for Service vs Pack */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-4">
@@ -486,7 +529,7 @@ const PricingEditSheet = ({ isOpen, onClose, initialPricing, onUpdate }: Pricing
                       exit={{ opacity: 0, height: 0 }}
                       className="space-y-2 overflow-hidden"
                     >
-                      <Label className="text-xs text-muted-foreground">Prix (FCFA)</Label>
+                      <Label className="text-xs text-muted-foreground">Prix ({getCurrencyLabel(selectedCurrency)})</Label>
                       <div className="flex gap-2">
                         <Input
                           type="number"
@@ -518,7 +561,7 @@ const PricingEditSheet = ({ isOpen, onClose, initialPricing, onUpdate }: Pricing
                   >
                     <span className="text-muted-foreground">Aperçu: </span>
                     <span className="font-medium">{generateTypeString()}</span>
-                    <span className="text-gold font-semibold"> — {price.toLocaleString()}f</span>
+                    <span className="text-gold font-semibold"> — {price.toLocaleString()}{getCurrencySymbol(selectedCurrency)}</span>
                   </motion.div>
                 )}
               </div>
@@ -558,7 +601,7 @@ const PricingEditSheet = ({ isOpen, onClose, initialPricing, onUpdate }: Pricing
                   </div>
 
                   <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Prix du pack (FCFA)</Label>
+                    <Label className="text-xs text-muted-foreground">Prix du pack ({getCurrencyLabel(selectedCurrency)})</Label>
                     <div className="flex gap-2">
                       <Input
                         type="number"
@@ -593,7 +636,7 @@ const PricingEditSheet = ({ isOpen, onClose, initialPricing, onUpdate }: Pricing
                     {packDescription && (
                       <p className="text-xs text-muted-foreground mt-1">{packDescription}</p>
                     )}
-                    <p className="text-violet font-bold mt-1">{packPrice.toLocaleString()}f</p>
+                    <p className="text-violet font-bold mt-1">{packPrice.toLocaleString()}{getCurrencySymbol(selectedCurrency)}</p>
                   </motion.div>
                 )}
               </div>
@@ -625,7 +668,7 @@ const PricingEditSheet = ({ isOpen, onClose, initialPricing, onUpdate }: Pricing
                     </div>
                     <div className="flex items-center gap-2 ml-2">
                       <span className="text-violet font-bold text-sm">
-                        {pack.price.toLocaleString()}f
+                        {pack.price.toLocaleString()}{getCurrencySymbol(selectedCurrency)}
                       </span>
                       <button
                         type="button"
@@ -665,7 +708,7 @@ const PricingEditSheet = ({ isOpen, onClose, initialPricing, onUpdate }: Pricing
                       </p>
                       <div className="flex items-center gap-2">
                         <span className="text-gold font-semibold text-xs">
-                          {item.price.toLocaleString()}f
+                          {item.price.toLocaleString()}{getCurrencySymbol(selectedCurrency)}
                         </span>
                         <button
                           type="button"

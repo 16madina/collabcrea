@@ -35,6 +35,17 @@ interface PricingItem {
   description: string;
 }
 
+// Parse pricing data - handles both old array format and new {currency, items} format
+const parsePricingData = (raw: unknown): { items: PricingItem[] | null; currency: string } => {
+  if (!raw) return { items: null, currency: "XOF" };
+  if (Array.isArray(raw)) return { items: raw as PricingItem[], currency: "XOF" };
+  if (typeof raw === "object" && raw !== null && "items" in raw) {
+    const obj = raw as { currency?: string; items?: PricingItem[] };
+    return { items: obj.items || null, currency: obj.currency || "XOF" };
+  }
+  return { items: null, currency: "XOF" };
+};
+
 interface ProfileData {
   full_name: string;
   bio: string | null;
@@ -47,6 +58,7 @@ interface ProfileData {
   snapchat_followers: string | null;
   facebook_followers: string | null;
   pricing: PricingItem[] | null;
+  pricingCurrency: string;
   email_verified: boolean;
   identity_verified: boolean;
   identity_document_url: string | null;
@@ -106,7 +118,8 @@ const CreatorProfile = () => {
         tiktok_followers: data.tiktok_followers,
         snapchat_followers: data.snapchat_followers,
         facebook_followers: data.facebook_followers,
-        pricing: data.pricing as unknown as PricingItem[] | null,
+        pricing: parsePricingData(data.pricing).items,
+        pricingCurrency: parsePricingData(data.pricing).currency,
         email_verified: data.email_verified ?? false,
         identity_verified: data.identity_verified ?? false,
         identity_document_url: data.identity_document_url,
@@ -496,6 +509,7 @@ const CreatorProfile = () => {
         isOpen={showPricingSheet}
         onClose={() => setShowPricingSheet(false)}
         initialPricing={profileData?.pricing || null}
+        initialCurrency={profileData?.pricingCurrency}
         onUpdate={fetchProfile}
       />
 

@@ -41,6 +41,7 @@ export interface Creator {
   isVerified?: boolean;
   socials: CreatorSocials;
   pricing?: CreatorPricing[];
+  pricingCurrency?: string;
 }
 
 interface CreatorDetailSheetProps {
@@ -256,6 +257,7 @@ const CreatorDetailSheet = ({ creator, creatorUserId, open, onOpenChange }: Crea
                   ...p,
                   price: typeof p.price === "string" ? parseInt(p.price.replace(/\D/g, "")) || 0 : p.price
                 }))}
+                currency={creator.pricingCurrency}
                 avatarUrl={creator.image}
                 fullName={`${creator.firstName} ${creator.lastName}`}
               />
