@@ -407,6 +407,11 @@ const AdminWithdrawalsTab = () => {
                         <Phone className="w-3 h-3" />
                         {req.mobile_provider} — {req.mobile_number}
                       </span>
+                    ) : req.method === "paypal" ? (
+                      <span className="flex items-center gap-1">
+                        <CreditCard className="w-3 h-3" />
+                        PayPal — {req.paypal_email} ({req.payout_currency || "EUR"})
+                      </span>
                     ) : (
                       <span className="flex items-center gap-1">
                         <Building2 className="w-3 h-3" />
