@@ -35,6 +35,11 @@ interface MobileMoneyDetails {
   mobile_number: string;
 }
 
+interface PayPalDetails {
+  paypal_email: string;
+  payout_currency: "EUR" | "USD";
+}
+
 export const useWithdrawal = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
