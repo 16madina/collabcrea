@@ -10,7 +10,7 @@ import {
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle,
 } from "@/components/ui/sheet";
-import { Wallet, CheckCircle, XCircle, Clock, Phone, Building2, User, Upload, Image, Loader2, Zap } from "lucide-react";
+import { Wallet, CheckCircle, XCircle, Clock, Phone, Building2, User, Upload, Image, Loader2, Zap, CreditCard } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
