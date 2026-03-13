@@ -988,13 +988,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "withdrawal_requests_transaction_id_fkey"
-            columns: ["transaction_id"]
-            isOneToOne: false
-            referencedRelation: "transactions"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "withdrawal_requests_wallet_id_fkey"
             columns: ["wallet_id"]
             isOneToOne: false
