@@ -140,7 +140,6 @@ const WalletTab = () => {
                         <p className="text-xs text-muted-foreground">
                           {req.method === "bank" ? req.bank_name : req.method === "paypal" ? `PayPal - ${(req as any).paypal_email}` : `${req.mobile_provider} - ${req.mobile_number}`}
                         </p>
-                        </p>
                       </div>
                     </div>
                     <Badge variant="secondary" className={req.status === "processing" ? "bg-orange-500/20 text-orange-500" : ""}>
