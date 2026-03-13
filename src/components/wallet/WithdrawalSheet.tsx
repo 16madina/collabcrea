@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, ArrowUpRight, AlertCircle, Clock, ShieldAlert } from "lucide-react";
+import { Loader2, ArrowUpRight, AlertCircle, Clock, ShieldAlert, Globe } from "lucide-react";
 import { useWithdrawal } from "@/hooks/useWithdrawal";
 import { useAuth } from "@/hooks/useAuth";
 import { Wallet } from "@/hooks/useWallet";
@@ -40,6 +40,11 @@ const phoneRulesByCountry: Record<string, { lengths: number[]; hint: string }> =
   "Kenya": { lengths: [9], hint: "9 chiffres" },
 };
 
+// Exchange rates FCFA -> target currency (approximate)
+const EXCHANGE_RATES: Record<string, number> = {
+  EUR: 1 / 656,
+  USD: 1 / 610,
+};
 
 interface WithdrawalSheetProps {
   open: boolean;
@@ -106,6 +111,8 @@ const mobileProviders = [
   },
 ];
 
+type WithdrawalMethod = "mobile_money" | "paypal";
+
 const WithdrawalSheet = ({
   open,
   onOpenChange,
@@ -113,8 +120,9 @@ const WithdrawalSheet = ({
   onSuccess,
 }: WithdrawalSheetProps) => {
   const { user } = useAuth();
-  const { loading, requestMobileMoneyWithdrawal } = useWithdrawal();
+  const { loading, requestMobileMoneyWithdrawal, requestPayPalWithdrawal } = useWithdrawal();
 
+  const [withdrawalMethod, setWithdrawalMethod] = useState<WithdrawalMethod>("mobile_money");
   const [amount, setAmount] = useState("");
   const [mobileProvider, setMobileProvider] = useState("");
   const [mobileNumber, setMobileNumber] = useState("");
@@ -122,6 +130,11 @@ const WithdrawalSheet = ({
   const [userCountry, setUserCountry] = useState("");
   const [userPhoneCode, setUserPhoneCode] = useState("");
   const [userFlag, setUserFlag] = useState("");
+
+  // PayPal fields
+  const [paypalEmail, setPaypalEmail] = useState("");
+  const [paypalEmailConfirm, setPaypalEmailConfirm] = useState("");
+  const [paypalCurrency, setPaypalCurrency] = useState<"EUR" | "USD">("EUR");
 
   // Fetch user's country from profile
   useEffect(() => {
@@ -145,7 +158,10 @@ const WithdrawalSheet = ({
   }, [user, open]);
 
   const numericAmount = parseInt(amount) || 0;
-  const isValidAmount = numericAmount >= 1000 && numericAmount <= (wallet?.balance || 0);
+  const minAmount = withdrawalMethod === "paypal" ? 3000 : 1000;
+  const isValidAmount = numericAmount >= minAmount && numericAmount <= (wallet?.balance || 0);
+
+  // Mobile money validation
   const phoneRules = phoneRulesByCountry[userCountry];
   const maxPhoneLength = phoneRules ? Math.max(...phoneRules.lengths) : 10;
   const isValidPhone = phoneRules
@@ -153,11 +169,32 @@ const WithdrawalSheet = ({
     : mobileNumber.length >= 7 && mobileNumber.length <= 10 && /^\d+$/.test(mobileNumber);
   const phonesMatch = mobileNumber === mobileNumberConfirm;
   const phoneHint = phoneRules?.hint || "7 à 10 chiffres";
-
   const selectedProvider = mobileProviders.find((p) => p.id === mobileProvider);
 
+  // PayPal validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const isValidPaypalEmail = emailRegex.test(paypalEmail);
+  const paypalEmailsMatch = paypalEmail === paypalEmailConfirm;
+
+  // PayPal conversion estimate
+  const paypalRate = EXCHANGE_RATES[paypalCurrency] || EXCHANGE_RATES.EUR;
+  const paypalGrossAmount = numericAmount * paypalRate;
+  const paypalFee = paypalGrossAmount * 0.02;
+  const paypalNetAmount = paypalGrossAmount - paypalFee;
+
+  const canSubmitMobile = isValidAmount && mobileProvider && isValidPhone && phonesMatch;
+  const canSubmitPaypal = isValidAmount && isValidPaypalEmail && paypalEmailsMatch;
+  const canSubmit = withdrawalMethod === "paypal" ? canSubmitPaypal : canSubmitMobile;
+
   const handleSubmit = async () => {
-    if (!wallet || !isValidAmount || !mobileProvider || !isValidPhone || !phonesMatch) {
+    if (!wallet || !canSubmit) return;
+
+    if (withdrawalMethod === "paypal") {
+      await requestPayPalWithdrawal(wallet.id, numericAmount, {
+        paypal_email: paypalEmail,
+        payout_currency: paypalCurrency,
+      });
+    } else {
       if (!isValidPhone && mobileNumber) {
         toast.error(`Numéro invalide. Format attendu : ${phoneHint}`);
         return;
@@ -166,13 +203,11 @@ const WithdrawalSheet = ({
         toast.error("Les numéros ne correspondent pas");
         return;
       }
-      return;
+      await requestMobileMoneyWithdrawal(wallet.id, numericAmount, {
+        mobile_provider: mobileProvider,
+        mobile_number: `${userPhoneCode}${mobileNumber}`,
+      });
     }
-
-    await requestMobileMoneyWithdrawal(wallet.id, numericAmount, {
-      mobile_provider: mobileProvider,
-      mobile_number: `${userPhoneCode}${mobileNumber}`,
-    });
 
     onOpenChange(false);
     resetForm();
@@ -184,9 +219,10 @@ const WithdrawalSheet = ({
     setMobileProvider("");
     setMobileNumber("");
     setMobileNumberConfirm("");
+    setPaypalEmail("");
+    setPaypalEmailConfirm("");
+    setPaypalCurrency("EUR");
   };
-
-  const canSubmit = isValidAmount && mobileProvider && isValidPhone && phonesMatch;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -202,39 +238,109 @@ const WithdrawalSheet = ({
         </SheetHeader>
 
         <div className="space-y-6 overflow-y-auto max-h-[calc(85vh-220px)]">
+          {/* Withdrawal Method Selection */}
+          <div className="space-y-2">
+            <Label>Type de retrait</Label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setWithdrawalMethod("mobile_money")}
+                className={`glass rounded-xl p-3 transition-all text-left ${
+                  withdrawalMethod === "mobile_money" ? "ring-2 ring-gold" : "hover:bg-muted/30"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <svg viewBox="0 0 24 24" className="w-5 h-5 text-gold" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="5" y="2" width="14" height="20" rx="2" />
+                    <line x1="12" y1="18" x2="12" y2="18.01" strokeWidth="3" strokeLinecap="round" />
+                  </svg>
+                  <div>
+                    <p className="text-sm font-semibold">Mobile Money</p>
+                    <p className="text-[10px] text-muted-foreground">Wave, Orange, MTN...</p>
+                  </div>
+                </div>
+              </button>
+              <button
+                onClick={() => setWithdrawalMethod("paypal")}
+                className={`glass rounded-xl p-3 transition-all text-left ${
+                  withdrawalMethod === "paypal" ? "ring-2 ring-[#0070BA]" : "hover:bg-muted/30"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <svg viewBox="0 0 40 40" className="w-5 h-5">
+                    <rect width="40" height="40" rx="10" fill="#0070BA" />
+                    <text x="20" y="26" textAnchor="middle" fontWeight="bold" fontSize="10" fill="white">PP</text>
+                  </svg>
+                  <div>
+                    <p className="text-sm font-semibold">PayPal</p>
+                    <p className="text-[10px] text-muted-foreground">EUR ou USD</p>
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <Separator />
+
           {/* Amount */}
           <div className="space-y-2">
-            <Label>Montant à retirer *</Label>
+            <Label>Montant à retirer (FCFA) *</Label>
             <Input
               type="number"
-              placeholder="10000"
+              placeholder={minAmount.toString()}
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               className="text-lg font-semibold bg-muted/30"
             />
             <p className="text-xs text-muted-foreground">
-              Minimum: 1 000 FCFA | Maximum: {formatCurrency(wallet?.balance || 0)}
+              Minimum: {new Intl.NumberFormat("fr-FR").format(minAmount)} FCFA | Maximum: {formatCurrency(wallet?.balance || 0)}
             </p>
-            {numericAmount >= 1000 && (
+
+            {/* Fee breakdown */}
+            {numericAmount >= minAmount && (
               <div className="glass rounded-lg p-3 space-y-1.5">
                 <div className="flex justify-between text-xs">
                   <span className="text-muted-foreground">Montant demandé</span>
                   <span>{formatCurrency(numericAmount)}</span>
                 </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">Frais de retrait (~2%)</span>
-                  <span className="text-destructive">-{formatCurrency(Math.round(numericAmount * 0.02))}</span>
-                </div>
-                <Separator className="my-1" />
-                <div className="flex justify-between text-xs font-semibold">
-                  <span>Vous recevrez environ</span>
-                  <span className="text-gold">{formatCurrency(numericAmount - Math.round(numericAmount * 0.02))}</span>
-                </div>
-                <p className="text-[10px] text-muted-foreground">
-                  Les frais exacts dépendent de l'opérateur et du pays
-                </p>
+
+                {withdrawalMethod === "paypal" ? (
+                  <>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Conversion → {paypalCurrency}</span>
+                      <span>{paypalGrossAmount.toFixed(2)} {paypalCurrency}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Frais PayPal (2%)</span>
+                      <span className="text-destructive">-{paypalFee.toFixed(2)} {paypalCurrency}</span>
+                    </div>
+                    <Separator className="my-1" />
+                    <div className="flex justify-between text-xs font-semibold">
+                      <span>Vous recevrez environ</span>
+                      <span className="text-[#0070BA]">{paypalNetAmount.toFixed(2)} {paypalCurrency}</span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">
+                      Taux indicatif : 1 {paypalCurrency} ≈ {Math.round(1 / paypalRate)} FCFA. Le taux réel peut varier.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Frais de retrait (~2%)</span>
+                      <span className="text-destructive">-{formatCurrency(Math.round(numericAmount * 0.02))}</span>
+                    </div>
+                    <Separator className="my-1" />
+                    <div className="flex justify-between text-xs font-semibold">
+                      <span>Vous recevrez environ</span>
+                      <span className="text-gold">{formatCurrency(numericAmount - Math.round(numericAmount * 0.02))}</span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">
+                      Les frais exacts dépendent de l'opérateur et du pays
+                    </p>
+                  </>
+                )}
               </div>
             )}
+
             {numericAmount > (wallet?.balance || 0) && (
               <div className="flex items-center gap-2 text-destructive text-xs">
                 <AlertCircle className="w-3 h-3" />
@@ -245,91 +351,163 @@ const WithdrawalSheet = ({
 
           <Separator />
 
-          {/* Provider Selection */}
-          <div className="space-y-3">
-            <Label>Méthode de retrait *</Label>
-            <div className="grid grid-cols-3 gap-2">
-              {mobileProviders.map((provider) => (
-                <button
-                  key={provider.id}
-                  onClick={() => setMobileProvider(provider.id)}
-                  className={`glass rounded-xl p-3 transition-all relative ${
-                    mobileProvider === provider.id
-                      ? "ring-2 ring-gold"
-                      : "hover:bg-muted/30"
-                  }`}
-                >
-                  <div className="flex flex-col items-center gap-1.5">
-                    {provider.logo}
-                    <span className="text-[10px] font-semibold leading-tight">{provider.name}</span>
+          {/* METHOD-SPECIFIC FIELDS */}
+          {withdrawalMethod === "mobile_money" && (
+            <>
+              {/* Provider Selection */}
+              <div className="space-y-3">
+                <Label>Opérateur *</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {mobileProviders.map((provider) => (
+                    <button
+                      key={provider.id}
+                      onClick={() => setMobileProvider(provider.id)}
+                      className={`glass rounded-xl p-3 transition-all relative ${
+                        mobileProvider === provider.id ? "ring-2 ring-gold" : "hover:bg-muted/30"
+                      }`}
+                    >
+                      <div className="flex flex-col items-center gap-1.5">
+                        {provider.logo}
+                        <span className="text-[10px] font-semibold leading-tight">{provider.name}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Phone Number */}
+              {mobileProvider && (
+                <div className="space-y-3">
+                  {userCountry && (
+                    <div className="flex items-center gap-2 bg-muted/30 rounded-xl p-3">
+                      <ShieldAlert className="w-4 h-4 text-gold shrink-0" />
+                      <p className="text-xs text-muted-foreground">
+                        Le numéro doit correspondre à votre pays d'inscription : <span className="font-semibold text-foreground">{userFlag} {userCountry}</span>
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label>Numéro {selectedProvider?.name || "Mobile Money"} *</Label>
+                    <div className="flex gap-2">
+                      <div className="w-24 h-10 bg-muted/50 border border-border rounded-xl px-3 flex items-center justify-center text-sm font-medium text-muted-foreground shrink-0">
+                        {userFlag} {userPhoneCode || "+--"}
+                      </div>
+                      <Input
+                        type="tel"
+                        inputMode="numeric"
+                        placeholder="07 00 00 00 00"
+                        value={mobileNumber}
+                        onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, ""))}
+                        maxLength={maxPhoneLength}
+                        className="bg-muted/30"
+                      />
+                    </div>
+                    {mobileNumber && !isValidPhone && (
+                      <div className="flex items-center gap-2 text-destructive text-xs">
+                        <AlertCircle className="w-3 h-3" />
+                        Format attendu : {phoneHint}
+                      </div>
+                    )}
                   </div>
-                </button>
-              ))}
-            </div>
-          </div>
 
-
-          {/* Phone Number */}
-          {mobileProvider && (
-            <div className="space-y-3">
-              {/* Country info */}
-              {userCountry && (
-                <div className="flex items-center gap-2 bg-muted/30 rounded-xl p-3">
-                  <ShieldAlert className="w-4 h-4 text-gold shrink-0" />
-                  <p className="text-xs text-muted-foreground">
-                    Le numéro doit correspondre à votre pays d'inscription : <span className="font-semibold text-foreground">{userFlag} {userCountry}</span>
-                  </p>
+                  <div className="space-y-2">
+                    <Label>Confirmer le numéro *</Label>
+                    <div className="flex gap-2">
+                      <div className="w-24 h-10 bg-muted/50 border border-border rounded-xl px-3 flex items-center justify-center text-sm font-medium text-muted-foreground shrink-0">
+                        {userFlag} {userPhoneCode || "+--"}
+                      </div>
+                      <Input
+                        type="tel"
+                        inputMode="numeric"
+                        placeholder="Retapez le numéro"
+                        value={mobileNumberConfirm}
+                        onChange={(e) => setMobileNumberConfirm(e.target.value.replace(/\D/g, ""))}
+                        maxLength={maxPhoneLength}
+                        className="bg-muted/30"
+                      />
+                    </div>
+                    {mobileNumberConfirm && !phonesMatch && (
+                      <div className="flex items-center gap-2 text-destructive text-xs">
+                        <AlertCircle className="w-3 h-3" />
+                        Les numéros ne correspondent pas
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
+            </>
+          )}
 
+          {withdrawalMethod === "paypal" && (
+            <div className="space-y-4">
+              {/* Currency selection */}
               <div className="space-y-2">
-                <Label>
-                  Numéro {selectedProvider?.name || "Mobile Money"} *
-                </Label>
-                <div className="flex gap-2">
-                  <div className="w-24 h-10 bg-muted/50 border border-border rounded-xl px-3 flex items-center justify-center text-sm font-medium text-muted-foreground shrink-0">
-                    {userFlag} {userPhoneCode || "+--"}
-                  </div>
-                  <Input
-                    type="tel"
-                    inputMode="numeric"
-                    placeholder="07 00 00 00 00"
-                    value={mobileNumber}
-                    onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, ""))}
-                    maxLength={maxPhoneLength}
-                    className="bg-muted/30"
-                  />
+                <Label>Devise de réception *</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(["EUR", "USD"] as const).map((cur) => (
+                    <button
+                      key={cur}
+                      onClick={() => setPaypalCurrency(cur)}
+                      className={`glass rounded-xl p-3 transition-all ${
+                        paypalCurrency === cur ? "ring-2 ring-[#0070BA]" : "hover:bg-muted/30"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 justify-center">
+                        <Globe className="w-4 h-4 text-muted-foreground" />
+                        <span className="font-semibold text-sm">{cur === "EUR" ? "€ Euro" : "$ Dollar US"}</span>
+                      </div>
+                    </button>
+                  ))}
                 </div>
-                {mobileNumber && !isValidPhone && (
+              </div>
+
+              {/* PayPal email */}
+              <div className="space-y-2">
+                <Label>Email PayPal *</Label>
+                <Input
+                  type="email"
+                  placeholder="votre-email@example.com"
+                  value={paypalEmail}
+                  onChange={(e) => setPaypalEmail(e.target.value.trim())}
+                  className="bg-muted/30"
+                />
+                {paypalEmail && !isValidPaypalEmail && (
                   <div className="flex items-center gap-2 text-destructive text-xs">
                     <AlertCircle className="w-3 h-3" />
-                    Format attendu : {phoneHint}
+                    Format d'email invalide
                   </div>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label>Confirmer le numéro *</Label>
-                <div className="flex gap-2">
-                  <div className="w-24 h-10 bg-muted/50 border border-border rounded-xl px-3 flex items-center justify-center text-sm font-medium text-muted-foreground shrink-0">
-                    {userFlag} {userPhoneCode || "+--"}
-                  </div>
-                  <Input
-                    type="tel"
-                    inputMode="numeric"
-                    placeholder="Retapez le numéro"
-                    value={mobileNumberConfirm}
-                    onChange={(e) => setMobileNumberConfirm(e.target.value.replace(/\D/g, ""))}
-                    maxLength={maxPhoneLength}
-                    className="bg-muted/30"
-                  />
-                </div>
-                {mobileNumberConfirm && !phonesMatch && (
+                <Label>Confirmer l'email PayPal *</Label>
+                <Input
+                  type="email"
+                  placeholder="Retapez votre email PayPal"
+                  value={paypalEmailConfirm}
+                  onChange={(e) => setPaypalEmailConfirm(e.target.value.trim())}
+                  className="bg-muted/30"
+                />
+                {paypalEmailConfirm && !paypalEmailsMatch && (
                   <div className="flex items-center gap-2 text-destructive text-xs">
                     <AlertCircle className="w-3 h-3" />
-                    Les numéros ne correspondent pas
+                    Les emails ne correspondent pas
                   </div>
                 )}
+              </div>
+
+              {/* PayPal info notice */}
+              <div className="bg-[#0070BA]/10 rounded-xl p-3 space-y-1">
+                <p className="text-xs font-medium text-[#0070BA]">
+                  ℹ️ Informations PayPal
+                </p>
+                <ul className="text-[10px] text-muted-foreground space-y-0.5 list-disc list-inside">
+                  <li>Le paiement sera envoyé à l'adresse email PayPal indiquée</li>
+                  <li>Frais PayPal de 2% déduits du montant reçu</li>
+                  <li>Taux de change indicatif, le taux réel peut légèrement varier</li>
+                  <li>Minimum : 3 000 FCFA (~5 {paypalCurrency})</li>
+                </ul>
               </div>
             </div>
           )}
@@ -343,7 +521,7 @@ const WithdrawalSheet = ({
               </p>
             </div>
             <p className="text-xs text-muted-foreground">
-              Votre demande sera vérifiée et le dépôt sera effectué sur votre compte. Vous recevrez une notification une fois le transfert effectué.
+              Votre demande sera vérifiée et le {withdrawalMethod === "paypal" ? "virement PayPal" : "dépôt"} sera effectué. Vous recevrez une notification une fois le transfert effectué.
             </p>
           </div>
         </div>
@@ -362,7 +540,10 @@ const WithdrawalSheet = ({
             ) : (
               <ArrowUpRight className="w-5 h-5 mr-2" />
             )}
-            Demander le retrait
+            {withdrawalMethod === "paypal" 
+              ? `Retirer via PayPal (${paypalNetAmount > 0 ? paypalNetAmount.toFixed(2) : "0"} ${paypalCurrency})`
+              : "Demander le retrait"
+            }
           </Button>
         </div>
       </SheetContent>
