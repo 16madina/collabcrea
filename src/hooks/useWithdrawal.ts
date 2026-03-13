@@ -8,12 +8,14 @@ export interface WithdrawalRequest {
   user_id: string;
   wallet_id: string;
   amount: number;
-  method: "bank" | "mobile_money";
+  method: "bank" | "mobile_money" | "paypal";
   bank_name: string | null;
   account_number: string | null;
   account_holder: string | null;
   mobile_provider: string | null;
   mobile_number: string | null;
+  paypal_email: string | null;
+  payout_currency: string | null;
   status: "pending" | "processing" | "completed" | "rejected";
   reviewed_by: string | null;
   reviewed_at: string | null;
@@ -31,6 +33,11 @@ interface BankDetails {
 interface MobileMoneyDetails {
   mobile_provider: string;
   mobile_number: string;
+}
+
+interface PayPalDetails {
+  paypal_email: string;
+  payout_currency: "EUR" | "USD";
 }
 
 export const useWithdrawal = () => {
@@ -157,11 +164,62 @@ export const useWithdrawal = () => {
     }
   };
 
+  const requestPayPalWithdrawal = async (
+    walletId: string,
+    amount: number,
+    details: PayPalDetails
+  ) => {
+    if (!user) return;
+    setLoading(true);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("Session expirée, veuillez vous reconnecter");
+        return;
+      }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/request-withdrawal`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            wallet_id: walletId,
+            amount,
+            method: "paypal",
+            paypal_email: details.paypal_email,
+            payout_currency: details.payout_currency,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        toast.error(result.error || "Erreur lors de la demande de retrait");
+        return;
+      }
+
+      toast.success("Demande de retrait PayPal envoyée !");
+      fetchWithdrawalRequests();
+    } catch (error) {
+      console.error("Error requesting PayPal withdrawal:", error);
+      toast.error("Erreur lors de la demande de retrait");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     loading,
     requests,
     fetchWithdrawalRequests,
     requestBankWithdrawal,
     requestMobileMoneyWithdrawal,
+    requestPayPalWithdrawal,
   };
 };

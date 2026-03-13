@@ -138,7 +138,7 @@ const WalletTab = () => {
                       <div>
                         <p className="font-medium text-sm">{formatCurrency(req.amount)}</p>
                         <p className="text-xs text-muted-foreground">
-                          {req.method === "bank" ? req.bank_name : `${req.mobile_provider} - ${req.mobile_number}`}
+                          {req.method === "bank" ? req.bank_name : req.method === "paypal" ? `PayPal - ${(req as any).paypal_email}` : `${req.mobile_provider} - ${req.mobile_number}`}
                         </p>
                       </div>
                     </div>
