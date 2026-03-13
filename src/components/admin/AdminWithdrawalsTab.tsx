@@ -29,6 +29,8 @@ interface WithdrawalWithProfile {
   bank_name: string | null;
   account_number: string | null;
   account_holder: string | null;
+  paypal_email: string | null;
+  payout_currency: string | null;
   rejection_reason: string | null;
   reviewed_at: string | null;
   reviewed_by: string | null;
