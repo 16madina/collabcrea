@@ -164,11 +164,62 @@ export const useWithdrawal = () => {
     }
   };
 
+  const requestPayPalWithdrawal = async (
+    walletId: string,
+    amount: number,
+    details: PayPalDetails
+  ) => {
+    if (!user) return;
+    setLoading(true);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("Session expirée, veuillez vous reconnecter");
+        return;
+      }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/request-withdrawal`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            wallet_id: walletId,
+            amount,
+            method: "paypal",
+            paypal_email: details.paypal_email,
+            payout_currency: details.payout_currency,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        toast.error(result.error || "Erreur lors de la demande de retrait");
+        return;
+      }
+
+      toast.success("Demande de retrait PayPal envoyée !");
+      fetchWithdrawalRequests();
+    } catch (error) {
+      console.error("Error requesting PayPal withdrawal:", error);
+      toast.error("Erreur lors de la demande de retrait");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     loading,
     requests,
     fetchWithdrawalRequests,
     requestBankWithdrawal,
     requestMobileMoneyWithdrawal,
+    requestPayPalWithdrawal,
   };
 };
