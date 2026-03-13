@@ -178,7 +178,7 @@ const AcceptProposalSheet = ({
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">
-                  Frais de plateforme (10%)
+                  Commission plateforme (10%)
                 </span>
                 <span className="text-destructive">-{formatCurrency(platformFee)}</span>
               </div>
@@ -189,6 +189,9 @@ const AcceptProposalSheet = ({
                   {formatCurrency(creatorAmount)}
                 </span>
               </div>
+              <p className="text-[11px] text-muted-foreground mt-1">
+                * Des frais de retrait (~2%) s'appliqueront lors du transfert vers votre Mobile Money
+              </p>
             </div>
           </div>
 

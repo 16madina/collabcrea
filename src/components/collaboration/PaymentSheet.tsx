@@ -221,7 +221,7 @@ const PaymentSheet = ({
             ) : (
               <ExternalLink className="w-5 h-5 mr-2" />
             )}
-            Payer {formatCurrency(collaboration.agreed_amount)}
+            Payer {formatCurrency(collaboration.agreed_amount + Math.round(collaboration.agreed_amount * 0.03))}
           </Button>
           <p className="text-xs text-muted-foreground text-center mt-2">
             Vous serez redirigé vers la page de paiement sécurisée PayDunya

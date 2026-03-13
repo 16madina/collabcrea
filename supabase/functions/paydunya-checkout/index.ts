@@ -212,6 +212,8 @@ serve(async (req) => {
         token: invoiceToken,
         reference,
         amountFCFA: effectiveAgreedAmount,
+        payinFee,
+        totalToPay,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
