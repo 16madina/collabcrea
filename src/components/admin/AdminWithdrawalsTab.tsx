@@ -688,6 +688,35 @@ const AdminWithdrawalsTab = () => {
                     </>
                   )}
 
+                  {selectedRequest.method === "paypal" && (
+                    <>
+                      <p className="text-xs text-muted-foreground">
+                        💳 Envoyez automatiquement via PayPal Payouts vers {selectedRequest.paypal_email} ({selectedRequest.payout_currency || "EUR"}).
+                      </p>
+                      <Button
+                        variant="gold"
+                        className="w-full text-xs"
+                        onClick={() => handlePayPalPayout(selectedRequest)}
+                        disabled={processing || payoutProcessing === selectedRequest.id}
+                      >
+                        {payoutProcessing === selectedRequest.id ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <CreditCard className="w-4 h-4 mr-2" />
+                        )}
+                        Payout automatique PayPal
+                      </Button>
+                      <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                          <span className="w-full border-t" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                          <span className="bg-background px-2 text-muted-foreground">ou</span>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
                   <Button
                     variant="default"
                     className="w-full text-xs"
