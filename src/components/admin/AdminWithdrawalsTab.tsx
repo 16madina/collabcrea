@@ -444,6 +444,25 @@ const AdminWithdrawalsTab = () => {
                           Payout auto
                         </Button>
                       )}
+                      {req.method === "paypal" && (
+                        <Button
+                          size="sm"
+                          variant="gold"
+                          className="text-[10px] h-7 px-2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePayPalPayout(req);
+                          }}
+                          disabled={processing || payoutProcessing === req.id}
+                        >
+                          {payoutProcessing === req.id ? (
+                            <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                          ) : (
+                            <CreditCard className="w-3 h-3 mr-1" />
+                          )}
+                          PayPal auto
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         variant="default"
