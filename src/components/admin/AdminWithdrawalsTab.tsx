@@ -10,7 +10,7 @@ import {
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle,
 } from "@/components/ui/sheet";
-import { Wallet, CheckCircle, XCircle, Clock, Phone, Building2, User, Upload, Image, Loader2, Zap } from "lucide-react";
+import { Wallet, CheckCircle, XCircle, Clock, Phone, Building2, User, Upload, Image, Loader2, Zap, CreditCard } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
@@ -29,6 +29,8 @@ interface WithdrawalWithProfile {
   bank_name: string | null;
   account_number: string | null;
   account_holder: string | null;
+  paypal_email: string | null;
+  payout_currency: string | null;
   rejection_reason: string | null;
   reviewed_at: string | null;
   reviewed_by: string | null;
@@ -262,6 +264,49 @@ const AdminWithdrawalsTab = () => {
     }
   };
 
+  const handlePayPalPayout = async (request: WithdrawalWithProfile) => {
+    if (!user) return;
+    if (request.method !== "paypal") {
+      toast.error("Cette demande n'est pas un retrait PayPal");
+      return;
+    }
+    setPayoutProcessing(request.id);
+    try {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (!session) {
+        toast.error("Session expirée");
+        return;
+      }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/paypal-payout`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ withdrawal_id: request.id }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success(`PayPal payout envoyé ! ${result.amount} ${result.currency}`);
+        fetchRequests();
+        setSelectedRequest(null);
+      } else {
+        toast.error(result.error || "Échec du payout PayPal");
+      }
+    } catch (error) {
+      console.error("PayPal payout error:", error);
+      toast.error("Erreur lors du payout PayPal");
+    } finally {
+      setPayoutProcessing(null);
+    }
+  };
+
   const resetCompletionFlow = () => {
     setProofFile(null);
     setProofPreview(null);
@@ -362,6 +407,11 @@ const AdminWithdrawalsTab = () => {
                         <Phone className="w-3 h-3" />
                         {req.mobile_provider} — {req.mobile_number}
                       </span>
+                    ) : req.method === "paypal" ? (
+                      <span className="flex items-center gap-1">
+                        <CreditCard className="w-3 h-3" />
+                        PayPal — {req.paypal_email} ({req.payout_currency || "EUR"})
+                      </span>
                     ) : (
                       <span className="flex items-center gap-1">
                         <Building2 className="w-3 h-3" />
@@ -392,6 +442,25 @@ const AdminWithdrawalsTab = () => {
                             <Zap className="w-3 h-3 mr-1" />
                           )}
                           Payout auto
+                        </Button>
+                      )}
+                      {req.method === "paypal" && (
+                        <Button
+                          size="sm"
+                          variant="gold"
+                          className="text-[10px] h-7 px-2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePayPalPayout(req);
+                          }}
+                          disabled={processing || payoutProcessing === req.id}
+                        >
+                          {payoutProcessing === req.id ? (
+                            <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                          ) : (
+                            <CreditCard className="w-3 h-3 mr-1" />
+                          )}
+                          PayPal auto
                         </Button>
                       )}
                       <Button
@@ -460,6 +529,8 @@ const AdminWithdrawalsTab = () => {
                       <TableCell className="text-xs">
                         {req.method === "mobile_money"
                           ? `${req.mobile_provider} (${req.mobile_number})`
+                          : req.method === "paypal"
+                          ? `PayPal (${req.paypal_email})`
                           : `${req.bank_name}`}
                       </TableCell>
                       <TableCell className="text-right font-semibold text-xs">
@@ -495,7 +566,7 @@ const AdminWithdrawalsTab = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Méthode</span>
-                  <span>{selectedRequest.method === "mobile_money" ? "Mobile Money" : "Virement bancaire"}</span>
+                  <span>{selectedRequest.method === "mobile_money" ? "Mobile Money" : selectedRequest.method === "paypal" ? "PayPal" : "Virement bancaire"}</span>
                 </div>
                 {selectedRequest.method === "mobile_money" ? (
                   <>
@@ -506,6 +577,17 @@ const AdminWithdrawalsTab = () => {
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Numéro</span>
                       <span className="font-mono">{selectedRequest.mobile_number}</span>
+                    </div>
+                  </>
+                ) : selectedRequest.method === "paypal" ? (
+                  <>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Email PayPal</span>
+                      <span className="font-mono">{selectedRequest.paypal_email}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Devise</span>
+                      <span>{selectedRequest.payout_currency || "EUR"}</span>
                     </div>
                   </>
                 ) : (
@@ -596,6 +678,35 @@ const AdminWithdrawalsTab = () => {
                           <Zap className="w-4 h-4 mr-2" />
                         )}
                         Payout automatique PayDunya
+                      </Button>
+                      <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                          <span className="w-full border-t" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                          <span className="bg-background px-2 text-muted-foreground">ou</span>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {selectedRequest.method === "paypal" && (
+                    <>
+                      <p className="text-xs text-muted-foreground">
+                        💳 Envoyez automatiquement via PayPal Payouts vers {selectedRequest.paypal_email} ({selectedRequest.payout_currency || "EUR"}).
+                      </p>
+                      <Button
+                        variant="gold"
+                        className="w-full text-xs"
+                        onClick={() => handlePayPalPayout(selectedRequest)}
+                        disabled={processing || payoutProcessing === selectedRequest.id}
+                      >
+                        {payoutProcessing === selectedRequest.id ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <CreditCard className="w-4 h-4 mr-2" />
+                        )}
+                        Payout automatique PayPal
                       </Button>
                       <div className="relative">
                         <div className="absolute inset-0 flex items-center">
