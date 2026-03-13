@@ -529,6 +529,8 @@ const AdminWithdrawalsTab = () => {
                       <TableCell className="text-xs">
                         {req.method === "mobile_money"
                           ? `${req.mobile_provider} (${req.mobile_number})`
+                          : req.method === "paypal"
+                          ? `PayPal (${req.paypal_email})`
                           : `${req.bank_name}`}
                       </TableCell>
                       <TableCell className="text-right font-semibold text-xs">
