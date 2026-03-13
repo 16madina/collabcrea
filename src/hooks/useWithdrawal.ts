@@ -8,12 +8,14 @@ export interface WithdrawalRequest {
   user_id: string;
   wallet_id: string;
   amount: number;
-  method: "bank" | "mobile_money";
+  method: "bank" | "mobile_money" | "paypal";
   bank_name: string | null;
   account_number: string | null;
   account_holder: string | null;
   mobile_provider: string | null;
   mobile_number: string | null;
+  paypal_email: string | null;
+  payout_currency: string | null;
   status: "pending" | "processing" | "completed" | "rejected";
   reviewed_by: string | null;
   reviewed_at: string | null;

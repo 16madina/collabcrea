@@ -120,28 +120,31 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Fetch user profile country
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from("profiles")
-      .select("country")
-      .eq("user_id", userId)
-      .single();
+    // For mobile money, validate country + phone
+    if (withdrawalMethod !== "paypal") {
+      // Fetch user profile country
+      const { data: profile, error: profileError } = await supabaseAdmin
+        .from("profiles")
+        .select("country")
+        .eq("user_id", userId)
+        .single();
 
-    if (profileError || !profile?.country) {
-      return new Response(JSON.stringify({ error: "Profil introuvable" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+      if (profileError || !profile?.country) {
+        return new Response(JSON.stringify({ error: "Profil introuvable" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
 
-    // Validate phone number matches user's country
-    const expectedPhoneCode = countryPhoneCodes[profile.country];
-    if (expectedPhoneCode && !mobile_number.startsWith(expectedPhoneCode)) {
-      return new Response(
-        JSON.stringify({
-          error: `Le numéro de téléphone ne correspond pas à votre pays d'inscription (${profile.country}). Le numéro doit commencer par ${expectedPhoneCode}.`,
-        }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      // Validate phone number matches user's country
+      const expectedPhoneCode = countryPhoneCodes[profile.country];
+      if (expectedPhoneCode && !mobile_number.startsWith(expectedPhoneCode)) {
+        return new Response(
+          JSON.stringify({
+            error: `Le numéro de téléphone ne correspond pas à votre pays d'inscription (${profile.country}). Le numéro doit commencer par ${expectedPhoneCode}.`,
+          }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     // Check wallet balance
@@ -170,16 +173,24 @@ Deno.serve(async (req) => {
     }
 
     // Create withdrawal request
+    const insertData: Record<string, unknown> = {
+      user_id: userId,
+      wallet_id,
+      amount,
+      method: withdrawalMethod,
+    };
+
+    if (withdrawalMethod === "paypal") {
+      insertData.paypal_email = paypal_email;
+      insertData.payout_currency = payout_currency;
+    } else {
+      insertData.mobile_provider = mobile_provider;
+      insertData.mobile_number = mobile_number;
+    }
+
     const { error: insertError } = await supabaseAdmin
       .from("withdrawal_requests")
-      .insert({
-        user_id: userId,
-        wallet_id,
-        amount,
-        method: "mobile_money",
-        mobile_provider,
-        mobile_number,
-      });
+      .insert(insertData);
 
     if (insertError) throw insertError;
 
