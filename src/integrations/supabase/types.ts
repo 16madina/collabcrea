@@ -930,6 +930,8 @@ export type Database = {
           method: string
           mobile_number: string | null
           mobile_provider: string | null
+          payout_currency: string | null
+          paypal_email: string | null
           proof_url: string | null
           rejection_reason: string | null
           reviewed_at: string | null
@@ -950,6 +952,8 @@ export type Database = {
           method: string
           mobile_number?: string | null
           mobile_provider?: string | null
+          payout_currency?: string | null
+          paypal_email?: string | null
           proof_url?: string | null
           rejection_reason?: string | null
           reviewed_at?: string | null
@@ -970,6 +974,8 @@ export type Database = {
           method?: string
           mobile_number?: string | null
           mobile_provider?: string | null
+          payout_currency?: string | null
+          paypal_email?: string | null
           proof_url?: string | null
           rejection_reason?: string | null
           reviewed_at?: string | null
