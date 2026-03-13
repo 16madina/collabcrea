@@ -264,6 +264,49 @@ const AdminWithdrawalsTab = () => {
     }
   };
 
+  const handlePayPalPayout = async (request: WithdrawalWithProfile) => {
+    if (!user) return;
+    if (request.method !== "paypal") {
+      toast.error("Cette demande n'est pas un retrait PayPal");
+      return;
+    }
+    setPayoutProcessing(request.id);
+    try {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (!session) {
+        toast.error("Session expirée");
+        return;
+      }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/paypal-payout`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ withdrawal_id: request.id }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success(`PayPal payout envoyé ! ${result.amount} ${result.currency}`);
+        fetchRequests();
+        setSelectedRequest(null);
+      } else {
+        toast.error(result.error || "Échec du payout PayPal");
+      }
+    } catch (error) {
+      console.error("PayPal payout error:", error);
+      toast.error("Erreur lors du payout PayPal");
+    } finally {
+      setPayoutProcessing(null);
+    }
+  };
+
   const resetCompletionFlow = () => {
     setProofFile(null);
     setProofPreview(null);
