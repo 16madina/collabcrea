@@ -129,11 +129,15 @@ const PaymentSheet = ({
               <span className="text-muted-foreground">Montant de la collaboration</span>
               <span className="font-semibold">{formatCurrency(collaboration.agreed_amount)}</span>
             </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Frais de paiement (3%)</span>
+              <span className="text-sm">+{formatCurrency(Math.round(collaboration.agreed_amount * 0.03))}</span>
+            </div>
             <Separator />
             <div className="flex justify-between items-center">
               <span className="font-semibold text-foreground">Total à payer</span>
               <span className="text-xl font-bold text-gold">
-                {formatCurrency(collaboration.agreed_amount)}
+                {formatCurrency(collaboration.agreed_amount + Math.round(collaboration.agreed_amount * 0.03))}
               </span>
             </div>
           </div>
