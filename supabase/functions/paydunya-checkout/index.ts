@@ -129,8 +129,15 @@ serve(async (req) => {
             total_price: effectiveAgreedAmount,
             description: `Créateur: ${creator?.full_name || "Créateur"}`,
           },
+          {
+            name: "Frais de traitement",
+            quantity: 1,
+            unit_price: payinFee,
+            total_price: payinFee,
+            description: "Frais de paiement (3%)",
+          },
         ],
-        total_amount: effectiveAgreedAmount,
+        total_amount: totalToPay,
         description: `Paiement collaboration - ${offer?.title || "Collaboration"}`,
       },
       store: {
