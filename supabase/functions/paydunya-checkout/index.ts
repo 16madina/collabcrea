@@ -93,6 +93,17 @@ serve(async (req) => {
       });
     }
 
+    // Calculate PayDunya pay-in fee (3%) — charged to the brand on top
+    const PAYIN_FEE_RATE = 0.03;
+    const payinFee = Math.round(effectiveAgreedAmount * PAYIN_FEE_RATE);
+    const totalToPay = effectiveAgreedAmount + payinFee;
+
+    logStep("Pay-in fee calculated", {
+      agreedAmount: effectiveAgreedAmount,
+      payinFee,
+      totalToPay,
+    });
+
     const [{ data: offer }, { data: creator }, { data: brand }] = await Promise.all([
       supabaseClient.from("offers").select("title, logo_url").eq("id", collab.offer_id).single(),
       supabaseClient.from("profiles").select("full_name").eq("user_id", collab.creator_id).single(),
