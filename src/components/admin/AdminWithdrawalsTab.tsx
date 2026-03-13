@@ -564,7 +564,7 @@ const AdminWithdrawalsTab = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Méthode</span>
-                  <span>{selectedRequest.method === "mobile_money" ? "Mobile Money" : "Virement bancaire"}</span>
+                  <span>{selectedRequest.method === "mobile_money" ? "Mobile Money" : selectedRequest.method === "paypal" ? "PayPal" : "Virement bancaire"}</span>
                 </div>
                 {selectedRequest.method === "mobile_money" ? (
                   <>
@@ -575,6 +575,17 @@ const AdminWithdrawalsTab = () => {
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Numéro</span>
                       <span className="font-mono">{selectedRequest.mobile_number}</span>
+                    </div>
+                  </>
+                ) : selectedRequest.method === "paypal" ? (
+                  <>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Email PayPal</span>
+                      <span className="font-mono">{selectedRequest.paypal_email}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Devise</span>
+                      <span>{selectedRequest.payout_currency || "EUR"}</span>
                     </div>
                   </>
                 ) : (
