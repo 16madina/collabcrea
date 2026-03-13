@@ -320,6 +320,7 @@ const AdminWithdrawalsTab = () => {
     const map: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
       pending: { label: "En attente", variant: "outline" },
       approved: { label: "Approuvé", variant: "secondary" },
+      processing: { label: "En cours", variant: "secondary" },
       completed: { label: "Effectué", variant: "default" },
       rejected: { label: "Refusé", variant: "destructive" },
     };
@@ -327,7 +328,7 @@ const AdminWithdrawalsTab = () => {
     return <Badge variant={cfg.variant}>{cfg.label}</Badge>;
   };
 
-  const pendingRequests = requests.filter((r) => r.status === "pending" || r.status === "approved");
+  const pendingRequests = requests.filter((r) => r.status === "pending" || r.status === "approved" || r.status === "processing");
   const completedRequests = requests.filter((r) => r.status === "completed" || r.status === "rejected");
 
   if (loading) {
