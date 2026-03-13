@@ -215,6 +215,26 @@ const WithdrawalSheet = ({
             <p className="text-xs text-muted-foreground">
               Minimum: 1 000 FCFA | Maximum: {formatCurrency(wallet?.balance || 0)}
             </p>
+            {numericAmount >= 1000 && (
+              <div className="glass rounded-lg p-3 space-y-1.5">
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">Montant demandé</span>
+                  <span>{formatCurrency(numericAmount)}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">Frais de retrait (~2%)</span>
+                  <span className="text-destructive">-{formatCurrency(Math.round(numericAmount * 0.02))}</span>
+                </div>
+                <Separator className="my-1" />
+                <div className="flex justify-between text-xs font-semibold">
+                  <span>Vous recevrez environ</span>
+                  <span className="text-gold">{formatCurrency(numericAmount - Math.round(numericAmount * 0.02))}</span>
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  Les frais exacts dépendent de l'opérateur et du pays
+                </p>
+              </div>
+            )}
             {numericAmount > (wallet?.balance || 0) && (
               <div className="flex items-center gap-2 text-destructive text-xs">
                 <AlertCircle className="w-3 h-3" />

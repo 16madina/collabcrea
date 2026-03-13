@@ -93,6 +93,17 @@ serve(async (req) => {
       });
     }
 
+    // Calculate PayDunya pay-in fee (3%) — charged to the brand on top
+    const PAYIN_FEE_RATE = 0.03;
+    const payinFee = Math.round(effectiveAgreedAmount * PAYIN_FEE_RATE);
+    const totalToPay = effectiveAgreedAmount + payinFee;
+
+    logStep("Pay-in fee calculated", {
+      agreedAmount: effectiveAgreedAmount,
+      payinFee,
+      totalToPay,
+    });
+
     const [{ data: offer }, { data: creator }, { data: brand }] = await Promise.all([
       supabaseClient.from("offers").select("title, logo_url").eq("id", collab.offer_id).single(),
       supabaseClient.from("profiles").select("full_name").eq("user_id", collab.creator_id).single(),
@@ -118,8 +129,15 @@ serve(async (req) => {
             total_price: effectiveAgreedAmount,
             description: `Créateur: ${creator?.full_name || "Créateur"}`,
           },
+          {
+            name: "Frais de traitement",
+            quantity: 1,
+            unit_price: payinFee,
+            total_price: payinFee,
+            description: "Frais de paiement (3%)",
+          },
         ],
-        total_amount: effectiveAgreedAmount,
+        total_amount: totalToPay,
         description: `Paiement collaboration - ${offer?.title || "Collaboration"}`,
       },
       store: {
@@ -194,6 +212,8 @@ serve(async (req) => {
         token: invoiceToken,
         reference,
         amountFCFA: effectiveAgreedAmount,
+        payinFee,
+        totalToPay,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
