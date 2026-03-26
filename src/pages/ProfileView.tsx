@@ -205,6 +205,21 @@ const ProfileView = () => {
               Conversation
             </button>
           )}
+          {isBrandViewingCreator && (
+            <button
+              onClick={() => {
+                if (!isBrandVerified) {
+                  toast.error("Vérifiez votre email avant de contacter un créateur");
+                  return;
+                }
+                setShowContactSheet(true);
+              }}
+              className="flex items-center gap-1.5 px-3 h-10 rounded-full bg-gold/90 backdrop-blur-sm text-primary-foreground text-xs font-semibold"
+            >
+              <Send className="w-4 h-4" />
+              Proposer
+            </button>
+          )
           {user && !isOwnProfile && userId && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
