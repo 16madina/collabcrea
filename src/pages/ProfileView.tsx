@@ -119,6 +119,8 @@ const ProfileView = () => {
   };
 
   const isOwnProfile = user?.id === userId;
+  const isBrandViewingCreator = currentUserRole === "brand" && role === "creator" && !isOwnProfile;
+  const isBrandVerified = currentUserRole === "brand" && currentUserProfile?.email_verified === true;
 
   if (loading) {
     return (
