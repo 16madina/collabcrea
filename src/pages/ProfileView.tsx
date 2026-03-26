@@ -26,8 +26,10 @@ import {
 import ReportDialog from "@/components/ReportDialog";
 import PortfolioTab from "@/components/creator/tabs/PortfolioTab";
 import RateCardDisplay from "@/components/creator/RateCardDisplay";
+import ContactCreatorSheet from "@/components/brand/ContactCreatorSheet";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { Send } from "lucide-react";
 
 interface ProfileData {
   full_name: string;
@@ -56,13 +58,14 @@ const ProfileView = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user } = useAuth();
+  const { user, role: currentUserRole, profile: currentUserProfile } = useAuth();
   const fromChat = searchParams.get("from") === "chat";
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showReport, setShowReport] = useState(false);
   const [showBlockConfirm, setShowBlockConfirm] = useState(false);
+  const [showContactSheet, setShowContactSheet] = useState(false);
   const [blocking, setBlocking] = useState(false);
 
   useEffect(() => {
