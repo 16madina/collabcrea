@@ -26,8 +26,10 @@ import {
 import ReportDialog from "@/components/ReportDialog";
 import PortfolioTab from "@/components/creator/tabs/PortfolioTab";
 import RateCardDisplay from "@/components/creator/RateCardDisplay";
+import ContactCreatorSheet from "@/components/brand/ContactCreatorSheet";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { Send } from "lucide-react";
 
 interface ProfileData {
   full_name: string;
@@ -56,13 +58,14 @@ const ProfileView = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user } = useAuth();
+  const { user, role: currentUserRole, profile: currentUserProfile } = useAuth();
   const fromChat = searchParams.get("from") === "chat";
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showReport, setShowReport] = useState(false);
   const [showBlockConfirm, setShowBlockConfirm] = useState(false);
+  const [showContactSheet, setShowContactSheet] = useState(false);
   const [blocking, setBlocking] = useState(false);
 
   useEffect(() => {
@@ -116,6 +119,8 @@ const ProfileView = () => {
   };
 
   const isOwnProfile = user?.id === userId;
+  const isBrandViewingCreator = currentUserRole === "brand" && role === "creator" && !isOwnProfile;
+  const isBrandVerified = currentUserRole === "brand" && currentUserProfile?.email_verified === true;
 
   if (loading) {
     return (
@@ -198,6 +203,21 @@ const ProfileView = () => {
             >
               <MessageCircle className="w-4 h-4" />
               Conversation
+            </button>
+          )}
+          {isBrandViewingCreator && (
+            <button
+              onClick={() => {
+                if (!isBrandVerified) {
+                  toast.error("Vérifiez votre email avant de contacter un créateur");
+                  return;
+                }
+                setShowContactSheet(true);
+              }}
+              className="flex items-center gap-1.5 px-3 h-10 rounded-full bg-gold/90 backdrop-blur-sm text-primary-foreground text-xs font-semibold"
+            >
+              <Send className="w-4 h-4" />
+              Proposer
             </button>
           )}
           {user && !isOwnProfile && userId && (
@@ -390,6 +410,16 @@ const ProfileView = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Contact Creator Sheet for brands */}
+      {userId && profile && (
+        <ContactCreatorSheet
+          open={showContactSheet}
+          onOpenChange={setShowContactSheet}
+          creatorId={userId}
+          creatorName={profile.full_name}
+        />
+      )}
     </>
   );
 };
