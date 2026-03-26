@@ -219,7 +219,7 @@ const ProfileView = () => {
               <Send className="w-4 h-4" />
               Proposer
             </button>
-          )
+          )}
           {user && !isOwnProfile && userId && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
