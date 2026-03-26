@@ -410,6 +410,16 @@ const ProfileView = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Contact Creator Sheet for brands */}
+      {userId && profile && (
+        <ContactCreatorSheet
+          open={showContactSheet}
+          onOpenChange={setShowContactSheet}
+          creatorId={userId}
+          creatorName={profile.full_name}
+        />
+      )}
     </>
   );
 };
