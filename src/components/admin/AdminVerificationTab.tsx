@@ -390,6 +390,8 @@ const AdminVerificationTab = () => {
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<PendingVerification | null>(null);
   const [showDetailSheet, setShowDetailSheet] = useState(false);
+  const [showApproveDialog, setShowApproveDialog] = useState(false);
+  const [approveMessage, setApproveMessage] = useState(APPROVE_TEMPLATES[0].message);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
