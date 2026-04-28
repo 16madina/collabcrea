@@ -372,6 +372,47 @@ const InAppPaymentSheet = ({
             </div>
           </div>
 
+          {/* Conversion breakdown */}
+          {(() => {
+            const baseConverted =
+              currency === "eur" ? amountFCFA / 655.957 : amountFCFA / 600;
+            const fees = approxAmount - baseConverted;
+            const fmt = (v: number) =>
+              new Intl.NumberFormat("fr-FR", {
+                style: "currency",
+                currency: currency.toUpperCase(),
+                maximumFractionDigits: 2,
+              }).format(v);
+            return (
+              <div className="glass rounded-xl p-4 space-y-2 border border-gold/20">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Détail du montant
+                </p>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground">Prix créateur</span>
+                  <span className="font-semibold text-foreground">
+                    {formatFCFA(amountFCFA)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground">
+                    Conversion → {currency.toUpperCase()}
+                  </span>
+                  <span className="text-foreground">{fmt(baseConverted)}</span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground">Frais bancaires (5%)</span>
+                  <span className="text-foreground">+ {fmt(fees)}</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold text-foreground">Total à payer</span>
+                  <span className="text-lg font-bold text-gold">{formattedApprox}</span>
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Card Element */}
           <div className="space-y-2">
             <div className="flex items-center gap-2">
