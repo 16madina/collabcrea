@@ -119,47 +119,32 @@ const AdminWithdrawalsTab = () => {
         .from("withdrawal-proofs")
         .getPublicUrl(path);
 
-      // Reset pending_balance on wallet
-      const { data: wallet } = await supabase
-        .from("wallets")
-        .select("pending_balance")
-        .eq("id", request.wallet_id)
-        .single();
-
-      if (wallet) {
-        const newPending = Math.max(0, (wallet.pending_balance || 0) - request.amount);
-        await supabase
-          .from("wallets")
-          .update({ pending_balance: newPending, updated_at: new Date().toISOString() })
-          .eq("id", request.wallet_id);
+      // Call edge function: marks request completed, syncs transaction, resets pending balance
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (!session) {
+        toast.error("Session expirée");
+        return;
       }
 
-      const { error } = await supabase
-        .from("withdrawal_requests")
-        .update({
-          status: "completed",
-          reviewed_by: user.id,
-          reviewed_at: new Date().toISOString(),
-          proof_url: urlData.publicUrl,
-        })
-        .eq("id", request.id);
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-finalize-withdrawal`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            withdrawal_id: request.id,
+            proof_url: urlData.publicUrl,
+          }),
+        }
+      );
 
-      if (error) throw error;
-
-      // Mark the matching withdrawal transaction as completed
-      await supabase
-        .from("transactions")
-        .update({ status: "completed", updated_at: new Date().toISOString() })
-        .eq("reference", request.id)
-        .eq("type", "withdrawal")
-        .eq("status", "pending");
-
-      await supabase.from("notifications").insert({
-        user_id: request.user_id,
-        title: "✅ Retrait effectué !",
-        message: `Votre retrait de ${formatAmount(request.amount)} a été envoyé via ${request.method === "mobile_money" ? request.mobile_provider : "virement bancaire"}.`,
-        type: "success",
-      });
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "Erreur lors de la finalisation");
+      }
 
       toast.success("Retrait marqué comme effectué");
       resetCompletionFlow();
@@ -167,7 +152,8 @@ const AdminWithdrawalsTab = () => {
       setSelectedRequest(null);
     } catch (error) {
       console.error("Error:", error);
-      toast.error("Erreur lors de la mise à jour");
+      const msg = error instanceof Error ? error.message : "Erreur lors de la mise à jour";
+      toast.error(msg);
     } finally {
       setProcessing(false);
     }
