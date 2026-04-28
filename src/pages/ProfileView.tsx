@@ -345,6 +345,24 @@ const ProfileView = () => {
                   avatarUrl={avatarUrl || undefined}
                   fullName={displayName}
                 />
+              ) : isOwnProfile ? (
+                <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+                  <div className="w-16 h-16 rounded-full bg-gold/10 flex items-center justify-center mb-4">
+                    <Plus className="w-8 h-8 text-gold" />
+                  </div>
+                  <p className="text-foreground font-semibold mb-1">Aucun tarif renseigné</p>
+                  <p className="text-muted-foreground text-sm mb-5 max-w-[260px]">
+                    Créez votre grille tarifaire pour attirer les marques
+                  </p>
+                  <Button
+                    variant="gold"
+                    onClick={() => navigate(role === "brand" ? "/brand/profile" : "/creator/profile")}
+                    className="gap-2 shadow-lg shadow-gold/20"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Créer mes tarifs
+                  </Button>
+                </div>
               ) : (
                 <p className="text-center text-muted-foreground py-8">Aucun tarif renseigné</p>
               )}
