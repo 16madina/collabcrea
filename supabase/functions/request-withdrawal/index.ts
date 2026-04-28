@@ -188,9 +188,11 @@ Deno.serve(async (req) => {
       insertData.mobile_number = mobile_number;
     }
 
-    const { error: insertError } = await supabaseAdmin
+    const { data: withdrawalRow, error: insertError } = await supabaseAdmin
       .from("withdrawal_requests")
-      .insert(insertData);
+      .insert(insertData)
+      .select("id")
+      .single();
 
     if (insertError) throw insertError;
 
@@ -204,6 +206,31 @@ Deno.serve(async (req) => {
       .eq("id", wallet_id);
 
     if (updateError) throw updateError;
+
+    // Track in transactions history (pending until admin confirms payout)
+    const txDescription =
+      withdrawalMethod === "paypal"
+        ? `Retrait PayPal - ${paypal_email}`
+        : `Retrait ${mobile_provider} - ${mobile_number}`;
+
+    const txDetails =
+      withdrawalMethod === "paypal"
+        ? { paypal_email, payout_currency }
+        : { mobile_provider, mobile_number };
+
+    await supabaseAdmin.from("transactions").insert({
+      user_id: userId,
+      wallet_id,
+      type: "withdrawal",
+      status: "pending",
+      amount,
+      fee: 0,
+      net_amount: amount,
+      withdrawal_method: withdrawalMethod,
+      withdrawal_details: txDetails,
+      description: txDescription,
+      reference: withdrawalRow?.id ?? null,
+    });
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
