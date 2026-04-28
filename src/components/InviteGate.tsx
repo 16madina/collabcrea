@@ -70,8 +70,9 @@ const InviteGate = ({ children }: InviteGateProps) => {
     );
   }
 
-  // Bypass: system disabled, already unlocked, or already logged in
-  if (!required || unlocked || user) {
+  // Bypass: system disabled, already unlocked, already logged in, or on auth page
+  const isAuthRoute = typeof window !== "undefined" && window.location.pathname.startsWith("/auth");
+  if (!required || unlocked || user || isAuthRoute) {
     return <>{children}</>;
   }
 
