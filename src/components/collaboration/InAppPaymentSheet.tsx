@@ -315,7 +315,7 @@ const InAppPaymentSheet = ({
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => setCurrency("eur")}
+                onClick={() => { setCurrency("eur"); setCardConfirmed(false); }}
                 className={`glass rounded-xl p-3 border-2 transition-all ${
                   currency === "eur" ? "border-gold bg-gold/10" : "border-transparent"
                 }`}
@@ -325,7 +325,7 @@ const InAppPaymentSheet = ({
               </button>
               <button
                 type="button"
-                onClick={() => setCurrency("usd")}
+                onClick={() => { setCurrency("usd"); setCardConfirmed(false); }}
                 className={`glass rounded-xl p-3 border-2 transition-all ${
                   currency === "usd" ? "border-gold bg-gold/10" : "border-transparent"
                 }`}
