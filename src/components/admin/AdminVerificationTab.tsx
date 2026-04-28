@@ -495,10 +495,42 @@ const AdminVerificationTab = () => {
     }
   };
 
+  // Télécharge le fichier en blob (même origine via SDK Supabase) pour contourner
+  // les bloqueurs (uBlock/AdGuard) qui bloquent les URLs *.supabase.co directes.
   const openDocument = async (path: string) => {
-    const url = await getDocumentUrl(path);
-    if (url) {
-      window.open(url, "_blank");
+    try {
+      const resolvedPath = normalizeDocumentPath(path);
+      if (!resolvedPath) {
+        toast({ title: "Erreur", description: "Chemin du document invalide", variant: "destructive" });
+        return;
+      }
+      const isPdf = isPdfPath(resolvedPath);
+      const fileName = resolvedPath.split("/").pop() || (isPdf ? "document.pdf" : "document");
+
+      const { data, error } = await supabase.storage
+        .from("identity-documents")
+        .download(resolvedPath);
+
+      if (error || !data) {
+        // Fallback : ouvrir l'URL signée dans un nouvel onglet
+        const signed = await getDocumentUrl(path);
+        if (signed) {
+          window.open(signed, "_blank");
+        } else {
+          toast({ title: "Erreur", description: "Impossible de charger le document", variant: "destructive" });
+        }
+        return;
+      }
+
+      // Force le bon mime-type pour les PDF (certains uploads ont octet-stream)
+      const blob = isPdf && data.type !== "application/pdf"
+        ? new Blob([data], { type: "application/pdf" })
+        : data;
+      const blobUrl = URL.createObjectURL(blob);
+      setDocumentViewer({ url: blobUrl, isPdf, fileName });
+    } catch (error) {
+      console.error("Error opening document:", error);
+      toast({ title: "Erreur", description: "Impossible d'ouvrir le document", variant: "destructive" });
     }
   };
 
