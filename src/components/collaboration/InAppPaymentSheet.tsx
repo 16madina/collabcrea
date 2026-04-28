@@ -32,11 +32,13 @@ const formatFCFA = (amount: number) =>
   new Intl.NumberFormat("fr-FR").format(amount) + " FCFA";
 
 let stripePromiseCache: Promise<StripeJS | null> | null = null;
-const getStripe = async (): Promise<Promise<StripeJS | null>> => {
+const getStripe = (): Promise<StripeJS | null> => {
   if (stripePromiseCache) return stripePromiseCache;
-  const { data, error } = await supabase.functions.invoke("stripe-publishable-key");
-  if (error || !data?.publishableKey) throw new Error("Stripe key unavailable");
-  stripePromiseCache = loadStripe(data.publishableKey);
+  stripePromiseCache = (async () => {
+    const { data, error } = await supabase.functions.invoke("stripe-publishable-key");
+    if (error || !data?.publishableKey) throw new Error("Stripe key unavailable");
+    return loadStripe(data.publishableKey);
+  })();
   return stripePromiseCache;
 };
 
@@ -166,7 +168,7 @@ const InAppPaymentSheet = ({
       setError(null);
       setClientSecret(null);
       try {
-        const stripe = await getStripe();
+        const stripe = getStripe();
         if (cancelled) return;
         setStripeInstance(stripe);
 
