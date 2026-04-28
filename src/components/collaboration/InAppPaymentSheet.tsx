@@ -9,7 +9,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, Lock, Shield, CreditCard } from "lucide-react";
+import { Loader2, Lock, Shield, CreditCard, AlertCircle, Check, ChevronRight } from "lucide-react";
 import { Collaboration } from "@/hooks/useCollaborations";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -142,7 +142,9 @@ const InAppPaymentSheet = ({
   onSuccess,
 }: InAppPaymentSheetProps) => {
   const [currency, setCurrency] = useState<"eur" | "usd">("eur");
-  const [cardBrand, setCardBrand] = useState<"wave" | "orange" | "djamo" | "other">("wave");
+  const [cardBrand, setCardBrand] = useState<"wave" | "orange" | "djamo" | "other" | null>(null);
+  const [cardConfirmed, setCardConfirmed] = useState(false);
+  const [cardError, setCardError] = useState<string | null>(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [stripeInstance, setStripeInstance] = useState<Promise<StripeJS | null> | null>(null);
   const [loading, setLoading] = useState(false);
@@ -154,7 +156,7 @@ const InAppPaymentSheet = ({
     { id: "djamo" as const, label: "Djamo Visa", logo: djamoLogo },
     { id: "other" as const, label: "Autre carte", logo: null },
   ];
-  const selectedCard = cardOptions.find((c) => c.id === cardBrand)!;
+  const selectedCard = cardBrand ? cardOptions.find((c) => c.id === cardBrand) : null;
 
   const amountFCFA = collaboration.agreed_amount;
   const approxAmount =
@@ -167,9 +169,16 @@ const InAppPaymentSheet = ({
     maximumFractionDigits: 2,
   }).format(approxAmount);
 
-  // Init Stripe + create PaymentIntent when sheet opens or currency changes
+  // Init Stripe + create PaymentIntent only after card brand confirmed
   useEffect(() => {
     if (!open) {
+      setClientSecret(null);
+      setCardConfirmed(false);
+      setCardBrand(null);
+      setCardError(null);
+      return;
+    }
+    if (!cardConfirmed) {
       setClientSecret(null);
       return;
     }
@@ -203,7 +212,7 @@ const InAppPaymentSheet = ({
     return () => {
       cancelled = true;
     };
-  }, [open, currency, collaboration.id]);
+  }, [open, currency, collaboration.id, cardConfirmed]);
 
   const elementsOptions = useMemo(
     () =>
@@ -258,23 +267,27 @@ const InAppPaymentSheet = ({
             <Separator />
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs text-muted-foreground">Méthode</span>
-              <div className="flex items-center gap-2">
-                {selectedCard.logo ? (
-                  <div className="h-6 w-10 rounded bg-white flex items-center justify-center p-0.5">
-                    <img
-                      src={selectedCard.logo}
-                      alt={selectedCard.label}
-                      loading="lazy"
-                      className="max-h-full max-w-full object-contain"
-                    />
-                  </div>
-                ) : (
-                  <CreditCard className="h-4 w-4 text-gold" />
-                )}
-                <span className="text-sm font-medium text-foreground">
-                  {selectedCard.label}
-                </span>
-              </div>
+              {selectedCard ? (
+                <div className="flex items-center gap-2">
+                  {selectedCard.logo ? (
+                    <div className="h-6 w-10 rounded bg-white flex items-center justify-center p-0.5">
+                      <img
+                        src={selectedCard.logo}
+                        alt={selectedCard.label}
+                        loading="lazy"
+                        className="max-h-full max-w-full object-contain"
+                      />
+                    </div>
+                  ) : (
+                    <CreditCard className="h-4 w-4 text-gold" />
+                  )}
+                  <span className="text-sm font-medium text-foreground">
+                    {selectedCard.label}
+                  </span>
+                </div>
+              ) : (
+                <span className="text-xs italic text-muted-foreground">Non sélectionnée</span>
+              )}
             </div>
           </div>
 
@@ -302,7 +315,7 @@ const InAppPaymentSheet = ({
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => setCurrency("eur")}
+                onClick={() => { setCurrency("eur"); setCardConfirmed(false); }}
                 className={`glass rounded-xl p-3 border-2 transition-all ${
                   currency === "eur" ? "border-gold bg-gold/10" : "border-transparent"
                 }`}
@@ -312,7 +325,7 @@ const InAppPaymentSheet = ({
               </button>
               <button
                 type="button"
-                onClick={() => setCurrency("usd")}
+                onClick={() => { setCurrency("usd"); setCardConfirmed(false); }}
                 className={`glass rounded-xl p-3 border-2 transition-all ${
                   currency === "usd" ? "border-gold bg-gold/10" : "border-transparent"
                 }`}
@@ -324,14 +337,29 @@ const InAppPaymentSheet = ({
           </div>
 
           {/* Card brand selector */}
-          <div className="glass rounded-xl p-4 space-y-3">
-            <p className="text-sm font-medium text-foreground">Choisissez votre carte</p>
+          <div className={`glass rounded-xl p-4 space-y-3 border-2 transition-colors ${
+            cardError ? "border-destructive/60" : "border-transparent"
+          }`}>
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-foreground">
+                Choisissez votre carte <span className="text-destructive">*</span>
+              </p>
+              {cardConfirmed && cardBrand && (
+                <span className="flex items-center gap-1 text-[10px] text-green-500 font-medium">
+                  <Check className="h-3 w-3" /> Confirmée
+                </span>
+              )}
+            </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {cardOptions.map((opt) => (
                 <button
                   key={opt.id}
                   type="button"
-                  onClick={() => setCardBrand(opt.id)}
+                  onClick={() => {
+                    setCardBrand(opt.id);
+                    setCardError(null);
+                    setCardConfirmed(false);
+                  }}
                   className={`flex flex-col items-center gap-2 rounded-xl p-3 border-2 transition-all ${
                     cardBrand === opt.id
                       ? "border-gold bg-gold/10 shadow-lg"
@@ -358,9 +386,36 @@ const InAppPaymentSheet = ({
                 </button>
               ))}
             </div>
+
+            {cardError && (
+              <div className="flex items-start gap-2 rounded-lg bg-destructive/10 border border-destructive/30 p-2.5">
+                <AlertCircle className="h-4 w-4 text-destructive flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-destructive font-medium">{cardError}</p>
+              </div>
+            )}
+
             <p className="text-[10px] text-muted-foreground text-center">
               Visa • Mastercard • Amex • Apple Pay • Google Pay
             </p>
+
+            {!cardConfirmed && (
+              <Button
+                type="button"
+                variant="gold"
+                className="w-full"
+                onClick={() => {
+                  if (!cardBrand) {
+                    setCardError("Veuillez sélectionner un type de carte avant de continuer.");
+                    return;
+                  }
+                  setCardError(null);
+                  setCardConfirmed(true);
+                }}
+              >
+                Continuer vers le paiement
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            )}
           </div>
 
           {/* Security badge */}
@@ -417,38 +472,50 @@ const InAppPaymentSheet = ({
             );
           })()}
 
-          {/* Card Element */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <CreditCard className="w-4 h-4 text-gold" />
-              <p className="text-sm font-medium text-foreground">Vos informations de paiement</p>
+          {/* Card Element — gated by card brand confirmation */}
+          {!cardConfirmed ? (
+            <div className="glass rounded-xl p-6 border border-dashed border-border/40 text-center space-y-2">
+              <Lock className="w-6 h-6 text-muted-foreground mx-auto" />
+              <p className="text-sm font-medium text-foreground">
+                Sélectionnez et confirmez votre carte
+              </p>
+              <p className="text-xs text-muted-foreground">
+                L'écran de paiement sécurisé apparaîtra ici une fois votre choix confirmé.
+              </p>
             </div>
-
-            {loading && (
-              <div className="glass rounded-xl p-8 flex items-center justify-center">
-                <Loader2 className="w-6 h-6 animate-spin text-gold" />
+          ) : (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <CreditCard className="w-4 h-4 text-gold" />
+                <p className="text-sm font-medium text-foreground">Vos informations de paiement</p>
               </div>
-            )}
 
-            {error && !loading && (
-              <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-4 text-sm text-destructive">
-                {error}
-              </div>
-            )}
+              {loading && (
+                <div className="glass rounded-xl p-8 flex items-center justify-center">
+                  <Loader2 className="w-6 h-6 animate-spin text-gold" />
+                </div>
+              )}
 
-            {!loading && !error && clientSecret && stripeInstance && elementsOptions && (
-              <Elements stripe={stripeInstance} options={elementsOptions}>
-                <PaymentForm
-                  collaborationId={collaboration.id}
-                  formattedApprox={formattedApprox}
-                  onSuccess={() => {
-                    onSuccess?.();
-                    onOpenChange(false);
-                  }}
-                />
-              </Elements>
-            )}
-          </div>
+              {error && !loading && (
+                <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-4 text-sm text-destructive">
+                  {error}
+                </div>
+              )}
+
+              {!loading && !error && clientSecret && stripeInstance && elementsOptions && (
+                <Elements stripe={stripeInstance} options={elementsOptions}>
+                  <PaymentForm
+                    collaborationId={collaboration.id}
+                    formattedApprox={formattedApprox}
+                    onSuccess={() => {
+                      onSuccess?.();
+                      onOpenChange(false);
+                    }}
+                  />
+                </Elements>
+              )}
+            </div>
+          )}
         </div>
       </SheetContent>
     </Sheet>
