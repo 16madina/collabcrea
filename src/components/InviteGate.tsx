@@ -9,6 +9,7 @@ import { useInviteCodesRequired } from "@/hooks/useInviteCodesRequired";
 import logoCollabCrea from "@/assets/logo-collabcrea.png";
 
 const STORAGE_KEY = "invite_gate_code";
+const FORCE_PROMPT_KEY = "invite_gate_force_prompt";
 
 interface InviteGateProps {
   children: React.ReactNode;
@@ -18,6 +19,7 @@ const InviteGate = ({ children }: InviteGateProps) => {
   const { user, loading: authLoading } = useAuth();
   const { required, loading: settingLoading } = useInviteCodesRequired();
   const [unlocked, setUnlocked] = useState(false);
+  const [forcePrompt, setForcePrompt] = useState(false);
   const [checked, setChecked] = useState(false);
   const [code, setCode] = useState("");
   const [validating, setValidating] = useState(false);
@@ -27,7 +29,9 @@ const InviteGate = ({ children }: InviteGateProps) => {
   useEffect(() => {
     const sync = () => {
       const stored = localStorage.getItem(STORAGE_KEY);
-      setUnlocked(!!stored);
+      const forced = sessionStorage.getItem(FORCE_PROMPT_KEY) === "true";
+      setForcePrompt(forced);
+      setUnlocked(!!stored && !forced);
       setChecked(true);
     };
     sync();
@@ -62,6 +66,8 @@ const InviteGate = ({ children }: InviteGateProps) => {
       }
       // Store and unlock
       localStorage.setItem(STORAGE_KEY, normalized);
+      sessionStorage.removeItem(FORCE_PROMPT_KEY);
+      setForcePrompt(false);
       setUnlocked(true);
     } catch (err: any) {
       setError(err.message || "Une erreur est survenue");
@@ -85,8 +91,8 @@ const InviteGate = ({ children }: InviteGateProps) => {
     );
   }
 
-  // Bypass: system disabled, already unlocked, or already logged in
-  if (!required || unlocked || user) {
+  // Bypass: system disabled, already unlocked, or logged in without manually requesting the code prompt
+  if (!required || unlocked || (user && !forcePrompt)) {
     return <>{children}</>;
   }
 
