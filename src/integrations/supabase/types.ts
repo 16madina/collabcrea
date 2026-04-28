@@ -1009,6 +1009,7 @@ export type Database = {
     }
     Functions: {
       can_initiate_contact: { Args: { _user_id: string }; Returns: boolean }
+      claim_invite_code: { Args: { p_code: string }; Returns: boolean }
       consume_invite_code: { Args: { p_code: string }; Returns: boolean }
       expire_overdue_offers: { Args: never; Returns: undefined }
       generate_invite_code: {
