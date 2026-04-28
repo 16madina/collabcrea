@@ -15,9 +15,6 @@ verify_jwt = false
 [functions.send-push-notification]
 verify_jwt = false
 
-[functions.create-collaboration-checkout]
-verify_jwt = false
-
 [functions.stripe-webhook]
 verify_jwt = false
 
@@ -28,22 +25,4 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.request-withdrawal]
-verify_jwt = false
-
-[functions.fincra-checkout]
-verify_jwt = false
-
-[functions.fincra-webhook]
-verify_jwt = false
-
-[functions.fincra-verify-payment]
-verify_jwt = false
-
-[functions.fincra-payout]
-verify_jwt = false
-
-[functions.paydunya-payout]
-verify_jwt = false
-
-[functions.paydunya-webhook]
 verify_jwt = false

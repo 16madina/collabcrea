@@ -221,48 +221,7 @@ const AdminWithdrawalsTab = () => {
     }
   };
 
-  const handleAutoPayout = async (request: WithdrawalWithProfile) => {
-    if (!user) return;
-    if (request.method !== "mobile_money") {
-      toast.error("Le payout automatique n'est disponible que pour Mobile Money");
-      return;
-    }
-    setPayoutProcessing(request.id);
-    try {
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      if (!session) {
-        toast.error("Session expirée");
-        return;
-      }
-
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/paydunya-payout`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({ withdrawal_request_id: request.id }),
-        }
-      );
-
-      const result = await response.json();
-
-      if (result.success) {
-        toast.success(`Payout envoyé ! TX: ${result.transaction_id || "OK"}`);
-        fetchRequests();
-        setSelectedRequest(null);
-      } else {
-        toast.error(result.error || "Échec du payout automatique");
-      }
-    } catch (error) {
-      console.error("Auto payout error:", error);
-      toast.error("Erreur lors du payout automatique");
-    } finally {
-      setPayoutProcessing(null);
-    }
-  };
+  // PayDunya auto payout removed — all Mobile Money payouts are now manual.
 
   const handlePayPalPayout = async (request: WithdrawalWithProfile) => {
     if (!user) return;
@@ -426,25 +385,6 @@ const AdminWithdrawalsTab = () => {
                       {format(new Date(req.created_at), "dd MMM yyyy à HH:mm", { locale: fr })}
                     </span>
                     <div className="flex gap-1.5">
-                      {req.method === "mobile_money" && (
-                        <Button
-                          size="sm"
-                          variant="gold"
-                          className="text-[10px] h-7 px-2"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleAutoPayout(req);
-                          }}
-                          disabled={processing || payoutProcessing === req.id}
-                        >
-                          {payoutProcessing === req.id ? (
-                            <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                          ) : (
-                            <Zap className="w-3 h-3 mr-1" />
-                          )}
-                          Payout auto
-                        </Button>
-                      )}
                       {req.method === "paypal" && (
                         <Button
                           size="sm"
@@ -663,33 +603,11 @@ const AdminWithdrawalsTab = () => {
               {selectedRequest.status === "pending" && !showCompletionFlow && (
                 <div className="space-y-3 pt-4 border-t">
                   {selectedRequest.method === "mobile_money" && (
-                    <>
-                      <p className="text-xs text-muted-foreground">
-                        ⚡ Envoyez automatiquement via PayDunya ou effectuez le virement manuellement.
-                      </p>
-                      <Button
-                        variant="gold"
-                        className="w-full text-xs"
-                        onClick={() => handleAutoPayout(selectedRequest)}
-                        disabled={processing || payoutProcessing === selectedRequest.id}
-                      >
-                        {payoutProcessing === selectedRequest.id ? (
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        ) : (
-                          <Zap className="w-4 h-4 mr-2" />
-                        )}
-                        Payout automatique PayDunya
-                      </Button>
-                      <div className="relative">
-                        <div className="absolute inset-0 flex items-center">
-                          <span className="w-full border-t" />
-                        </div>
-                        <div className="relative flex justify-center text-xs uppercase">
-                          <span className="bg-background px-2 text-muted-foreground">ou</span>
-                        </div>
-                      </div>
-                    </>
+                    <p className="text-xs text-muted-foreground">
+                      📱 Effectuez le virement manuellement via Wave / Orange Money vers le numéro indiqué, puis confirmez avec la preuve.
+                    </p>
                   )}
+
 
                   {selectedRequest.method === "paypal" && (
                     <>
