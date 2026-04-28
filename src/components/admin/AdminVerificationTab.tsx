@@ -40,6 +40,54 @@ import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
+// Templates de messages pour refus
+const REJECT_TEMPLATES: { label: string; message: string }[] = [
+  {
+    label: "Document illisible",
+    message: "Votre document d'identité n'est pas lisible (flou, coupé ou mal éclairé). Merci de soumettre une nouvelle photo nette, prise en pleine lumière, où toutes les informations sont bien visibles.",
+  },
+  {
+    label: "Document non valide",
+    message: "Le document fourni n'est pas une pièce d'identité officielle valide. Merci de soumettre une carte d'identité nationale, un passeport ou un permis de conduire en cours de validité.",
+  },
+  {
+    label: "Profil incorrect",
+    message: "Les informations de votre profil ne correspondent pas au document fourni. Merci de vérifier que votre nom complet et votre date de naissance sur le profil correspondent exactement à ceux de votre pièce d'identité.",
+  },
+  {
+    label: "Selfie non conforme",
+    message: "Votre selfie ne permet pas de confirmer votre identité (visage masqué, lunettes de soleil, qualité insuffisante). Merci de refaire les 4 photos en respectant les consignes : visage bien visible et bien éclairé.",
+  },
+  {
+    label: "Soupçon de fraude",
+    message: "Nous ne pouvons pas valider votre identité pour le moment. Le document semble altéré ou ne correspond pas à votre profil. Si vous pensez qu'il s'agit d'une erreur, contactez notre support à support@collabcrea.com.",
+  },
+  {
+    label: "Document expiré",
+    message: "Votre pièce d'identité est expirée. Merci de soumettre un document en cours de validité.",
+  },
+];
+
+// Templates de messages pour approbation
+const APPROVE_TEMPLATES: { label: string; message: string }[] = [
+  {
+    label: "Approbation standard",
+    message: "Félicitations ! Votre identité a été vérifiée avec succès. Vous avez maintenant accès à toutes les fonctionnalités de la plateforme.",
+  },
+  {
+    label: "Bienvenue créateur",
+    message: "Votre identité est maintenant vérifiée ✅ Bienvenue officiellement sur CollabCréa ! Vous pouvez désormais recevoir des collaborations et être payé en toute sécurité.",
+  },
+  {
+    label: "Court & efficace",
+    message: "Identité vérifiée ✅ Votre profil est maintenant certifié sur CollabCréa.",
+  },
+  {
+    label: "Avec rappel sécurité",
+    message: "Votre identité a été vérifiée avec succès. Pensez à compléter votre profil et à activer la double authentification pour sécuriser votre compte.",
+  },
+];
+
 interface PendingVerification {
   id: string;
   user_id: string;
@@ -342,6 +390,8 @@ const AdminVerificationTab = () => {
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<PendingVerification | null>(null);
   const [showDetailSheet, setShowDetailSheet] = useState(false);
+  const [showApproveDialog, setShowApproveDialog] = useState(false);
+  const [approveMessage, setApproveMessage] = useState(APPROVE_TEMPLATES[0].message);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -382,6 +432,8 @@ const AdminVerificationTab = () => {
     if (!currentUser) return;
     setIsProcessing(true);
 
+    const finalMessage = approveMessage || APPROVE_TEMPLATES[0].message;
+
     try {
       const { error: updateError } = await supabase
         .from("profiles")
@@ -390,14 +442,24 @@ const AdminVerificationTab = () => {
 
       if (updateError) throw updateError;
 
-      // Send approval notification
+      // Send approval notification (in-app)
       await supabase.from("notifications").insert({
         user_id: user.user_id,
-        title: "Identité vérifiée",
-        message: "Félicitations ! Votre identité a été vérifiée avec succès. Vous avez maintenant accès à toutes les fonctionnalités de la plateforme.",
+        title: "Identité vérifiée ✅",
+        message: finalMessage,
         type: "success",
         created_by: currentUser.id,
       });
+
+      // Push notification
+      supabase.functions.invoke("send-push-notification", {
+        body: {
+          user_id: user.user_id,
+          title: "✅ Identité vérifiée",
+          body: finalMessage.length > 150 ? finalMessage.slice(0, 147) + "..." : finalMessage,
+          data: { route: "/creator/profile", tab: "identity" },
+        },
+      }).catch((e) => console.error("Push error:", e));
 
       // Log the action
       await supabase.from("admin_logs").insert({
@@ -768,11 +830,14 @@ const AdminVerificationTab = () => {
                   <Button
                     variant="default"
                     className="bg-accent hover:bg-accent/90"
-                    onClick={() => handleApprove(selectedUser)}
+                    onClick={() => {
+                      setApproveMessage(APPROVE_TEMPLATES[0].message);
+                      setShowApproveDialog(true);
+                    }}
                     disabled={isProcessing}
                   >
                     <CheckCircle className="w-4 h-4 mr-2" />
-                    {isProcessing ? "..." : "Approuver"}
+                    Approuver
                   </Button>
                 </div>
               </div>
@@ -783,17 +848,40 @@ const AdminVerificationTab = () => {
 
       {/* Reject Dialog */}
       <AlertDialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-h-[90vh] overflow-y-auto">
           <AlertDialogHeader>
             <AlertDialogTitle>Refuser la vérification</AlertDialogTitle>
             <AlertDialogDescription>
-              Indiquez la raison du refus. L'utilisateur recevra une notification.
+              Choisissez un motif prédéfini puis modifiez-le si besoin. L'utilisateur recevra notification, push et email.
             </AlertDialogDescription>
           </AlertDialogHeader>
+
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">Motifs prédéfinis</p>
+            <div className="flex flex-wrap gap-2">
+              {REJECT_TEMPLATES.map((tpl) => (
+                <button
+                  key={tpl.label}
+                  type="button"
+                  onClick={() => setRejectReason(tpl.message)}
+                  className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                    rejectReason === tpl.message
+                      ? "bg-destructive/10 border-destructive text-destructive"
+                      : "border-border hover:bg-muted"
+                  }`}
+                >
+                  {tpl.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <Textarea
-            placeholder="Raison du refus (optionnel)..."
+            placeholder="Raison du refus..."
             value={rejectReason}
             onChange={(e) => setRejectReason(e.target.value)}
+            rows={5}
+            className="text-sm"
           />
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
@@ -803,6 +891,61 @@ const AdminVerificationTab = () => {
               disabled={isProcessing}
             >
               {isProcessing ? "..." : "Refuser"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Approve Dialog */}
+      <AlertDialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
+        <AlertDialogContent className="max-h-[90vh] overflow-y-auto">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Approuver la vérification</AlertDialogTitle>
+            <AlertDialogDescription>
+              Choisissez un message prédéfini puis modifiez-le si besoin. L'utilisateur recevra notification et push.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">Messages prédéfinis</p>
+            <div className="flex flex-wrap gap-2">
+              {APPROVE_TEMPLATES.map((tpl) => (
+                <button
+                  key={tpl.label}
+                  type="button"
+                  onClick={() => setApproveMessage(tpl.message)}
+                  className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                    approveMessage === tpl.message
+                      ? "bg-gold/10 border-gold text-gold"
+                      : "border-border hover:bg-muted"
+                  }`}
+                >
+                  {tpl.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <Textarea
+            placeholder="Message d'approbation..."
+            value={approveMessage}
+            onChange={(e) => setApproveMessage(e.target.value)}
+            rows={5}
+            className="text-sm"
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (selectedUser) {
+                  await handleApprove(selectedUser);
+                  setShowApproveDialog(false);
+                }
+              }}
+              className="bg-accent hover:bg-accent/90"
+              disabled={isProcessing}
+            >
+              {isProcessing ? "..." : "Approuver"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
