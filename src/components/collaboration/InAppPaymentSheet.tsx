@@ -472,38 +472,50 @@ const InAppPaymentSheet = ({
             );
           })()}
 
-          {/* Card Element */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <CreditCard className="w-4 h-4 text-gold" />
-              <p className="text-sm font-medium text-foreground">Vos informations de paiement</p>
+          {/* Card Element — gated by card brand confirmation */}
+          {!cardConfirmed ? (
+            <div className="glass rounded-xl p-6 border border-dashed border-border/40 text-center space-y-2">
+              <Lock className="w-6 h-6 text-muted-foreground mx-auto" />
+              <p className="text-sm font-medium text-foreground">
+                Sélectionnez et confirmez votre carte
+              </p>
+              <p className="text-xs text-muted-foreground">
+                L'écran de paiement sécurisé apparaîtra ici une fois votre choix confirmé.
+              </p>
             </div>
-
-            {loading && (
-              <div className="glass rounded-xl p-8 flex items-center justify-center">
-                <Loader2 className="w-6 h-6 animate-spin text-gold" />
+          ) : (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <CreditCard className="w-4 h-4 text-gold" />
+                <p className="text-sm font-medium text-foreground">Vos informations de paiement</p>
               </div>
-            )}
 
-            {error && !loading && (
-              <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-4 text-sm text-destructive">
-                {error}
-              </div>
-            )}
+              {loading && (
+                <div className="glass rounded-xl p-8 flex items-center justify-center">
+                  <Loader2 className="w-6 h-6 animate-spin text-gold" />
+                </div>
+              )}
 
-            {!loading && !error && clientSecret && stripeInstance && elementsOptions && (
-              <Elements stripe={stripeInstance} options={elementsOptions}>
-                <PaymentForm
-                  collaborationId={collaboration.id}
-                  formattedApprox={formattedApprox}
-                  onSuccess={() => {
-                    onSuccess?.();
-                    onOpenChange(false);
-                  }}
-                />
-              </Elements>
-            )}
-          </div>
+              {error && !loading && (
+                <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-4 text-sm text-destructive">
+                  {error}
+                </div>
+              )}
+
+              {!loading && !error && clientSecret && stripeInstance && elementsOptions && (
+                <Elements stripe={stripeInstance} options={elementsOptions}>
+                  <PaymentForm
+                    collaborationId={collaboration.id}
+                    formattedApprox={formattedApprox}
+                    onSuccess={() => {
+                      onSuccess?.();
+                      onOpenChange(false);
+                    }}
+                  />
+                </Elements>
+              )}
+            </div>
+          )}
         </div>
       </SheetContent>
     </Sheet>
