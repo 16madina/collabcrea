@@ -20,6 +20,9 @@ import {
   useStripe,
   useElements,
 } from "@stripe/react-stripe-js";
+import waveLogo from "@/assets/payment-wave.png";
+import orangeLogo from "@/assets/payment-orange.png";
+import djamoLogo from "@/assets/payment-djamo.png";
 
 interface InAppPaymentSheetProps {
   open: boolean;
@@ -288,6 +291,30 @@ const InAppPaymentSheet = ({
                 <p className="text-[10px] text-muted-foreground">US Dollar</p>
               </button>
             </div>
+          </div>
+
+          {/* Accepted cards (Wave / Orange / Djamo Visa) */}
+          <div className="glass rounded-xl p-4 space-y-3">
+            <p className="text-xs font-medium text-muted-foreground">
+              Cartes Visa & Mastercard acceptées
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="flex flex-col items-center gap-1 bg-background/40 rounded-lg p-2">
+                <img src={waveLogo} alt="Wave" loading="lazy" className="h-8 w-8 object-contain" />
+                <p className="text-[10px] text-muted-foreground">Wave Visa</p>
+              </div>
+              <div className="flex flex-col items-center gap-1 bg-background/40 rounded-lg p-2">
+                <img src={orangeLogo} alt="Orange Money" loading="lazy" className="h-8 w-8 object-contain" />
+                <p className="text-[10px] text-muted-foreground">Orange Visa</p>
+              </div>
+              <div className="flex flex-col items-center gap-1 bg-background/40 rounded-lg p-2">
+                <img src={djamoLogo} alt="Djamo" loading="lazy" className="h-8 w-8 object-contain" />
+                <p className="text-[10px] text-muted-foreground">Djamo Visa</p>
+              </div>
+            </div>
+            <p className="text-[10px] text-muted-foreground text-center">
+              + Visa • Mastercard • Amex • Apple Pay • Google Pay
+            </p>
           </div>
 
           {/* Security badge */}
