@@ -1470,6 +1470,26 @@ const StepFour = ({
       <p className="text-muted-foreground text-sm">Créez vos identifiants</p>
     </div>
 
+    {inviteRequired && (
+      <div className="space-y-2 p-4 rounded-xl border border-gold/30 bg-gold/5">
+        <Label className="flex items-center gap-2">
+          🎟️ Code d'invitation *
+        </Label>
+        <Input
+          type="text"
+          value={formData.inviteCode}
+          onChange={(e) => updateFormData("inviteCode", e.target.value.toUpperCase())}
+          placeholder="COLLAB-XXXX"
+          maxLength={11}
+          className={`h-14 bg-muted/50 border rounded-xl uppercase tracking-wider font-mono text-center ${errors.inviteCode ? "border-destructive" : "border-border focus:border-gold"}`}
+        />
+        <p className="text-xs text-muted-foreground">
+          Demandez votre code d'accès en MP sur Snap
+        </p>
+        {errors.inviteCode && <p className="text-destructive text-xs">{errors.inviteCode}</p>}
+      </div>
+    )}
+
     <div className="space-y-2">
       <Label>Email *</Label>
       <div className="relative">
