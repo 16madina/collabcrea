@@ -40,6 +40,54 @@ import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
+// Templates de messages pour refus
+const REJECT_TEMPLATES: { label: string; message: string }[] = [
+  {
+    label: "Document illisible",
+    message: "Votre document d'identité n'est pas lisible (flou, coupé ou mal éclairé). Merci de soumettre une nouvelle photo nette, prise en pleine lumière, où toutes les informations sont bien visibles.",
+  },
+  {
+    label: "Document non valide",
+    message: "Le document fourni n'est pas une pièce d'identité officielle valide. Merci de soumettre une carte d'identité nationale, un passeport ou un permis de conduire en cours de validité.",
+  },
+  {
+    label: "Profil incorrect",
+    message: "Les informations de votre profil ne correspondent pas au document fourni. Merci de vérifier que votre nom complet et votre date de naissance sur le profil correspondent exactement à ceux de votre pièce d'identité.",
+  },
+  {
+    label: "Selfie non conforme",
+    message: "Votre selfie ne permet pas de confirmer votre identité (visage masqué, lunettes de soleil, qualité insuffisante). Merci de refaire les 4 photos en respectant les consignes : visage bien visible et bien éclairé.",
+  },
+  {
+    label: "Soupçon de fraude",
+    message: "Nous ne pouvons pas valider votre identité pour le moment. Le document semble altéré ou ne correspond pas à votre profil. Si vous pensez qu'il s'agit d'une erreur, contactez notre support à support@collabcrea.com.",
+  },
+  {
+    label: "Document expiré",
+    message: "Votre pièce d'identité est expirée. Merci de soumettre un document en cours de validité.",
+  },
+];
+
+// Templates de messages pour approbation
+const APPROVE_TEMPLATES: { label: string; message: string }[] = [
+  {
+    label: "Approbation standard",
+    message: "Félicitations ! Votre identité a été vérifiée avec succès. Vous avez maintenant accès à toutes les fonctionnalités de la plateforme.",
+  },
+  {
+    label: "Bienvenue créateur",
+    message: "Votre identité est maintenant vérifiée ✅ Bienvenue officiellement sur CollabCréa ! Vous pouvez désormais recevoir des collaborations et être payé en toute sécurité.",
+  },
+  {
+    label: "Court & efficace",
+    message: "Identité vérifiée ✅ Votre profil est maintenant certifié sur CollabCréa.",
+  },
+  {
+    label: "Avec rappel sécurité",
+    message: "Votre identité a été vérifiée avec succès. Pensez à compléter votre profil et à activer la double authentification pour sécuriser votre compte.",
+  },
+];
+
 interface PendingVerification {
   id: string;
   user_id: string;
