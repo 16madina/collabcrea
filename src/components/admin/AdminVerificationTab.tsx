@@ -432,6 +432,8 @@ const AdminVerificationTab = () => {
     if (!currentUser) return;
     setIsProcessing(true);
 
+    const finalMessage = approveMessage || APPROVE_TEMPLATES[0].message;
+
     try {
       const { error: updateError } = await supabase
         .from("profiles")
@@ -440,14 +442,24 @@ const AdminVerificationTab = () => {
 
       if (updateError) throw updateError;
 
-      // Send approval notification
+      // Send approval notification (in-app)
       await supabase.from("notifications").insert({
         user_id: user.user_id,
-        title: "Identité vérifiée",
-        message: "Félicitations ! Votre identité a été vérifiée avec succès. Vous avez maintenant accès à toutes les fonctionnalités de la plateforme.",
+        title: "Identité vérifiée ✅",
+        message: finalMessage,
         type: "success",
         created_by: currentUser.id,
       });
+
+      // Push notification
+      supabase.functions.invoke("send-push-notification", {
+        body: {
+          user_id: user.user_id,
+          title: "✅ Identité vérifiée",
+          body: finalMessage.length > 150 ? finalMessage.slice(0, 147) + "..." : finalMessage,
+          data: { route: "/creator/profile", tab: "identity" },
+        },
+      }).catch((e) => console.error("Push error:", e));
 
       // Log the action
       await supabase.from("admin_logs").insert({
