@@ -41,6 +41,27 @@ export type Database = {
         }
         Relationships: []
       }
+      app_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       applications: {
         Row: {
           conversation_id: string | null
@@ -266,6 +287,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      invite_codes: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string
+          id: string
+          is_active: boolean
+          note: string | null
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by: string
+          id?: string
+          is_active?: boolean
+          note?: string | null
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_active?: boolean
+          note?: string | null
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: []
       }
       legal_pages: {
         Row: {
@@ -955,7 +1009,15 @@ export type Database = {
     }
     Functions: {
       can_initiate_contact: { Args: { _user_id: string }; Returns: boolean }
+      consume_invite_code: { Args: { p_code: string }; Returns: boolean }
       expire_overdue_offers: { Args: never; Returns: undefined }
+      generate_invite_code: {
+        Args: { p_note?: string }
+        Returns: {
+          code: string
+          id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -977,6 +1039,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      validate_invite_code: { Args: { p_code: string }; Returns: boolean }
     }
     Enums: {
       app_role: "creator" | "brand" | "admin"
