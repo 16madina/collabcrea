@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, MapPin, Globe, ShieldCheck, Star, User, CreditCard, Image, MessageCircle, Flag, Ban, AlertTriangle, MoreVertical } from "lucide-react";
+import { ArrowLeft, MapPin, Globe, ShieldCheck, Star, User, CreditCard, Image, MessageCircle, Flag, Ban, AlertTriangle, MoreVertical, Plus } from "lucide-react";
 import { FaYoutube, FaInstagram, FaTiktok, FaSnapchatGhost, FaFacebookF } from "react-icons/fa";
 import { supabase } from "@/integrations/supabase/client";
 import { CountryFlag } from "@/lib/flags";
