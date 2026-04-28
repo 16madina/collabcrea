@@ -436,7 +436,7 @@ const InAppPaymentSheet = ({
           {/* Conversion breakdown */}
           {(() => {
             const baseConverted =
-              currency === "eur" ? amountFCFA / 655.957 : amountFCFA / 600;
+              currency === "eur" ? totalFCFA / 655.957 : totalFCFA / 600;
             const fees = approxAmount - baseConverted;
             const fmt = (v: number) =>
               new Intl.NumberFormat("fr-FR", {
@@ -454,6 +454,14 @@ const InAppPaymentSheet = ({
                   <span className="font-semibold text-foreground">
                     {formatFCFA(amountFCFA)}
                   </span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground">Commission plateforme (10%)</span>
+                  <span className="text-foreground">+ {formatFCFA(brandFeeFCFA)}</span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground">Sous-total</span>
+                  <span className="text-foreground">{formatFCFA(totalFCFA)}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-muted-foreground">
