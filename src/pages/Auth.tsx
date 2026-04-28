@@ -719,6 +719,7 @@ const Auth = () => {
                 setStep(1);
               }}
               onOpenLegal={openLegalDialog}
+              inviteRequired={inviteRequired}
             />
           )}
         </AnimatePresence>
@@ -877,6 +878,7 @@ interface SignupFormProps {
   onSubmit: () => void;
   onSwitchToLogin: () => void;
   onOpenLegal: (slug: string) => void;
+  inviteRequired: boolean;
 }
 
 const SignupForm = ({
@@ -895,6 +897,7 @@ const SignupForm = ({
   onSubmit,
   onSwitchToLogin,
   onOpenLegal,
+  inviteRequired,
 }: SignupFormProps) => (
   <motion.div
     initial={{ opacity: 0, x: 20 }}
@@ -967,6 +970,7 @@ const SignupForm = ({
             showConfirmPassword={showConfirmPassword}
             setShowConfirmPassword={setShowConfirmPassword}
             onOpenLegal={onOpenLegal}
+            inviteRequired={inviteRequired}
           />
         )}
       </AnimatePresence>
