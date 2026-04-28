@@ -848,17 +848,40 @@ const AdminVerificationTab = () => {
 
       {/* Reject Dialog */}
       <AlertDialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-h-[90vh] overflow-y-auto">
           <AlertDialogHeader>
             <AlertDialogTitle>Refuser la vérification</AlertDialogTitle>
             <AlertDialogDescription>
-              Indiquez la raison du refus. L'utilisateur recevra une notification.
+              Choisissez un motif prédéfini puis modifiez-le si besoin. L'utilisateur recevra notification, push et email.
             </AlertDialogDescription>
           </AlertDialogHeader>
+
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">Motifs prédéfinis</p>
+            <div className="flex flex-wrap gap-2">
+              {REJECT_TEMPLATES.map((tpl) => (
+                <button
+                  key={tpl.label}
+                  type="button"
+                  onClick={() => setRejectReason(tpl.message)}
+                  className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                    rejectReason === tpl.message
+                      ? "bg-destructive/10 border-destructive text-destructive"
+                      : "border-border hover:bg-muted"
+                  }`}
+                >
+                  {tpl.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <Textarea
-            placeholder="Raison du refus (optionnel)..."
+            placeholder="Raison du refus..."
             value={rejectReason}
             onChange={(e) => setRejectReason(e.target.value)}
+            rows={5}
+            className="text-sm"
           />
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
@@ -868,6 +891,61 @@ const AdminVerificationTab = () => {
               disabled={isProcessing}
             >
               {isProcessing ? "..." : "Refuser"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Approve Dialog */}
+      <AlertDialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
+        <AlertDialogContent className="max-h-[90vh] overflow-y-auto">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Approuver la vérification</AlertDialogTitle>
+            <AlertDialogDescription>
+              Choisissez un message prédéfini puis modifiez-le si besoin. L'utilisateur recevra notification et push.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">Messages prédéfinis</p>
+            <div className="flex flex-wrap gap-2">
+              {APPROVE_TEMPLATES.map((tpl) => (
+                <button
+                  key={tpl.label}
+                  type="button"
+                  onClick={() => setApproveMessage(tpl.message)}
+                  className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                    approveMessage === tpl.message
+                      ? "bg-gold/10 border-gold text-gold"
+                      : "border-border hover:bg-muted"
+                  }`}
+                >
+                  {tpl.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <Textarea
+            placeholder="Message d'approbation..."
+            value={approveMessage}
+            onChange={(e) => setApproveMessage(e.target.value)}
+            rows={5}
+            className="text-sm"
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (selectedUser) {
+                  await handleApprove(selectedUser);
+                  setShowApproveDialog(false);
+                }
+              }}
+              className="bg-accent hover:bg-accent/90"
+              disabled={isProcessing}
+            >
+              {isProcessing ? "..." : "Approuver"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
