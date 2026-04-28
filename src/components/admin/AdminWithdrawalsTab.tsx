@@ -385,25 +385,6 @@ const AdminWithdrawalsTab = () => {
                       {format(new Date(req.created_at), "dd MMM yyyy à HH:mm", { locale: fr })}
                     </span>
                     <div className="flex gap-1.5">
-                      {req.method === "mobile_money" && (
-                        <Button
-                          size="sm"
-                          variant="gold"
-                          className="text-[10px] h-7 px-2"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleAutoPayout(req);
-                          }}
-                          disabled={processing || payoutProcessing === req.id}
-                        >
-                          {payoutProcessing === req.id ? (
-                            <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                          ) : (
-                            <Zap className="w-3 h-3 mr-1" />
-                          )}
-                          Payout auto
-                        </Button>
-                      )}
                       {req.method === "paypal" && (
                         <Button
                           size="sm"
