@@ -26,6 +26,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { useInviteCodesRequired } from "@/hooks/useInviteCodesRequired";
 import logoCollabCrea from "@/assets/logo-collabcrea.png";
 import authBackground from "@/assets/auth-background.jpg";
 import authStep1Bg from "@/assets/auth-step1-bg.jpg";
@@ -151,6 +152,7 @@ interface SignupFormData {
   password: string;
   confirmPassword: string;
   acceptTerms: boolean;
+  inviteCode: string;
 }
 
 const initialFormData: SignupFormData = {
@@ -177,11 +179,13 @@ const initialFormData: SignupFormData = {
   password: "",
   confirmPassword: "",
   acceptTerms: false,
+  inviteCode: "",
 };
 
 const Auth = () => {
   const navigate = useNavigate();
   const { user, role: userRole, loading: authLoading, signIn } = useAuth();
+  const { required: inviteRequired } = useInviteCodesRequired();
   
   const [mode, setMode] = useState<AuthMode>("choice");
   const [step, setStep] = useState<SignupStep>(1);
