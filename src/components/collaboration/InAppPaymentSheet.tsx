@@ -337,14 +337,29 @@ const InAppPaymentSheet = ({
           </div>
 
           {/* Card brand selector */}
-          <div className="glass rounded-xl p-4 space-y-3">
-            <p className="text-sm font-medium text-foreground">Choisissez votre carte</p>
+          <div className={`glass rounded-xl p-4 space-y-3 border-2 transition-colors ${
+            cardError ? "border-destructive/60" : "border-transparent"
+          }`}>
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-foreground">
+                Choisissez votre carte <span className="text-destructive">*</span>
+              </p>
+              {cardConfirmed && cardBrand && (
+                <span className="flex items-center gap-1 text-[10px] text-green-500 font-medium">
+                  <Check className="h-3 w-3" /> Confirmée
+                </span>
+              )}
+            </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {cardOptions.map((opt) => (
                 <button
                   key={opt.id}
                   type="button"
-                  onClick={() => setCardBrand(opt.id)}
+                  onClick={() => {
+                    setCardBrand(opt.id);
+                    setCardError(null);
+                    setCardConfirmed(false);
+                  }}
                   className={`flex flex-col items-center gap-2 rounded-xl p-3 border-2 transition-all ${
                     cardBrand === opt.id
                       ? "border-gold bg-gold/10 shadow-lg"
@@ -371,9 +386,36 @@ const InAppPaymentSheet = ({
                 </button>
               ))}
             </div>
+
+            {cardError && (
+              <div className="flex items-start gap-2 rounded-lg bg-destructive/10 border border-destructive/30 p-2.5">
+                <AlertCircle className="h-4 w-4 text-destructive flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-destructive font-medium">{cardError}</p>
+              </div>
+            )}
+
             <p className="text-[10px] text-muted-foreground text-center">
               Visa • Mastercard • Amex • Apple Pay • Google Pay
             </p>
+
+            {!cardConfirmed && (
+              <Button
+                type="button"
+                variant="gold"
+                className="w-full"
+                onClick={() => {
+                  if (!cardBrand) {
+                    setCardError("Veuillez sélectionner un type de carte avant de continuer.");
+                    return;
+                  }
+                  setCardError(null);
+                  setCardConfirmed(true);
+                }}
+              >
+                Continuer vers le paiement
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            )}
           </div>
 
           {/* Security badge */}
