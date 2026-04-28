@@ -142,10 +142,19 @@ const InAppPaymentSheet = ({
   onSuccess,
 }: InAppPaymentSheetProps) => {
   const [currency, setCurrency] = useState<"eur" | "usd">("eur");
+  const [cardBrand, setCardBrand] = useState<"wave" | "orange" | "djamo" | "other">("wave");
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [stripeInstance, setStripeInstance] = useState<Promise<StripeJS | null> | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const cardOptions = [
+    { id: "wave" as const, label: "Wave Visa", logo: waveLogo },
+    { id: "orange" as const, label: "Orange Visa", logo: orangeLogo },
+    { id: "djamo" as const, label: "Djamo Visa", logo: djamoLogo },
+    { id: "other" as const, label: "Autre carte", logo: null },
+  ];
+  const selectedCard = cardOptions.find((c) => c.id === cardBrand)!;
 
   const amountFCFA = collaboration.agreed_amount;
   const approxAmount =
@@ -246,6 +255,25 @@ const InAppPaymentSheet = ({
                 En attente
               </Badge>
             </div>
+            <Separator />
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs text-muted-foreground">Méthode</span>
+              <div className="flex items-center gap-2">
+                {selectedCard.logo ? (
+                  <img
+                    src={selectedCard.logo}
+                    alt={selectedCard.label}
+                    loading="lazy"
+                    className="h-5 w-5 object-contain"
+                  />
+                ) : (
+                  <CreditCard className="h-4 w-4 text-gold" />
+                )}
+                <span className="text-sm font-medium text-foreground">
+                  {selectedCard.label}
+                </span>
+              </div>
+            </div>
           </div>
 
           {/* Amount */}
@@ -293,27 +321,41 @@ const InAppPaymentSheet = ({
             </div>
           </div>
 
-          {/* Accepted cards (Wave / Orange / Djamo Visa) */}
+          {/* Card brand selector */}
           <div className="glass rounded-xl p-4 space-y-3">
-            <p className="text-xs font-medium text-muted-foreground">
-              Cartes Visa & Mastercard acceptées
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              <div className="flex flex-col items-center gap-1 bg-background/40 rounded-lg p-2">
-                <img src={waveLogo} alt="Wave" loading="lazy" className="h-8 w-8 object-contain" />
-                <p className="text-[10px] text-muted-foreground">Wave Visa</p>
-              </div>
-              <div className="flex flex-col items-center gap-1 bg-background/40 rounded-lg p-2">
-                <img src={orangeLogo} alt="Orange Money" loading="lazy" className="h-8 w-8 object-contain" />
-                <p className="text-[10px] text-muted-foreground">Orange Visa</p>
-              </div>
-              <div className="flex flex-col items-center gap-1 bg-background/40 rounded-lg p-2">
-                <img src={djamoLogo} alt="Djamo" loading="lazy" className="h-8 w-8 object-contain" />
-                <p className="text-[10px] text-muted-foreground">Djamo Visa</p>
-              </div>
+            <p className="text-sm font-medium text-foreground">Choisissez votre carte</p>
+            <div className="grid grid-cols-4 gap-2">
+              {cardOptions.map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => setCardBrand(opt.id)}
+                  className={`flex flex-col items-center gap-1 rounded-lg p-2 border-2 transition-all ${
+                    cardBrand === opt.id
+                      ? "border-gold bg-gold/10"
+                      : "border-transparent bg-background/40 hover:bg-background/60"
+                  }`}
+                >
+                  {opt.logo ? (
+                    <img
+                      src={opt.logo}
+                      alt={opt.label}
+                      loading="lazy"
+                      className="h-8 w-8 object-contain"
+                    />
+                  ) : (
+                    <div className="h-8 w-8 rounded-md bg-gold/10 flex items-center justify-center">
+                      <CreditCard className="h-4 w-4 text-gold" />
+                    </div>
+                  )}
+                  <p className="text-[9px] text-muted-foreground text-center leading-tight">
+                    {opt.label}
+                  </p>
+                </button>
+              ))}
             </div>
             <p className="text-[10px] text-muted-foreground text-center">
-              + Visa • Mastercard • Amex • Apple Pay • Google Pay
+              Visa • Mastercard • Amex • Apple Pay • Google Pay
             </p>
           </div>
 
