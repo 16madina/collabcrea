@@ -32,18 +32,33 @@ serve(async (req) => {
     if (userError || !userData.user) throw new Error("Not authenticated");
     const user = userData.user;
 
-    const { sessionId, collaborationId } = await req.json();
-    if (!sessionId) throw new Error("sessionId required");
+    const { sessionId, paymentIntentId, collaborationId } = await req.json();
     if (!collaborationId) throw new Error("collaborationId required");
+    if (!sessionId && !paymentIntentId) throw new Error("sessionId or paymentIntentId required");
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
 
-    log("Session retrieved", { id: session.id, status: session.payment_status });
+    let isPaid = false;
+    let reference = "";
+    let paymentStatus = "";
 
-    if (session.payment_status !== "paid") {
+    if (paymentIntentId) {
+      const pi = await stripe.paymentIntents.retrieve(paymentIntentId);
+      log("PI retrieved", { id: pi.id, status: pi.status });
+      paymentStatus = pi.status;
+      isPaid = pi.status === "succeeded";
+      reference = `stripe-pi-${pi.id}`;
+    } else {
+      const session = await stripe.checkout.sessions.retrieve(sessionId!);
+      log("Session retrieved", { id: session.id, status: session.payment_status });
+      paymentStatus = session.payment_status;
+      isPaid = session.payment_status === "paid";
+      reference = `stripe-${session.id}`;
+    }
+
+    if (!isPaid) {
       return new Response(
-        JSON.stringify({ verified: false, paymentStatus: session.payment_status }),
+        JSON.stringify({ verified: false, paymentStatus }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
       );
     }
@@ -56,8 +71,6 @@ serve(async (req) => {
     if (collabError || !collab) throw new Error("Collaboration not found");
     if (collab.brand_id !== user.id) throw new Error("Forbidden");
 
-    // Idempotency: check if transaction already exists
-    const reference = `stripe-${session.id}`;
     const { data: existingTx } = await supabase
       .from("transactions")
       .select("id")
