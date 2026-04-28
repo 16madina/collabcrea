@@ -2,6 +2,13 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import {
+  computeCommission,
+  BRAND_FEE_PERCENTAGE,
+  CREATOR_FEE_PERCENTAGE,
+} from "@/lib/commission";
+
+export { BRAND_FEE_PERCENTAGE, CREATOR_FEE_PERCENTAGE };
 
 export interface Collaboration {
   id: string;
