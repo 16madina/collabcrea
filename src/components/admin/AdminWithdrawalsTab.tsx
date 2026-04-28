@@ -221,48 +221,7 @@ const AdminWithdrawalsTab = () => {
     }
   };
 
-  const handleAutoPayout = async (request: WithdrawalWithProfile) => {
-    if (!user) return;
-    if (request.method !== "mobile_money") {
-      toast.error("Le payout automatique n'est disponible que pour Mobile Money");
-      return;
-    }
-    setPayoutProcessing(request.id);
-    try {
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      if (!session) {
-        toast.error("Session expirée");
-        return;
-      }
-
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/paydunya-payout`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({ withdrawal_request_id: request.id }),
-        }
-      );
-
-      const result = await response.json();
-
-      if (result.success) {
-        toast.success(`Payout envoyé ! TX: ${result.transaction_id || "OK"}`);
-        fetchRequests();
-        setSelectedRequest(null);
-      } else {
-        toast.error(result.error || "Échec du payout automatique");
-      }
-    } catch (error) {
-      console.error("Auto payout error:", error);
-      toast.error("Erreur lors du payout automatique");
-    } finally {
-      setPayoutProcessing(null);
-    }
-  };
+  // PayDunya auto payout removed — all Mobile Money payouts are now manual.
 
   const handlePayPalPayout = async (request: WithdrawalWithProfile) => {
     if (!user) return;
