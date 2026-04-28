@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import PushPermissionSheet from "@/components/PushPermissionSheet";
+import InviteGate from "@/components/InviteGate";
 import SplashScreen from "@/components/SplashScreen";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
@@ -65,7 +66,8 @@ const AppContent = () => {
       <PushNotificationInitializer />
       <PushPermissionSheet />
       <BrowserRouter>
-        <Routes>
+        <InviteGate>
+          <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -104,7 +106,8 @@ const AppContent = () => {
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
-        </Routes>
+          </Routes>
+        </InviteGate>
       </BrowserRouter>
     </>
   );
