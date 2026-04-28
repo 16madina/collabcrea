@@ -139,3 +139,104 @@ describe("computeCommission – bornes et invariants", () => {
     expect(r.brandTotalFCFA).toBe(23_100);
   });
 });
+
+describe("computeCommission – entrées invalides (NaN, Infinity, négatifs)", () => {
+  it("NaN est bridé au minimum 200 FCFA", () => {
+    const r = computeCommission(NaN);
+    expect(r.agreedAmount).toBe(MIN_AGREED_AMOUNT_FCFA);
+    expect(r.creatorAmount).toBe(190);
+    expect(r.brandSubtotalFCFA).toBe(220);
+  });
+
+  it("Infinity est bridé au minimum 200 FCFA", () => {
+    const r = computeCommission(Infinity);
+    expect(r.agreedAmount).toBe(MIN_AGREED_AMOUNT_FCFA);
+    expect(Number.isFinite(r.creatorAmount)).toBe(true);
+    expect(Number.isFinite(r.brandTotalFCFA)).toBe(true);
+  });
+
+  it("-Infinity est bridé au minimum 200 FCFA", () => {
+    const r = computeCommission(-Infinity);
+    expect(r.agreedAmount).toBe(MIN_AGREED_AMOUNT_FCFA);
+  });
+
+  it("montant négatif est bridé au minimum 200 FCFA", () => {
+    const r = computeCommission(-5_000);
+    expect(r.agreedAmount).toBe(MIN_AGREED_AMOUNT_FCFA);
+    expect(r.brandFee).toBe(20);
+    expect(r.creatorFee).toBe(10);
+    expect(r.creatorAmount).toBe(190);
+  });
+
+  it("très petit négatif (-1) est bridé au minimum", () => {
+    const r = computeCommission(-1);
+    expect(r.agreedAmount).toBe(MIN_AGREED_AMOUNT_FCFA);
+  });
+
+  it("undefined (cast en number) → bridé au minimum", () => {
+    const r = computeCommission(undefined as unknown as number);
+    expect(r.agreedAmount).toBe(MIN_AGREED_AMOUNT_FCFA);
+  });
+
+  it("null (cast en number) → bridé au minimum", () => {
+    const r = computeCommission(null as unknown as number);
+    expect(r.agreedAmount).toBe(MIN_AGREED_AMOUNT_FCFA);
+  });
+});
+
+describe("computeCommission – très grands montants", () => {
+  it("1e9 FCFA (1 milliard) calcule sans débordement", () => {
+    const r = computeCommission(1_000_000_000);
+    expect(r.agreedAmount).toBe(1_000_000_000);
+    expect(r.brandFee).toBe(100_000_000);
+    expect(r.creatorFee).toBe(50_000_000);
+    expect(r.creatorAmount).toBe(950_000_000);
+    expect(r.brandSubtotalFCFA).toBe(1_100_000_000);
+    expect(r.brandTotalFCFA).toBe(1_155_000_000);
+  });
+
+  it("1e12 FCFA (1 000 milliards) reste exact et entier", () => {
+    const r = computeCommission(1e12);
+    expect(r.agreedAmount).toBe(1e12);
+    expect(r.brandFee).toBe(1e11);
+    expect(r.creatorFee).toBe(5e10);
+    expect(r.creatorAmount).toBe(9.5e11);
+    expect(r.brandSubtotalFCFA).toBe(1.1e12);
+    // Tous les résultats doivent rester des entiers finis
+    expect(Number.isInteger(r.brandFee)).toBe(true);
+    expect(Number.isInteger(r.creatorFee)).toBe(true);
+    expect(Number.isInteger(r.creatorAmount)).toBe(true);
+    expect(Number.isFinite(r.brandTotalFCFA)).toBe(true);
+  });
+
+  it("invariants conservés sur très gros montant (1e10)", () => {
+    const r = computeCommission(1e10);
+    expect(r.creatorAmount + r.creatorFee).toBe(r.agreedAmount);
+    expect(r.brandSubtotalFCFA).toBe(r.agreedAmount + r.brandFee);
+  });
+
+  it("Number.MAX_SAFE_INTEGER reste fini et entier", () => {
+    const r = computeCommission(Number.MAX_SAFE_INTEGER);
+    expect(Number.isFinite(r.brandTotalFCFA)).toBe(true);
+    expect(Number.isInteger(r.brandFee)).toBe(true);
+    expect(Number.isInteger(r.creatorFee)).toBe(true);
+  });
+});
+
+describe("computeCommission – arrondi FCFA strict (jamais de décimales)", () => {
+  const samples = [
+    0, -1, NaN, Infinity, 199, 200, 201, 333, 1_234, 99_999, 1e6, 1e9, 1e12,
+  ];
+  samples.forEach((v) => {
+    it(`entrée ${String(v)} → tous les champs sont des entiers`, () => {
+      const r = computeCommission(v);
+      expect(Number.isInteger(r.agreedAmount)).toBe(true);
+      expect(Number.isInteger(r.brandFee)).toBe(true);
+      expect(Number.isInteger(r.creatorFee)).toBe(true);
+      expect(Number.isInteger(r.platformFee)).toBe(true);
+      expect(Number.isInteger(r.creatorAmount)).toBe(true);
+      expect(Number.isInteger(r.brandSubtotalFCFA)).toBe(true);
+      expect(Number.isInteger(r.brandTotalFCFA)).toBe(true);
+    });
+  });
+});

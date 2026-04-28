@@ -35,7 +35,10 @@ export interface CommissionBreakdown {
  * Le montant est borné au minimum (MIN_AGREED_AMOUNT_FCFA) et arrondi à l'entier.
  */
 export function computeCommission(agreedAmount: number): CommissionBreakdown {
-  const safeAgreedAmount = Math.max(MIN_AGREED_AMOUNT_FCFA, Math.round(agreedAmount));
+  // Sanitize : NaN, Infinity, négatif → bridé au minimum
+  const numeric =
+    typeof agreedAmount === "number" && Number.isFinite(agreedAmount) ? agreedAmount : 0;
+  const safeAgreedAmount = Math.max(MIN_AGREED_AMOUNT_FCFA, Math.round(numeric));
   const brandFee = Math.round(safeAgreedAmount * BRAND_FEE_PERCENTAGE);
   const creatorFee = Math.round(safeAgreedAmount * CREATOR_FEE_PERCENTAGE);
   const platformFee = Math.round(safeAgreedAmount * PLATFORM_FEE_PERCENTAGE);
