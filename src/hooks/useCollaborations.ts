@@ -56,7 +56,10 @@ export interface Collaboration {
   } | null;
 }
 
-const PLATFORM_FEE_PERCENTAGE = 0.10; // 10%
+// Commission plateforme : 10% prélevés sur la marque (ajoutés au prix) + 5% prélevés sur le créateur (déduits du wallet)
+export const BRAND_FEE_PERCENTAGE = 0.10; // 10% ajoutés au montant payé par la marque
+export const CREATOR_FEE_PERCENTAGE = 0.05; // 5% déduits du créditement du créateur
+const PLATFORM_FEE_PERCENTAGE = BRAND_FEE_PERCENTAGE + CREATOR_FEE_PERCENTAGE; // total stocké en platform_fee
 
 export const useCollaborations = () => {
   const { user } = useAuth();
