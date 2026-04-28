@@ -868,7 +868,19 @@ const LoginForm = ({
     <div className="mt-4 text-center">
       <p className="text-muted-foreground text-sm">
         Pas encore de compte ?{" "}
-        <button onClick={onSwitchToSignup} className="text-gold font-medium hover:underline">
+        <button
+          onClick={() => {
+            // Block signup if invite gate is required and no code stored
+            const stored = typeof window !== "undefined" ? localStorage.getItem("invite_gate_code") : null;
+            if (!stored) {
+              // Try to detect requirement; if no code, redirect to gate
+              window.location.href = "/";
+              return;
+            }
+            onSwitchToSignup();
+          }}
+          className="text-gold font-medium hover:underline"
+        >
           S'inscrire
         </button>
       </p>
