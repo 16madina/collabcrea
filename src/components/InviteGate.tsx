@@ -55,12 +55,13 @@ const InviteGate = ({ children }: InviteGateProps) => {
 
     setValidating(true);
     try {
-      const { data: isValid, error: rpcError } = await supabase.rpc(
-        "validate_invite_code",
+      // Atomic claim: deactivates the code immediately so it can't be reused
+      const { data: claimed, error: rpcError } = await supabase.rpc(
+        "claim_invite_code",
         { p_code: normalized }
       );
       if (rpcError) throw rpcError;
-      if (!isValid) {
+      if (!claimed) {
         setError("Code invalide ou déjà utilisé");
         return;
       }
