@@ -146,6 +146,14 @@ const AdminWithdrawalsTab = () => {
 
       if (error) throw error;
 
+      // Mark the matching withdrawal transaction as completed
+      await supabase
+        .from("transactions")
+        .update({ status: "completed", updated_at: new Date().toISOString() })
+        .eq("reference", request.id)
+        .eq("type", "withdrawal")
+        .eq("status", "pending");
+
       await supabase.from("notifications").insert({
         user_id: request.user_id,
         title: "✅ Retrait effectué !",
