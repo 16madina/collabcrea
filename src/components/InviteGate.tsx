@@ -23,11 +23,20 @@ const InviteGate = ({ children }: InviteGateProps) => {
   const [validating, setValidating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Check localStorage on mount
+  // Check localStorage on mount + listen to external changes (e.g. "J'ai un code" button)
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) setUnlocked(true);
-    setChecked(true);
+    const sync = () => {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      setUnlocked(!!stored);
+      setChecked(true);
+    };
+    sync();
+    window.addEventListener("invite-gate-reset", sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener("invite-gate-reset", sync);
+      window.removeEventListener("storage", sync);
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
