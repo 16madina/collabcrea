@@ -160,8 +160,9 @@ export const useCollaborations = () => {
     conversationId?: string
   ) => {
     const safeAgreedAmount = Math.max(200, Math.round(agreedAmount));
+    // platform_fee = total commission (15%) ; creator_amount = 95% (5% prélevés sur créateur)
     const platformFee = Math.round(safeAgreedAmount * PLATFORM_FEE_PERCENTAGE);
-    const creatorAmount = safeAgreedAmount - platformFee;
+    const creatorAmount = safeAgreedAmount - Math.round(safeAgreedAmount * CREATOR_FEE_PERCENTAGE);
 
     try {
       const { data, error } = await supabase
