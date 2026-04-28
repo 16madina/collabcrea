@@ -424,6 +424,18 @@ const Auth = () => {
       if (error) throw error;
 
       if (data.user) {
+        // Consume invite code (atomic) — must be done while session exists
+        if (inviteRequired) {
+          const { data: consumed, error: consumeErr } = await supabase.rpc(
+            "consume_invite_code",
+            { p_code: formData.inviteCode.trim().toUpperCase() }
+          );
+          if (consumeErr || !consumed) {
+            console.error("Failed to consume invite code:", consumeErr);
+            // Don't block signup — code was validated just before
+          }
+        }
+
         // Upload avatar
         const avatarUrl = await uploadAvatar(data.user.id);
 
