@@ -482,9 +482,11 @@ const AdminVerificationTab = () => {
 
   const getDocumentUrl = async (path: string): Promise<string | null> => {
     try {
+      const resolvedPath = normalizeDocumentPath(path);
+      if (!resolvedPath) return path.startsWith("http") ? path : null;
       const { data } = await supabase.storage
         .from("identity-documents")
-        .createSignedUrl(path, 3600);
+        .createSignedUrl(resolvedPath, 3600);
       return data?.signedUrl || null;
     } catch (error) {
       console.error("Error getting signed URL:", error);
