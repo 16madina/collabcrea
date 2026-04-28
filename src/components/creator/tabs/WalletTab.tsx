@@ -43,7 +43,10 @@ const getTransactionIcon = (type: Transaction["type"]) => {
 const getTransactionLabel = (tx: Transaction) => {
   switch (tx.type) {
     case "release": return "Paiement reçu";
-    case "withdrawal": return "Retrait";
+    case "withdrawal":
+      if (tx.status === "pending") return "Retrait en cours";
+      if (tx.status === "cancelled") return "Retrait annulé";
+      return "Retrait effectué";
     case "deposit": return "Dépôt";
     case "refund": return "Remboursement";
     case "escrow": return tx.status === "pending" ? "En cours de traitement" : "Séquestre validé";
