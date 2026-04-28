@@ -70,6 +70,12 @@ const InviteGate = ({ children }: InviteGateProps) => {
     }
   };
 
+  // Bypass: on auth page we never want to gate (avoid blank screens during loading)
+  const isAuthRoute = typeof window !== "undefined" && window.location.pathname.startsWith("/auth");
+  if (isAuthRoute) {
+    return <>{children}</>;
+  }
+
   // Wait for initial checks
   if (!checked || authLoading || settingLoading) {
     return (
@@ -79,9 +85,8 @@ const InviteGate = ({ children }: InviteGateProps) => {
     );
   }
 
-  // Bypass: system disabled, already unlocked, already logged in, or on auth page
-  const isAuthRoute = typeof window !== "undefined" && window.location.pathname.startsWith("/auth");
-  if (!required || unlocked || user || isAuthRoute) {
+  // Bypass: system disabled, already unlocked, or already logged in
+  if (!required || unlocked || user) {
     return <>{children}</>;
   }
 
