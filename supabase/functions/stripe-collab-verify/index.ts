@@ -86,7 +86,7 @@ serve(async (req) => {
         amount: collab.agreed_amount,
         fee: collab.platform_fee,
         net_amount: collab.creator_amount,
-        description: `Paiement Stripe - ${session.id}`,
+        description: `Paiement Stripe - ${reference}`,
         reference,
       });
     }
