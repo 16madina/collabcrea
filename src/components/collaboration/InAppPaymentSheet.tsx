@@ -9,7 +9,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, Lock, Shield, CreditCard } from "lucide-react";
+import { Loader2, Lock, Shield, CreditCard, AlertCircle, Check, ChevronRight } from "lucide-react";
 import { Collaboration } from "@/hooks/useCollaborations";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
