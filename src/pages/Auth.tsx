@@ -186,6 +186,12 @@ const Auth = () => {
   const navigate = useNavigate();
   const { user, role: userRole, loading: authLoading, signIn } = useAuth();
   const { required: inviteRequired } = useInviteCodesRequired();
+  const openInviteGate = () => {
+    localStorage.removeItem("invite_gate_code");
+    sessionStorage.setItem("invite_gate_force_prompt", "true");
+    window.dispatchEvent(new Event("invite-gate-reset"));
+    navigate("/");
+  };
   
   const [mode, setMode] = useState<AuthMode>("choice");
   const [step, setStep] = useState<SignupStep>(1);
@@ -702,12 +708,7 @@ const Auth = () => {
                 )}
                 {inviteRequired && (
                   <Button
-                    onClick={() => {
-                      localStorage.removeItem("invite_gate_code");
-                      // Notify InviteGate to re-evaluate without a full page reload
-                      window.dispatchEvent(new Event("invite-gate-reset"));
-                      navigate("/");
-                    }}
+                    onClick={openInviteGate}
                     className="w-full bg-gold/15 hover:bg-gold/25 border border-gold/40 text-gold font-semibold py-5 rounded-xl"
                   >
                     <Sparkles className="w-5 h-5 mr-2" />
