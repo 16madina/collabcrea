@@ -54,6 +54,20 @@ interface PendingVerification {
   bio: string | null;
 }
 
+// Normalise un chemin de document : accepte un path brut ou une URL publique/signée
+// Retourne le chemin relatif au bucket identity-documents
+const normalizeDocumentPath = (raw: string | null): string | null => {
+  if (!raw) return null;
+  if (!raw.startsWith("http")) return raw;
+  const match = raw.match(/identity-documents\/(.+?)(\?|$)/);
+  return match ? decodeURIComponent(match[1]) : null;
+};
+
+const isPdfPath = (path: string | null): boolean => {
+  if (!path) return false;
+  return path.toLowerCase().split("?")[0].endsWith(".pdf");
+};
+
 // Component to preview identity document with loading state
 const IdentityDocumentPreview = ({ 
   documentPath, 
@@ -64,10 +78,12 @@ const IdentityDocumentPreview = ({
 }) => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const isPdf = isPdfPath(documentPath);
 
   useEffect(() => {
     const loadImage = async () => {
-      if (!documentPath) {
+      const resolvedPath = normalizeDocumentPath(documentPath);
+      if (!resolvedPath) {
         setLoading(false);
         return;
       }
@@ -75,7 +91,7 @@ const IdentityDocumentPreview = ({
       try {
         const { data } = await supabase.storage
           .from("identity-documents")
-          .createSignedUrl(documentPath, 3600);
+          .createSignedUrl(resolvedPath, 3600);
         setImageUrl(data?.signedUrl || null);
       } catch (error) {
         console.error("Error loading document:", error);
@@ -92,6 +108,22 @@ const IdentityDocumentPreview = ({
       <div className="aspect-square rounded-xl bg-muted flex items-center justify-center border-2 border-border">
         <div className="text-center text-muted-foreground">
           <div className="animate-pulse">Chargement...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // PDF: show clickable placeholder (cannot render in <img>)
+  if (isPdf && imageUrl) {
+    return (
+      <div
+        className="aspect-square rounded-xl bg-muted flex items-center justify-center border-2 border-border cursor-pointer hover:border-gold transition-colors"
+        onClick={onOpenDocument}
+      >
+        <div className="text-center text-muted-foreground p-4">
+          <FileCheck className="w-12 h-12 mx-auto mb-2 text-gold" />
+          <p className="text-xs font-semibold text-foreground">Document PDF</p>
+          <p className="text-[10px] mt-1">Cliquez pour ouvrir</p>
         </div>
       </div>
     );
@@ -450,9 +482,11 @@ const AdminVerificationTab = () => {
 
   const getDocumentUrl = async (path: string): Promise<string | null> => {
     try {
+      const resolvedPath = normalizeDocumentPath(path);
+      if (!resolvedPath) return path.startsWith("http") ? path : null;
       const { data } = await supabase.storage
         .from("identity-documents")
-        .createSignedUrl(path, 3600);
+        .createSignedUrl(resolvedPath, 3600);
       return data?.signedUrl || null;
     } catch (error) {
       console.error("Error getting signed URL:", error);
