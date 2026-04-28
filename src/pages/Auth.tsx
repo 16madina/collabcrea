@@ -704,8 +704,9 @@ const Auth = () => {
                   <Button
                     onClick={() => {
                       localStorage.removeItem("invite_gate_code");
-                      // Full reload so InviteGate re-evaluates state and shows the prompt
-                      window.location.href = "/";
+                      // Notify InviteGate to re-evaluate without a full page reload
+                      window.dispatchEvent(new Event("invite-gate-reset"));
+                      navigate("/");
                     }}
                     className="w-full bg-gold/15 hover:bg-gold/25 border border-gold/40 text-gold font-semibold py-5 rounded-xl"
                   >
