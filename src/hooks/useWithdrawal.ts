@@ -84,15 +84,19 @@ export const useWithdrawal = () => {
       }
 
       // Create withdrawal request
-      const { error } = await supabase.from("withdrawal_requests").insert({
-        user_id: user.id,
-        wallet_id: walletId,
-        amount,
-        method: "bank",
-        bank_name: details.bank_name,
-        account_number: details.account_number,
-        account_holder: details.account_holder,
-      });
+      const { data: withdrawalRow, error } = await supabase
+        .from("withdrawal_requests")
+        .insert({
+          user_id: user.id,
+          wallet_id: walletId,
+          amount,
+          method: "bank",
+          bank_name: details.bank_name,
+          account_number: details.account_number,
+          account_holder: details.account_holder,
+        })
+        .select("id")
+        .single();
 
       if (error) throw error;
 
@@ -104,6 +108,21 @@ export const useWithdrawal = () => {
           pending_balance: amount,
         })
         .eq("id", walletId);
+
+      // Track in transaction history (pending until admin confirms transfer)
+      await supabase.from("transactions").insert({
+        user_id: user.id,
+        wallet_id: walletId,
+        type: "withdrawal",
+        status: "pending",
+        amount,
+        fee: 0,
+        net_amount: amount,
+        withdrawal_method: "bank",
+        withdrawal_details: details as any,
+        description: `Retrait bancaire - ${details.bank_name}`,
+        reference: withdrawalRow?.id ?? null,
+      });
 
       toast.success("Demande de retrait envoyée !");
       fetchWithdrawalRequests();
