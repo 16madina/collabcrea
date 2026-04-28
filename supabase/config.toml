@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.stripe-publishable-key]
 verify_jwt = false
+
+[functions.send-identity-rejection-email]
+verify_jwt = false
