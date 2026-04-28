@@ -315,6 +315,14 @@ const Auth = () => {
       if (!formData.acceptTerms) {
         newErrors.acceptTerms = "Vous devez accepter les conditions";
       }
+      if (inviteRequired) {
+        const code = formData.inviteCode.trim().toUpperCase();
+        if (!code) {
+          newErrors.inviteCode = "Code d'invitation requis";
+        } else if (!/^COLLAB-[A-Z0-9]{4}$/.test(code)) {
+          newErrors.inviteCode = "Format invalide (ex: COLLAB-X7K9)";
+        }
+      }
     }
 
     setErrors(newErrors);
