@@ -159,10 +159,12 @@ const InAppPaymentSheet = ({
   const selectedCard = cardBrand ? cardOptions.find((c) => c.id === cardBrand) : null;
 
   const amountFCFA = collaboration.agreed_amount;
+  const brandFeeFCFA = Math.round(amountFCFA * 0.10); // commission marque 10%
+  const totalFCFA = amountFCFA + brandFeeFCFA;
   const approxAmount =
     currency === "eur"
-      ? (amountFCFA / 655.957) * 1.05
-      : (amountFCFA / 600) * 1.05;
+      ? (totalFCFA / 655.957) * 1.05
+      : (totalFCFA / 600) * 1.05;
   const formattedApprox = new Intl.NumberFormat("fr-FR", {
     style: "currency",
     currency: currency.toUpperCase(),
@@ -434,7 +436,7 @@ const InAppPaymentSheet = ({
           {/* Conversion breakdown */}
           {(() => {
             const baseConverted =
-              currency === "eur" ? amountFCFA / 655.957 : amountFCFA / 600;
+              currency === "eur" ? totalFCFA / 655.957 : totalFCFA / 600;
             const fees = approxAmount - baseConverted;
             const fmt = (v: number) =>
               new Intl.NumberFormat("fr-FR", {
@@ -452,6 +454,14 @@ const InAppPaymentSheet = ({
                   <span className="font-semibold text-foreground">
                     {formatFCFA(amountFCFA)}
                   </span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground">Commission plateforme (10%)</span>
+                  <span className="text-foreground">+ {formatFCFA(brandFeeFCFA)}</span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground">Sous-total</span>
+                  <span className="text-foreground">{formatFCFA(totalFCFA)}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-muted-foreground">

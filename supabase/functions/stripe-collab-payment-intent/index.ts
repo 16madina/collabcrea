@@ -15,10 +15,12 @@ const log = (step: string, details?: unknown) => {
 const FCFA_TO_EUR = 1 / 655.957;
 const FCFA_TO_USD = 1 / 600;
 const PAYIN_MARKUP = 0.05;
+const BRAND_FEE = 0.10; // 10% commission plateforme prélevée sur la marque
 
 const convertFCFA = (amountFCFA: number, currency: "eur" | "usd") => {
   const rate = currency === "eur" ? FCFA_TO_EUR : FCFA_TO_USD;
-  const base = amountFCFA * rate;
+  const withBrandFee = amountFCFA * (1 + BRAND_FEE);
+  const base = withBrandFee * rate;
   return Math.max(50, Math.round(base * (1 + PAYIN_MARKUP) * 100));
 };
 

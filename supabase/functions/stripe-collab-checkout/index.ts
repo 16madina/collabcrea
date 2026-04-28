@@ -16,10 +16,13 @@ const log = (step: string, details?: unknown) => {
 const FCFA_TO_EUR = 1 / 655.957;
 const FCFA_TO_USD = 1 / 600; // approximate
 const PAYIN_MARKUP = 0.05; // 5% markup to cover Stripe fees + currency conversion
+const BRAND_FEE = 0.10; // 10% commission plateforme prélevée sur la marque
 
 const convertFCFA = (amountFCFA: number, currency: "eur" | "usd") => {
   const rate = currency === "eur" ? FCFA_TO_EUR : FCFA_TO_USD;
-  const base = amountFCFA * rate;
+  // Add brand commission (10%) then Stripe markup (5%)
+  const withBrandFee = amountFCFA * (1 + BRAND_FEE);
+  const base = withBrandFee * rate;
   const withMarkup = base * (1 + PAYIN_MARKUP);
   // Stripe expects amounts in minor units (cents)
   return Math.max(50, Math.round(withMarkup * 100));

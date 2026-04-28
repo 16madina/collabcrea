@@ -56,7 +56,10 @@ export interface Collaboration {
   } | null;
 }
 
-const PLATFORM_FEE_PERCENTAGE = 0.10; // 10%
+// Commission plateforme : 10% prélevés sur la marque (ajoutés au prix) + 5% prélevés sur le créateur (déduits du wallet)
+export const BRAND_FEE_PERCENTAGE = 0.10; // 10% ajoutés au montant payé par la marque
+export const CREATOR_FEE_PERCENTAGE = 0.05; // 5% déduits du créditement du créateur
+const PLATFORM_FEE_PERCENTAGE = BRAND_FEE_PERCENTAGE + CREATOR_FEE_PERCENTAGE; // total stocké en platform_fee
 
 export const useCollaborations = () => {
   const { user } = useAuth();
@@ -157,8 +160,9 @@ export const useCollaborations = () => {
     conversationId?: string
   ) => {
     const safeAgreedAmount = Math.max(200, Math.round(agreedAmount));
+    // platform_fee = total commission (15%) ; creator_amount = 95% (5% prélevés sur créateur)
     const platformFee = Math.round(safeAgreedAmount * PLATFORM_FEE_PERCENTAGE);
-    const creatorAmount = safeAgreedAmount - platformFee;
+    const creatorAmount = safeAgreedAmount - Math.round(safeAgreedAmount * CREATOR_FEE_PERCENTAGE);
 
     try {
       const { data, error } = await supabase
