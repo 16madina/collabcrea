@@ -242,6 +242,14 @@ Deno.serve(async (req) => {
             .eq("id", withdrawal.wallet_id);
         }
 
+        // Mark the matching withdrawal transaction as completed
+        await supabaseAdmin
+          .from("transactions")
+          .update({ status: "completed", updated_at: new Date().toISOString() })
+          .eq("reference", withdrawal_id)
+          .eq("type", "withdrawal")
+          .eq("status", "pending");
+
         // Notify user
         await supabaseAdmin.from("notifications").insert({
           user_id: withdrawal.user_id,
