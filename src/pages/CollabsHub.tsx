@@ -22,26 +22,18 @@ const CollabsHub = () => {
   const isCreator = window.location.pathname.includes("/creator");
   const userRole = isCreator ? "creator" : "brand";
 
-  // Handle PayDunya payment callback
+  // Handle Stripe payment callback
   useEffect(() => {
     const payment = searchParams.get("payment");
     const collaborationId = searchParams.get("collaboration");
     const provider = searchParams.get("provider");
-    const token = searchParams.get("token");
-    const rawReference = searchParams.get("reference");
+    const sessionId = searchParams.get("session_id");
 
-    const normalizedReference = (() => {
-      if (!rawReference) return null;
-      const decoded = decodeURIComponent(rawReference).trim();
-      const nested = decoded.match(/[?&]reference=([^&]+)/);
-      return (nested?.[1] ?? decoded).split("?")[0].split("&")[0];
-    })();
-    
-    if (payment === "success" && collaborationId && (provider === "paydunya" || !!token)) {
+    if (payment === "success" && collaborationId && provider === "stripe" && sessionId) {
       const verifyPayment = async () => {
         try {
-          const { data, error } = await supabase.functions.invoke("paydunya-verify-payment", {
-            body: { token, reference: normalizedReference, collaborationId },
+          const { data, error } = await supabase.functions.invoke("stripe-collab-verify", {
+            body: { sessionId, collaborationId },
           });
 
           if (error) throw error;
