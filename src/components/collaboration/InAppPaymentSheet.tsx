@@ -142,7 +142,9 @@ const InAppPaymentSheet = ({
   onSuccess,
 }: InAppPaymentSheetProps) => {
   const [currency, setCurrency] = useState<"eur" | "usd">("eur");
-  const [cardBrand, setCardBrand] = useState<"wave" | "orange" | "djamo" | "other">("wave");
+  const [cardBrand, setCardBrand] = useState<"wave" | "orange" | "djamo" | "other" | null>(null);
+  const [cardConfirmed, setCardConfirmed] = useState(false);
+  const [cardError, setCardError] = useState<string | null>(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [stripeInstance, setStripeInstance] = useState<Promise<StripeJS | null> | null>(null);
   const [loading, setLoading] = useState(false);
@@ -154,7 +156,7 @@ const InAppPaymentSheet = ({
     { id: "djamo" as const, label: "Djamo Visa", logo: djamoLogo },
     { id: "other" as const, label: "Autre carte", logo: null },
   ];
-  const selectedCard = cardOptions.find((c) => c.id === cardBrand)!;
+  const selectedCard = cardBrand ? cardOptions.find((c) => c.id === cardBrand) : null;
 
   const amountFCFA = collaboration.agreed_amount;
   const approxAmount =
