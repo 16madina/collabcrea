@@ -603,33 +603,11 @@ const AdminWithdrawalsTab = () => {
               {selectedRequest.status === "pending" && !showCompletionFlow && (
                 <div className="space-y-3 pt-4 border-t">
                   {selectedRequest.method === "mobile_money" && (
-                    <>
-                      <p className="text-xs text-muted-foreground">
-                        ⚡ Envoyez automatiquement via PayDunya ou effectuez le virement manuellement.
-                      </p>
-                      <Button
-                        variant="gold"
-                        className="w-full text-xs"
-                        onClick={() => handleAutoPayout(selectedRequest)}
-                        disabled={processing || payoutProcessing === selectedRequest.id}
-                      >
-                        {payoutProcessing === selectedRequest.id ? (
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        ) : (
-                          <Zap className="w-4 h-4 mr-2" />
-                        )}
-                        Payout automatique PayDunya
-                      </Button>
-                      <div className="relative">
-                        <div className="absolute inset-0 flex items-center">
-                          <span className="w-full border-t" />
-                        </div>
-                        <div className="relative flex justify-center text-xs uppercase">
-                          <span className="bg-background px-2 text-muted-foreground">ou</span>
-                        </div>
-                      </div>
-                    </>
+                    <p className="text-xs text-muted-foreground">
+                      📱 Effectuez le virement manuellement via Wave / Orange Money vers le numéro indiqué, puis confirmez avec la preuve.
+                    </p>
                   )}
+
 
                   {selectedRequest.method === "paypal" && (
                     <>
