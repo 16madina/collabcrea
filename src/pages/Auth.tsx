@@ -697,8 +697,21 @@ const Auth = () => {
                 )}
                 {inviteRequired && !localStorage.getItem("invite_gate_code") && (
                   <p className="text-xs text-center text-muted-foreground px-4">
-                    🔒 La création de compte nécessite un code d'invitation. Entrez-le sur l'écran d'accueil.
+                    🔒 La création de compte nécessite un code d'invitation.
                   </p>
+                )}
+                {inviteRequired && (
+                  <Button
+                    onClick={() => {
+                      localStorage.removeItem("invite_gate_code");
+                      navigate("/");
+                    }}
+                    variant="ghost"
+                    className="w-full text-muted-foreground hover:text-gold font-medium text-sm"
+                  >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    J'ai un code d'invitation
+                  </Button>
                 )}
               </motion.div>
             </motion.div>
