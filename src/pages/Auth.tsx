@@ -26,6 +26,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { useInviteCodesRequired } from "@/hooks/useInviteCodesRequired";
 import logoCollabCrea from "@/assets/logo-collabcrea.png";
 import authBackground from "@/assets/auth-background.jpg";
 import authStep1Bg from "@/assets/auth-step1-bg.jpg";
@@ -151,6 +152,7 @@ interface SignupFormData {
   password: string;
   confirmPassword: string;
   acceptTerms: boolean;
+  inviteCode: string;
 }
 
 const initialFormData: SignupFormData = {
@@ -177,11 +179,13 @@ const initialFormData: SignupFormData = {
   password: "",
   confirmPassword: "",
   acceptTerms: false,
+  inviteCode: "",
 };
 
 const Auth = () => {
   const navigate = useNavigate();
   const { user, role: userRole, loading: authLoading, signIn } = useAuth();
+  const { required: inviteRequired } = useInviteCodesRequired();
   
   const [mode, setMode] = useState<AuthMode>("choice");
   const [step, setStep] = useState<SignupStep>(1);
@@ -311,6 +315,14 @@ const Auth = () => {
       if (!formData.acceptTerms) {
         newErrors.acceptTerms = "Vous devez accepter les conditions";
       }
+      if (inviteRequired) {
+        const code = formData.inviteCode.trim().toUpperCase();
+        if (!code) {
+          newErrors.inviteCode = "Code d'invitation requis";
+        } else if (!/^COLLAB-[A-Z0-9]{4}$/.test(code)) {
+          newErrors.inviteCode = "Format invalide (ex: COLLAB-X7K9)";
+        }
+      }
     }
 
     setErrors(newErrors);
@@ -386,6 +398,19 @@ const Auth = () => {
     setIsSubmitting(true);
 
     try {
+      // Pre-validate invite code if required
+      if (inviteRequired) {
+        const { data: isValid, error: validateError } = await supabase.rpc(
+          "validate_invite_code",
+          { p_code: formData.inviteCode.trim().toUpperCase() }
+        );
+        if (validateError || !isValid) {
+          setErrors({ inviteCode: "Code invalide ou déjà utilisé" });
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
       const redirectUrl = `${window.location.origin}/`;
 
       const { data, error } = await supabase.auth.signUp({
@@ -399,6 +424,18 @@ const Auth = () => {
       if (error) throw error;
 
       if (data.user) {
+        // Consume invite code (atomic) — must be done while session exists
+        if (inviteRequired) {
+          const { data: consumed, error: consumeErr } = await supabase.rpc(
+            "consume_invite_code",
+            { p_code: formData.inviteCode.trim().toUpperCase() }
+          );
+          if (consumeErr || !consumed) {
+            console.error("Failed to consume invite code:", consumeErr);
+            // Don't block signup — code was validated just before
+          }
+        }
+
         // Upload avatar
         const avatarUrl = await uploadAvatar(data.user.id);
 
@@ -682,6 +719,7 @@ const Auth = () => {
                 setStep(1);
               }}
               onOpenLegal={openLegalDialog}
+              inviteRequired={inviteRequired}
             />
           )}
         </AnimatePresence>
@@ -840,6 +878,7 @@ interface SignupFormProps {
   onSubmit: () => void;
   onSwitchToLogin: () => void;
   onOpenLegal: (slug: string) => void;
+  inviteRequired: boolean;
 }
 
 const SignupForm = ({
@@ -858,6 +897,7 @@ const SignupForm = ({
   onSubmit,
   onSwitchToLogin,
   onOpenLegal,
+  inviteRequired,
 }: SignupFormProps) => (
   <motion.div
     initial={{ opacity: 0, x: 20 }}
@@ -930,6 +970,7 @@ const SignupForm = ({
             showConfirmPassword={showConfirmPassword}
             setShowConfirmPassword={setShowConfirmPassword}
             onOpenLegal={onOpenLegal}
+            inviteRequired={inviteRequired}
           />
         )}
       </AnimatePresence>
@@ -1404,6 +1445,7 @@ interface StepFourProps {
   showConfirmPassword: boolean;
   setShowConfirmPassword: (v: boolean) => void;
   onOpenLegal: (slug: string) => void;
+  inviteRequired: boolean;
 }
 
 const StepFour = ({
@@ -1415,6 +1457,7 @@ const StepFour = ({
   showConfirmPassword,
   setShowConfirmPassword,
   onOpenLegal,
+  inviteRequired,
 }: StepFourProps) => (
   <motion.div
     initial={{ opacity: 0, x: 20 }}
@@ -1426,6 +1469,26 @@ const StepFour = ({
       <h2 className="font-display text-2xl font-bold mb-2">Dernière étape</h2>
       <p className="text-muted-foreground text-sm">Créez vos identifiants</p>
     </div>
+
+    {inviteRequired && (
+      <div className="space-y-2 p-4 rounded-xl border border-gold/30 bg-gold/5">
+        <Label className="flex items-center gap-2">
+          🎟️ Code d'invitation *
+        </Label>
+        <Input
+          type="text"
+          value={formData.inviteCode}
+          onChange={(e) => updateFormData("inviteCode", e.target.value.toUpperCase())}
+          placeholder="COLLAB-XXXX"
+          maxLength={11}
+          className={`h-14 bg-muted/50 border rounded-xl uppercase tracking-wider font-mono text-center ${errors.inviteCode ? "border-destructive" : "border-border focus:border-gold"}`}
+        />
+        <p className="text-xs text-muted-foreground">
+          Demandez votre code d'accès en MP sur Snap
+        </p>
+        {errors.inviteCode && <p className="text-destructive text-xs">{errors.inviteCode}</p>}
+      </div>
+    )}
 
     <div className="space-y-2">
       <Label>Email *</Label>
