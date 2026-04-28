@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
+import PushPermissionSheet from "@/components/PushPermissionSheet";
 import SplashScreen from "@/components/SplashScreen";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
@@ -62,6 +63,7 @@ const AppContent = () => {
         <SplashScreen onComplete={handleSplashComplete} />
       )}
       <PushNotificationInitializer />
+      <PushPermissionSheet />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Landing />} />
