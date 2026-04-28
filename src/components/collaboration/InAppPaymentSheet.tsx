@@ -324,31 +324,33 @@ const InAppPaymentSheet = ({
           {/* Card brand selector */}
           <div className="glass rounded-xl p-4 space-y-3">
             <p className="text-sm font-medium text-foreground">Choisissez votre carte</p>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {cardOptions.map((opt) => (
                 <button
                   key={opt.id}
                   type="button"
                   onClick={() => setCardBrand(opt.id)}
-                  className={`flex flex-col items-center gap-1 rounded-lg p-2 border-2 transition-all ${
+                  className={`flex flex-col items-center gap-2 rounded-xl p-3 border-2 transition-all ${
                     cardBrand === opt.id
-                      ? "border-gold bg-gold/10"
-                      : "border-transparent bg-background/40 hover:bg-background/60"
+                      ? "border-gold bg-gold/10 shadow-lg"
+                      : "border-border/40 bg-background/40 hover:bg-background/60"
                   }`}
                 >
                   {opt.logo ? (
-                    <img
-                      src={opt.logo}
-                      alt={opt.label}
-                      loading="lazy"
-                      className="h-8 w-8 object-contain"
-                    />
+                    <div className="h-14 w-full rounded-lg bg-white flex items-center justify-center p-2 overflow-hidden">
+                      <img
+                        src={opt.logo}
+                        alt={opt.label}
+                        loading="lazy"
+                        className="max-h-full max-w-full object-contain"
+                      />
+                    </div>
                   ) : (
-                    <div className="h-8 w-8 rounded-md bg-gold/10 flex items-center justify-center">
-                      <CreditCard className="h-4 w-4 text-gold" />
+                    <div className="h-14 w-full rounded-lg bg-gold/10 flex items-center justify-center">
+                      <CreditCard className="h-6 w-6 text-gold" />
                     </div>
                   )}
-                  <p className="text-[9px] text-muted-foreground text-center leading-tight">
+                  <p className="text-xs font-medium text-foreground text-center leading-tight">
                     {opt.label}
                   </p>
                 </button>
