@@ -192,7 +192,12 @@ const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState<SignupFormData>(initialFormData);
+  const [formData, setFormData] = useState<SignupFormData>(() => {
+    const storedCode = typeof window !== "undefined"
+      ? localStorage.getItem("invite_gate_code") || ""
+      : "";
+    return { ...initialFormData, inviteCode: storedCode };
+  });
   const [errors, setErrors] = useState<Partial<Record<keyof SignupFormData, string>>>({});
 
   // Login form state
@@ -433,6 +438,9 @@ const Auth = () => {
           if (consumeErr || !consumed) {
             console.error("Failed to consume invite code:", consumeErr);
             // Don't block signup — code was validated just before
+          } else {
+            // Clear the gate-stored code so it's not reused
+            localStorage.removeItem("invite_gate_code");
           }
         }
 
