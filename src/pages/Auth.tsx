@@ -438,6 +438,9 @@ const Auth = () => {
           if (consumeErr || !consumed) {
             console.error("Failed to consume invite code:", consumeErr);
             // Don't block signup — code was validated just before
+          } else {
+            // Clear the gate-stored code so it's not reused
+            localStorage.removeItem("invite_gate_code");
           }
         }
 
