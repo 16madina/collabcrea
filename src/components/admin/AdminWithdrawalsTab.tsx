@@ -604,11 +604,56 @@ const AdminWithdrawalsTab = () => {
               {/* Actions when not in completion flow */}
               {selectedRequest.status === "pending" && !showCompletionFlow && (
                 <div className="space-y-3 pt-4 border-t">
-                  {selectedRequest.method === "mobile_money" && (
-                    <p className="text-xs text-muted-foreground">
-                      📱 Effectuez le virement manuellement via Wave / Orange Money vers le numéro indiqué, puis confirmez avec la preuve.
+                  {/* Mode d'emploi du dépôt — visible pour toutes les méthodes */}
+                  <div className="rounded-lg border border-gold/30 bg-gold/5 p-3 space-y-2">
+                    <p className="text-xs font-semibold text-gold uppercase tracking-wide">
+                      📋 Comment effectuer le dépôt
                     </p>
-                  )}
+                    {selectedRequest.method === "mobile_money" && (
+                      <ol className="text-xs text-muted-foreground space-y-1.5 list-decimal list-inside">
+                        <li>
+                          Ouvrez votre application <span className="font-medium text-foreground">{selectedRequest.mobile_provider || "Mobile Money"}</span>.
+                        </li>
+                        <li>
+                          Envoyez <span className="font-semibold text-foreground">{selectedRequest.amount.toLocaleString("fr-FR")} FCFA</span> au numéro <span className="font-mono font-semibold text-foreground">{selectedRequest.mobile_number}</span>.
+                        </li>
+                        <li>
+                          Bénéficiaire : <span className="font-medium text-foreground">{selectedRequest.account_holder}</span>.
+                        </li>
+                        <li>Capturez le reçu de confirmation puis cliquez sur « Marquer comme effectué ».</li>
+                      </ol>
+                    )}
+                    {selectedRequest.method === "bank" && (
+                      <ol className="text-xs text-muted-foreground space-y-1.5 list-decimal list-inside">
+                        <li>
+                          Connectez-vous à votre interface bancaire ou rendez-vous en agence.
+                        </li>
+                        <li>
+                          Effectuez un virement de <span className="font-semibold text-foreground">{selectedRequest.amount.toLocaleString("fr-FR")} FCFA</span> vers&nbsp;:
+                          <div className="mt-1 ml-1 font-mono text-[11px] text-foreground bg-background/60 rounded p-2 space-y-0.5">
+                            <div>Banque : <span className="font-semibold">{selectedRequest.bank_name}</span></div>
+                            <div>N° compte : <span className="font-semibold">{selectedRequest.account_number}</span></div>
+                            <div>Titulaire : <span className="font-semibold">{selectedRequest.account_holder}</span></div>
+                          </div>
+                        </li>
+                        <li>Téléchargez le justificatif (capture ou PDF) et confirmez ici avec la preuve.</li>
+                      </ol>
+                    )}
+                    {selectedRequest.method === "paypal" && (
+                      <ol className="text-xs text-muted-foreground space-y-1.5 list-decimal list-inside">
+                        <li>
+                          <span className="font-medium text-foreground">Recommandé&nbsp;:</span> cliquez sur « Payout automatique PayPal » ci-dessous, le virement est traité instantanément.
+                        </li>
+                        <li>
+                          Manuel : envoyez <span className="font-semibold text-foreground">{selectedRequest.amount.toLocaleString("fr-FR")} FCFA</span> (équivalent {selectedRequest.payout_currency || "EUR"}) à <span className="font-mono text-foreground">{selectedRequest.paypal_email}</span> depuis votre compte PayPal.
+                        </li>
+                        <li>Capturez la confirmation PayPal et confirmez ici.</li>
+                      </ol>
+                    )}
+                    <p className="text-[11px] text-muted-foreground italic pt-1 border-t border-gold/20">
+                      💡 Le wallet du créateur sera automatiquement débité et il recevra une notification une fois le dépôt confirmé.
+                    </p>
+                  </div>
 
 
                   {selectedRequest.method === "paypal" && (
