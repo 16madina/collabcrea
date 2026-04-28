@@ -830,11 +830,14 @@ const AdminVerificationTab = () => {
                   <Button
                     variant="default"
                     className="bg-accent hover:bg-accent/90"
-                    onClick={() => handleApprove(selectedUser)}
+                    onClick={() => {
+                      setApproveMessage(APPROVE_TEMPLATES[0].message);
+                      setShowApproveDialog(true);
+                    }}
                     disabled={isProcessing}
                   >
                     <CheckCircle className="w-4 h-4 mr-2" />
-                    {isProcessing ? "..." : "Approuver"}
+                    Approuver
                   </Button>
                 </div>
               </div>
