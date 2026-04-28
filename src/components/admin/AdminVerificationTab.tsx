@@ -346,6 +346,7 @@ const AdminVerificationTab = () => {
   const [rejectReason, setRejectReason] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [fullscreenSelfie, setFullscreenSelfie] = useState<{ urls: string[]; index: number } | null>(null);
+  const [documentViewer, setDocumentViewer] = useState<{ url: string; isPdf: boolean; fileName: string } | null>(null);
   const { toast } = useToast();
   const { user: currentUser } = useAuth();
 
