@@ -371,6 +371,10 @@ const Auth = () => {
       setFormData(initialFormData);
       setStep(1);
     } else {
+      // Going back to home: if invite gate is active, clear stored code so user re-enters it
+      if (inviteRequired) {
+        localStorage.removeItem("invite_gate_code");
+      }
       navigate("/");
     }
   };
