@@ -169,9 +169,16 @@ const InAppPaymentSheet = ({
     maximumFractionDigits: 2,
   }).format(approxAmount);
 
-  // Init Stripe + create PaymentIntent when sheet opens or currency changes
+  // Init Stripe + create PaymentIntent only after card brand confirmed
   useEffect(() => {
     if (!open) {
+      setClientSecret(null);
+      setCardConfirmed(false);
+      setCardBrand(null);
+      setCardError(null);
+      return;
+    }
+    if (!cardConfirmed) {
       setClientSecret(null);
       return;
     }
@@ -205,7 +212,7 @@ const InAppPaymentSheet = ({
     return () => {
       cancelled = true;
     };
-  }, [open, currency, collaboration.id]);
+  }, [open, currency, collaboration.id, cardConfirmed]);
 
   const elementsOptions = useMemo(
     () =>
