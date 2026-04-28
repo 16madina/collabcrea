@@ -398,6 +398,19 @@ const Auth = () => {
     setIsSubmitting(true);
 
     try {
+      // Pre-validate invite code if required
+      if (inviteRequired) {
+        const { data: isValid, error: validateError } = await supabase.rpc(
+          "validate_invite_code",
+          { p_code: formData.inviteCode.trim().toUpperCase() }
+        );
+        if (validateError || !isValid) {
+          setErrors({ inviteCode: "Code invalide ou déjà utilisé" });
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
       const redirectUrl = `${window.location.origin}/`;
 
       const { data, error } = await supabase.auth.signUp({
