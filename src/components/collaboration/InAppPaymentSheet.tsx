@@ -260,12 +260,14 @@ const InAppPaymentSheet = ({
               <span className="text-xs text-muted-foreground">Méthode</span>
               <div className="flex items-center gap-2">
                 {selectedCard.logo ? (
-                  <img
-                    src={selectedCard.logo}
-                    alt={selectedCard.label}
-                    loading="lazy"
-                    className="h-5 w-5 object-contain"
-                  />
+                  <div className="h-6 w-10 rounded bg-white flex items-center justify-center p-0.5">
+                    <img
+                      src={selectedCard.logo}
+                      alt={selectedCard.label}
+                      loading="lazy"
+                      className="max-h-full max-w-full object-contain"
+                    />
+                  </div>
                 ) : (
                   <CreditCard className="h-4 w-4 text-gold" />
                 )}
