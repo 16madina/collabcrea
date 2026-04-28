@@ -173,6 +173,16 @@ const InviteGate = ({ children }: InviteGateProps) => {
               et demande le tien 👻
             </p>
           </div>
+
+          <div className="mt-4 text-center">
+            <button
+              type="button"
+              onClick={() => (window.location.href = "/auth")}
+              className="text-xs text-muted-foreground hover:text-gold transition-colors underline underline-offset-4"
+            >
+              Déjà inscrit ? Se connecter
+            </button>
+          </div>
         </div>
       </motion.div>
     </div>
