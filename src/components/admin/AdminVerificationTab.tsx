@@ -346,6 +346,7 @@ const AdminVerificationTab = () => {
   const [rejectReason, setRejectReason] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [fullscreenSelfie, setFullscreenSelfie] = useState<{ urls: string[]; index: number } | null>(null);
+  const [documentViewer, setDocumentViewer] = useState<{ url: string; isPdf: boolean; fileName: string } | null>(null);
   const { toast } = useToast();
   const { user: currentUser } = useAuth();
 
@@ -494,10 +495,42 @@ const AdminVerificationTab = () => {
     }
   };
 
+  // Télécharge le fichier en blob (même origine via SDK Supabase) pour contourner
+  // les bloqueurs (uBlock/AdGuard) qui bloquent les URLs *.supabase.co directes.
   const openDocument = async (path: string) => {
-    const url = await getDocumentUrl(path);
-    if (url) {
-      window.open(url, "_blank");
+    try {
+      const resolvedPath = normalizeDocumentPath(path);
+      if (!resolvedPath) {
+        toast({ title: "Erreur", description: "Chemin du document invalide", variant: "destructive" });
+        return;
+      }
+      const isPdf = isPdfPath(resolvedPath);
+      const fileName = resolvedPath.split("/").pop() || (isPdf ? "document.pdf" : "document");
+
+      const { data, error } = await supabase.storage
+        .from("identity-documents")
+        .download(resolvedPath);
+
+      if (error || !data) {
+        // Fallback : ouvrir l'URL signée dans un nouvel onglet
+        const signed = await getDocumentUrl(path);
+        if (signed) {
+          window.open(signed, "_blank");
+        } else {
+          toast({ title: "Erreur", description: "Impossible de charger le document", variant: "destructive" });
+        }
+        return;
+      }
+
+      // Force le bon mime-type pour les PDF (certains uploads ont octet-stream)
+      const blob = isPdf && data.type !== "application/pdf"
+        ? new Blob([data], { type: "application/pdf" })
+        : data;
+      const blobUrl = URL.createObjectURL(blob);
+      setDocumentViewer({ url: blobUrl, isPdf, fileName });
+    } catch (error) {
+      console.error("Error opening document:", error);
+      toast({ title: "Erreur", description: "Impossible d'ouvrir le document", variant: "destructive" });
     }
   };
 
@@ -762,6 +795,60 @@ const AdminVerificationTab = () => {
           initialIndex={fullscreenSelfie.index}
           onClose={() => setFullscreenSelfie(null)}
         />
+      )}
+
+      {/* Document viewer (PDF/image) */}
+      {documentViewer && (
+        <div
+          className="fixed inset-0 z-[100] bg-background/95 flex flex-col"
+          onClick={() => {
+            URL.revokeObjectURL(documentViewer.url);
+            setDocumentViewer(null);
+          }}
+        >
+          <div
+            className="flex items-center justify-between p-3 border-b border-border bg-background"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="text-sm font-medium truncate">{documentViewer.fileName}</p>
+            <div className="flex items-center gap-2">
+              <a
+                href={documentViewer.url}
+                download={documentViewer.fileName}
+                className="inline-flex items-center justify-center rounded-md text-xs font-medium h-8 px-3 bg-gold text-background hover:bg-gold/90 transition-colors"
+              >
+                Télécharger
+              </a>
+              <button
+                onClick={() => {
+                  URL.revokeObjectURL(documentViewer.url);
+                  setDocumentViewer(null);
+                }}
+                className="w-8 h-8 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80"
+                aria-label="Fermer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+          <div className="flex-1 overflow-auto bg-muted" onClick={(e) => e.stopPropagation()}>
+            {documentViewer.isPdf ? (
+              <iframe
+                src={documentViewer.url}
+                title={documentViewer.fileName}
+                className="w-full h-full border-0"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center p-4">
+                <img
+                  src={documentViewer.url}
+                  alt={documentViewer.fileName}
+                  className="max-w-full max-h-full object-contain"
+                />
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
