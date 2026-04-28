@@ -443,14 +443,34 @@ const AdminVerificationTab = () => {
 
       if (updateError) throw updateError;
 
-      // Send rejection notification
+      const finalReason = rejectReason || "Votre document d'identité n'a pas pu être vérifié. Veuillez soumettre un nouveau document conforme.";
+
+      // Send in-app notification
       await supabase.from("notifications").insert({
         user_id: selectedUser.user_id,
         title: "Vérification refusée",
-        message: rejectReason || "Votre document d'identité n'a pas pu être vérifié. Veuillez soumettre un nouveau document conforme.",
+        message: finalReason,
         type: "error",
         created_by: currentUser.id,
       });
+
+      // Send push notification (with reason)
+      supabase.functions.invoke("send-push-notification", {
+        body: {
+          user_id: selectedUser.user_id,
+          title: "❌ Vérification d'identité refusée",
+          body: finalReason.length > 150 ? finalReason.slice(0, 147) + "..." : finalReason,
+          data: { route: "/creator/profile", tab: "identity" },
+        },
+      }).catch((e) => console.error("Push error:", e));
+
+      // Send rejection email (with reason + resubmit CTA)
+      supabase.functions.invoke("send-identity-rejection-email", {
+        body: {
+          user_id: selectedUser.user_id,
+          reason: finalReason,
+        },
+      }).catch((e) => console.error("Email error:", e));
 
       // Log the action
       await supabase.from("admin_logs").insert({
