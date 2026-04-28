@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Sheet,
   SheetContent,
@@ -9,10 +9,17 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, Lock, Shield, ExternalLink, CreditCard } from "lucide-react";
+import { Loader2, Lock, Shield, CreditCard } from "lucide-react";
 import { Collaboration } from "@/hooks/useCollaborations";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { loadStripe, Stripe as StripeJS } from "@stripe/stripe-js";
+import {
+  Elements,
+  PaymentElement,
+  useStripe,
+  useElements,
+} from "@stripe/react-stripe-js";
 
 interface InAppPaymentSheetProps {
   open: boolean;
@@ -24,17 +31,120 @@ interface InAppPaymentSheetProps {
 const formatFCFA = (amount: number) =>
   new Intl.NumberFormat("fr-FR").format(amount) + " FCFA";
 
+let stripePromiseCache: Promise<StripeJS | null> | null = null;
+const getStripe = (): Promise<StripeJS | null> => {
+  if (stripePromiseCache) return stripePromiseCache;
+  stripePromiseCache = (async () => {
+    const { data, error } = await supabase.functions.invoke("stripe-publishable-key");
+    if (error || !data?.publishableKey) throw new Error("Stripe key unavailable");
+    return loadStripe(data.publishableKey);
+  })();
+  return stripePromiseCache;
+};
+
+const PaymentForm = ({
+  collaborationId,
+  formattedApprox,
+  onSuccess,
+}: {
+  collaborationId: string;
+  formattedApprox: string;
+  onSuccess: () => void;
+}) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!stripe || !elements) return;
+    setSubmitting(true);
+
+    const { error: submitError } = await elements.submit();
+    if (submitError) {
+      toast.error(submitError.message || "Erreur de validation");
+      setSubmitting(false);
+      return;
+    }
+
+    const { error, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      redirect: "if_required",
+    });
+
+    if (error) {
+      toast.error(error.message || "Paiement échoué");
+      setSubmitting(false);
+      return;
+    }
+
+    if (paymentIntent?.status === "succeeded") {
+      try {
+        const { data, error: verifyErr } = await supabase.functions.invoke(
+          "stripe-collab-verify",
+          { body: { paymentIntentId: paymentIntent.id, collaborationId } }
+        );
+        if (verifyErr) throw verifyErr;
+        if (data?.verified) {
+          if (data?.nextStatus === "in_progress") {
+            toast.success("Paiement confirmé ! La collaboration est lancée.");
+          } else {
+            toast.success("Paiement confirmé ! Le contenu est en revue.");
+          }
+        } else {
+          toast.success("Paiement reçu, vérification en cours...");
+        }
+        onSuccess();
+      } catch (err) {
+        console.error("Verify error:", err);
+        toast.info("Paiement reçu, vérification en cours...");
+        onSuccess();
+      }
+    } else {
+      toast.info(`Statut: ${paymentIntent?.status || "inconnu"}`);
+    }
+    setSubmitting(false);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="glass rounded-xl p-4">
+        <PaymentElement options={{ layout: "tabs" }} />
+      </div>
+      <Button
+        type="submit"
+        variant="gold"
+        size="lg"
+        className="w-full"
+        disabled={!stripe || submitting}
+      >
+        {submitting ? (
+          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+        ) : (
+          <Lock className="w-5 h-5 mr-2" />
+        )}
+        Payer {formattedApprox}
+      </Button>
+      <p className="text-xs text-muted-foreground text-center">
+        Paiement sécurisé via Stripe • Vos données ne sont jamais stockées sur nos serveurs
+      </p>
+    </form>
+  );
+};
+
 const InAppPaymentSheet = ({
   open,
   onOpenChange,
   collaboration,
+  onSuccess,
 }: InAppPaymentSheetProps) => {
-  const [loading, setLoading] = useState(false);
   const [currency, setCurrency] = useState<"eur" | "usd">("eur");
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [stripeInstance, setStripeInstance] = useState<Promise<StripeJS | null> | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const amountFCFA = collaboration.agreed_amount;
-
-  // Approximate display conversion (real conversion happens server-side)
   const approxAmount =
     currency === "eur"
       ? (amountFCFA / 655.957) * 1.05
@@ -45,51 +155,80 @@ const InAppPaymentSheet = ({
     maximumFractionDigits: 2,
   }).format(approxAmount);
 
-  const handleStripeCheckout = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("stripe-collab-checkout", {
-        body: { collaborationId: collaboration.id, currency },
-      });
-
-      if (error) {
-        console.error("Checkout error:", error);
-        toast.error("Erreur lors de la création du paiement");
-        return;
-      }
-
-      if (data?.error) {
-        toast.error(data.error);
-        return;
-      }
-
-      if (data?.url) {
-        window.location.href = data.url;
-      } else {
-        toast.error("URL de paiement non reçue");
-      }
-    } catch (err) {
-      console.error("Payment error:", err);
-      toast.error("Erreur lors du paiement");
-    } finally {
-      setLoading(false);
+  // Init Stripe + create PaymentIntent when sheet opens or currency changes
+  useEffect(() => {
+    if (!open) {
+      setClientSecret(null);
+      return;
     }
-  };
+
+    let cancelled = false;
+    const init = async () => {
+      setLoading(true);
+      setError(null);
+      setClientSecret(null);
+      try {
+        const stripe = getStripe();
+        if (cancelled) return;
+        setStripeInstance(stripe);
+
+        const { data, error: fnErr } = await supabase.functions.invoke(
+          "stripe-collab-payment-intent",
+          { body: { collaborationId: collaboration.id, currency } }
+        );
+        if (fnErr) throw fnErr;
+        if (data?.error) throw new Error(data.error);
+        if (!data?.clientSecret) throw new Error("Aucun clientSecret reçu");
+        if (!cancelled) setClientSecret(data.clientSecret);
+      } catch (err: any) {
+        console.error("Init payment error:", err);
+        if (!cancelled) setError(err?.message || "Erreur d'initialisation du paiement");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    init();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, currency, collaboration.id]);
+
+  const elementsOptions = useMemo(
+    () =>
+      clientSecret
+        ? {
+            clientSecret,
+            appearance: {
+              theme: "night" as const,
+              variables: {
+                colorPrimary: "hsl(38, 65%, 48%)",
+                colorBackground: "hsl(270, 40%, 12%)",
+                colorText: "hsl(0, 0%, 95%)",
+                colorDanger: "hsl(0, 70%, 50%)",
+                fontFamily: "system-ui, sans-serif",
+                borderRadius: "12px",
+              },
+            },
+          }
+        : undefined,
+    [clientSecret]
+  );
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl">
+      <SheetContent side="bottom" className="h-[92vh] rounded-t-3xl overflow-y-auto">
         <SheetHeader className="mb-4">
           <SheetTitle className="text-xl font-display flex items-center gap-2">
             <Lock className="w-6 h-6 text-gold" />
             Paiement de la collaboration
           </SheetTitle>
           <SheetDescription>
-            Payez de manière sécurisée par carte bancaire via Stripe
+            Saisissez votre carte bancaire pour payer en toute sécurité
           </SheetDescription>
         </SheetHeader>
 
-        <div className="space-y-6 overflow-y-auto max-h-[calc(85vh-200px)]">
+        <div className="space-y-5 pb-12">
+          {/* Recap */}
           <div className="glass rounded-xl p-4 space-y-3">
             <div className="flex items-start justify-between">
               <div>
@@ -106,6 +245,7 @@ const InAppPaymentSheet = ({
             </div>
           </div>
 
+          {/* Amount */}
           <div className="glass rounded-xl p-4 space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Montant convenu</span>
@@ -113,11 +253,9 @@ const InAppPaymentSheet = ({
             </div>
             <Separator />
             <div className="flex justify-between items-center">
-              <span className="font-semibold text-foreground">À payer (approx.)</span>
+              <span className="font-semibold text-foreground">À payer</span>
               <div className="text-right">
-                <span className="text-xl font-bold text-gold">
-                  {formattedApprox}
-                </span>
+                <span className="text-xl font-bold text-gold">{formattedApprox}</span>
                 <p className="text-[10px] text-muted-foreground">
                   Conversion + frais inclus
                 </p>
@@ -125,27 +263,25 @@ const InAppPaymentSheet = ({
             </div>
           </div>
 
-          {/* Currency selector */}
+          {/* Currency */}
           <div className="space-y-2">
             <p className="text-sm font-medium text-muted-foreground">Devise de paiement</p>
             <div className="grid grid-cols-2 gap-2">
               <button
+                type="button"
                 onClick={() => setCurrency("eur")}
                 className={`glass rounded-xl p-3 border-2 transition-all ${
-                  currency === "eur"
-                    ? "border-gold bg-gold/10"
-                    : "border-transparent"
+                  currency === "eur" ? "border-gold bg-gold/10" : "border-transparent"
                 }`}
               >
                 <p className="font-semibold">🇪🇺 EUR</p>
                 <p className="text-[10px] text-muted-foreground">Euro</p>
               </button>
               <button
+                type="button"
                 onClick={() => setCurrency("usd")}
                 className={`glass rounded-xl p-3 border-2 transition-all ${
-                  currency === "usd"
-                    ? "border-gold bg-gold/10"
-                    : "border-transparent"
+                  currency === "usd" ? "border-gold bg-gold/10" : "border-transparent"
                 }`}
               >
                 <p className="font-semibold">🇺🇸 USD</p>
@@ -154,61 +290,51 @@ const InAppPaymentSheet = ({
             </div>
           </div>
 
+          {/* Security badge */}
           <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4">
             <div className="flex gap-3">
               <Shield className="w-5 h-5 text-green-500 flex-shrink-0" />
               <div className="text-sm">
-                <p className="font-medium text-foreground mb-1">
-                  Paiement sécurisé via Stripe
-                </p>
+                <p className="font-medium text-foreground mb-1">Séquestre sécurisé</p>
                 <p className="text-muted-foreground text-xs">
-                  Les fonds sont mis en séquestre. Le créateur sera payé après que
-                  vous validiez son travail.
+                  Les fonds sont conservés jusqu'à validation du travail.
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="space-y-3">
-            <p className="text-sm font-medium text-muted-foreground">
-              Méthodes de paiement acceptées
-            </p>
-            <div className="glass rounded-xl p-4">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-gold/10 flex items-center justify-center">
-                  <CreditCard className="w-5 h-5 text-gold" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-semibold text-foreground text-sm">
-                    Carte bancaire
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Visa • Mastercard • Apple Pay • Google Pay
-                  </p>
-                </div>
-              </div>
+          {/* Card Element */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <CreditCard className="w-4 h-4 text-gold" />
+              <p className="text-sm font-medium text-foreground">Vos informations de paiement</p>
             </div>
-          </div>
-        </div>
 
-        <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-background via-background to-transparent">
-          <Button
-            variant="gold"
-            size="lg"
-            className="w-full"
-            onClick={handleStripeCheckout}
-            disabled={loading}
-          >
-            {loading ? (
-              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-            ) : (
-              <ExternalLink className="w-5 h-5 mr-2" />
+            {loading && (
+              <div className="glass rounded-xl p-8 flex items-center justify-center">
+                <Loader2 className="w-6 h-6 animate-spin text-gold" />
+              </div>
             )}
-            Payer {formattedApprox}
-          </Button>
-          <p className="text-xs text-muted-foreground text-center mt-2">
-            Paiement sécurisé via Stripe
-          </p>
+
+            {error && !loading && (
+              <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-4 text-sm text-destructive">
+                {error}
+              </div>
+            )}
+
+            {!loading && !error && clientSecret && stripeInstance && elementsOptions && (
+              <Elements stripe={stripeInstance} options={elementsOptions}>
+                <PaymentForm
+                  collaborationId={collaboration.id}
+                  formattedApprox={formattedApprox}
+                  onSuccess={() => {
+                    onSuccess?.();
+                    onOpenChange(false);
+                  }}
+                />
+              </Elements>
+            )}
+          </div>
         </div>
       </SheetContent>
     </Sheet>
