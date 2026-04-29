@@ -229,6 +229,8 @@ const Auth = () => {
       setFormData((prev) => ({ ...prev, inviteCode: normalized }));
       setHasValidatedCode(true);
       setInviteDialogOpen(false);
+      setMode("signup");
+      setStep(1);
       toast.success("Code validé ! Vous pouvez créer votre compte.");
     } catch (err: any) {
       setInviteDialogError(err.message || "Une erreur est survenue");
