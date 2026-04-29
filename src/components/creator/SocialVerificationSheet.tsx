@@ -240,6 +240,30 @@ const SocialVerificationSheet = ({ isOpen, onClose, onUpdate, defaultPlatform }:
           </p>
         </SheetHeader>
 
+        {/* Identity gate — block social verification if user hasn't verified their identity */}
+        {identityVerified === false && (
+          <div className="mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30">
+            <div className="flex items-start gap-3">
+              <ShieldAlert className="w-6 h-6 text-amber-500 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="font-semibold text-amber-700 dark:text-amber-400">
+                  Vérification d'identité requise
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Pour éviter l'usurpation d'identité, vous devez d'abord vérifier votre identité
+                  (pièce d'identité + selfie) avant de pouvoir lier un réseau social.
+                </p>
+                <Link to="/creator/profile?tab=security">
+                  <Button variant="gold" size="sm" className="mt-3" onClick={() => onClose()}>
+                    <ShieldAlert className="w-4 h-4 mr-2" />
+                    Vérifier mon identité
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Result States */}
         {status === "verified" && (
           <div className="mb-6 p-4 rounded-2xl bg-green-500/10 border border-green-500/30">
