@@ -168,123 +168,62 @@ const SocialEditSheet = ({ isOpen, onClose, initialData, onUpdate }: SocialEditS
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="youtube_followers"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex items-center gap-3">
-                    <YouTubeIcon className="w-10 h-10 p-2" size={20} />
-                    <div className="flex-1">
-                      <FormLabel>YouTube</FormLabel>
-                      <div className="flex items-center gap-2">
-                        <FormControl>
-                          <Input placeholder="Ex: 150K" {...field} className="flex-1" />
-                        </FormControl>
-                        <YouTubeConnectButton 
-                          currentFollowers={initialData.youtube_followers}
-                          onSyncComplete={onUpdate}
-                        />
-                        {getVerifyButton("youtube")}
+            {([
+              { name: "youtube_followers", platform: "youtube", label: "YouTube", placeholder: "Ex: 150K", Icon: YouTubeIcon, connectBtn: "youtube" as string | undefined },
+              { name: "instagram_followers", platform: "instagram", label: "Instagram", placeholder: "Ex: 250K", Icon: InstagramIcon, connectBtn: undefined as string | undefined },
+              { name: "tiktok_followers", platform: "tiktok", label: "TikTok", placeholder: "Ex: 500K", Icon: TikTokIcon, connectBtn: "tiktok" as string | undefined },
+              { name: "snapchat_followers", platform: "snapchat", label: "Snapchat", placeholder: "Ex: 100K", Icon: SnapchatIcon, connectBtn: undefined as string | undefined },
+              { name: "facebook_followers", platform: "facebook", label: "Facebook", placeholder: "Ex: 200K", Icon: FacebookIcon, connectBtn: undefined as string | undefined },
+            ]).map(({ name, platform, label, placeholder, Icon, connectBtn }) => {
+              const isVerified = verificationStatuses[platform] === "verified";
+              return (
+                <FormField
+                  key={name}
+                  control={form.control}
+                  name={name as keyof SocialFormData}
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center gap-3">
+                        <Icon className="w-10 h-10 p-2" size={20} />
+                        <div className="flex-1">
+                          <FormLabel>{label}</FormLabel>
+                          <div className="flex items-center gap-2">
+                            <FormControl>
+                              <Input
+                                placeholder={placeholder}
+                                {...field}
+                                className="flex-1"
+                                readOnly={isVerified}
+                                disabled={isVerified}
+                              />
+                            </FormControl>
+                            {connectBtn === "youtube" && (
+                              <YouTubeConnectButton
+                                currentFollowers={initialData.youtube_followers}
+                                onSyncComplete={onUpdate}
+                              />
+                            )}
+                            {connectBtn === "tiktok" && (
+                              <TikTokConnectButton
+                                currentFollowers={initialData.tiktok_followers}
+                                onSyncComplete={onUpdate}
+                              />
+                            )}
+                            {getVerifyButton(platform)}
+                          </div>
+                          {isVerified && (
+                            <p className="text-[11px] text-muted-foreground mt-1">
+                              🔒 Champ verrouillé. Pour modifier, refaites une vérification avec une nouvelle capture.
+                            </p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="instagram_followers"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex items-center gap-3">
-                    <InstagramIcon className="w-10 h-10 p-2" size={20} />
-                    <div className="flex-1">
-                      <FormLabel>Instagram</FormLabel>
-                      <div className="flex items-center gap-2">
-                        <FormControl>
-                          <Input placeholder="Ex: 250K" {...field} className="flex-1" />
-                        </FormControl>
-                        {getVerifyButton("instagram")}
-                      </div>
-                    </div>
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="tiktok_followers"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex items-center gap-3">
-                    <TikTokIcon className="w-10 h-10 p-2" size={20} />
-                    <div className="flex-1">
-                      <FormLabel>TikTok</FormLabel>
-                      <div className="flex items-center gap-2">
-                        <FormControl>
-                          <Input placeholder="Ex: 500K" {...field} className="flex-1" />
-                        </FormControl>
-                        <TikTokConnectButton 
-                          currentFollowers={initialData.tiktok_followers}
-                          onSyncComplete={onUpdate}
-                        />
-                        {getVerifyButton("tiktok")}
-                      </div>
-                    </div>
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="snapchat_followers"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex items-center gap-3">
-                    <SnapchatIcon className="w-10 h-10 p-2" size={20} />
-                    <div className="flex-1">
-                      <FormLabel>Snapchat</FormLabel>
-                      <div className="flex items-center gap-2">
-                        <FormControl>
-                          <Input placeholder="Ex: 100K" {...field} className="flex-1" />
-                        </FormControl>
-                        {getVerifyButton("snapchat")}
-                      </div>
-                    </div>
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="facebook_followers"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex items-center gap-3">
-                    <FacebookIcon className="w-10 h-10 p-2" size={20} />
-                    <div className="flex-1">
-                      <FormLabel>Facebook</FormLabel>
-                      <div className="flex items-center gap-2">
-                        <FormControl>
-                          <Input placeholder="Ex: 200K" {...field} className="flex-1" />
-                        </FormControl>
-                        {getVerifyButton("facebook")}
-                      </div>
-                    </div>
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              );
+            })}
 
 
 
