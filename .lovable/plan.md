@@ -1,35 +1,34 @@
-Je vais corriger ce flux pour que le bouton “J’ai un code d’activation / d’invitation” affiche directement la saisie du code, au lieu de naviguer vers l’accueil.
+## Problème
 
-Plan de correction :
+Sur la page Connexion, le lien **"Pas encore de compte ? S'inscrire"** (en bas du formulaire de connexion) bascule directement vers le formulaire d'inscription **sans vérifier si l'utilisateur a un code d'activation valide**. Résultat : un utilisateur peut contourner totalement le code en passant par "Se connecter" puis "S'inscrire".
 
-1. Remplacer la redirection du bouton dans `src/pages/Auth.tsx`
-   - Aujourd’hui, `openInviteGate()` met un flag puis fait `navigate("/")`.
-   - C’est ce qui provoque le retour à la page d’accueil et peut ensuite laisser l’app repartir vers le profil si l’utilisateur est connecté.
-   - Je vais faire ouvrir une fenêtre/pop-up de saisie du code directement depuis `/auth`.
+Le bouton "Créer un compte" sur l'écran de choix initial est, lui, déjà correctement protégé (il n'apparaît que si `!inviteRequired || hasValidatedCode`), mais le raccourci depuis la page Connexion ne l'est pas.
 
-2. Ajouter un vrai pop-up de code sur la page Auth
-   - Créer un `Dialog` avec :
-     - champ `COLLAB-XXXX`
-     - bouton “Valider le code”
-     - message d’erreur clair si le code est invalide ou déjà utilisé
-     - loader pendant la vérification
-   - Le bouton “J’ai un code d’invitation” ouvrira ce Dialog sans changer de page.
+## Correction
 
-3. Utiliser la même sécurité “code à usage unique”
-   - Le pop-up appellera `claim_invite_code` comme l’écran d’accès privé.
-   - Si le code est accepté, il sera immédiatement désactivé pour empêcher une deuxième utilisation.
-   - Le code sera enregistré localement uniquement pour permettre de continuer la création de compte.
+Dans `src/pages/Auth.tsx` :
 
-4. Corriger la suite d’inscription après validation du code
-   - Après validation, fermer le pop-up.
-   - Afficher le bouton “Créer un compte”.
-   - Pré-remplir le champ code de l’étape finale avec le code validé.
+1. **Intercepter le clic "S'inscrire" depuis le formulaire de connexion**
+   - Modifier la fonction passée en `onSwitchToSignup` au composant `LoginForm` (ligne ~776).
+   - Nouveau comportement :
+     - Si les codes ne sont pas requis OU si l'utilisateur a déjà validé un code → basculer en mode `signup` comme aujourd'hui.
+     - Sinon → ouvrir directement le pop-up de saisie du code (`openInviteGate()`) sans changer de mode. La création de compte ne sera débloquée qu'après validation du code.
 
-5. Éviter les redirections automatiques indésirables
-   - Si l’utilisateur clique “J’ai un code” depuis `/auth`, il ne sera plus envoyé vers `/`.
-   - Si un utilisateur déjà connecté arrive sur `/auth` uniquement pour entrer un code, le pop-up pourra s’ouvrir sans que la page le renvoie immédiatement vers le profil.
+2. **Sécuriser aussi l'écran de choix au cas où**
+   - Vérifier que le bouton "S'inscrire" / "Créer un compte" sur l'écran de choix passe bien par la même garde (`!inviteRequired || hasValidatedCode`). Si ce n'est pas le cas, appliquer la même logique.
 
-Détail technique :
-- Fichier principal à modifier : `src/pages/Auth.tsx`.
-- Je garderai `InviteGate.tsx` pour protéger les autres pages, mais le bouton de la page Auth ne dépendra plus de la redirection vers l’accueil.
-- Je vérifierai aussi que l’appel de validation côté inscription reste compatible avec les codes déjà “claim” par le pop-up.
+3. **Filet de sécurité dans le formulaire d'inscription**
+   - Dans `SignupForm`, si on arrive en mode `signup` alors que `inviteRequired && !hasValidatedCode` (ne devrait plus arriver après la correction ci-dessus, mais par sécurité) :
+     - Afficher un état "Code requis" avec un bouton qui rouvre le pop-up.
+     - Empêcher la soumission de l'étape 4 tant que le code n'est pas validé (la validation `validate_invite_code` côté `handleSignup` reste en place comme dernière barrière serveur).
+
+4. **Pas de régression côté UX**
+   - Le pop-up reste un `Dialog` in-page (pas de redirection vers `/`).
+   - Une fois le code validé, on bascule automatiquement en mode `signup` pour que l'utilisateur enchaîne sans friction.
+   - Le code reste **à usage unique** grâce à `claim_invite_code` déjà appelé dans le pop-up.
+
+## Fichiers modifiés
+
+- `src/pages/Auth.tsx` (logique du bouton "S'inscrire" depuis Connexion + filet de sécurité signup)
+
+Aucun changement base de données n'est nécessaire : la fonction `claim_invite_code` et la table `invite_codes` font déjà respecter l'unicité d'utilisation.
