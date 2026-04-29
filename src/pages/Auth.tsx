@@ -820,6 +820,65 @@ const Auth = () => {
           </ScrollArea>
         </DialogContent>
       </Dialog>
+
+      {/* Invite Code Dialog (in-page popup) */}
+      <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
+        <DialogContent className="max-w-sm border-gold/30">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-gold" />
+              Code d'activation
+            </DialogTitle>
+            <DialogDescription>
+              Entrez votre code d'invitation au format COLLAB-XXXX pour débloquer la création de compte.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleValidateInviteCode} className="space-y-4 pt-2">
+            <Input
+              type="text"
+              value={inviteDialogCode}
+              onChange={(e) => {
+                setInviteDialogCode(e.target.value.toUpperCase());
+                setInviteDialogError(null);
+              }}
+              placeholder="COLLAB-XXXX"
+              maxLength={11}
+              autoFocus
+              autoComplete="off"
+              autoCapitalize="characters"
+              className={`h-14 bg-muted/50 border rounded-xl uppercase tracking-widest font-mono text-center text-lg ${
+                inviteDialogError ? "border-destructive" : "border-border focus:border-gold"
+              }`}
+            />
+            {inviteDialogError && (
+              <p className="text-destructive text-xs text-center">{inviteDialogError}</p>
+            )}
+            <Button
+              type="submit"
+              variant="gold"
+              size="lg"
+              className="w-full"
+              disabled={inviteDialogValidating}
+            >
+              {inviteDialogValidating ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Vérification...
+                </>
+              ) : (
+                <>
+                  Valider le code
+                  <Sparkles className="w-5 h-5" />
+                </>
+              )}
+            </Button>
+            <p className="text-[11px] text-center text-muted-foreground">
+              Pas de code ? Demandez-le sur Snap{" "}
+              <span className="text-gold font-semibold">@lazone_officiel</span>
+            </p>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
