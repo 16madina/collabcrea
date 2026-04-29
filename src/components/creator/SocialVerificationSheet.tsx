@@ -340,6 +340,12 @@ const SocialVerificationSheet = ({ isOpen, onClose, onUpdate, defaultPlatform }:
                     alt="Capture d'écran"
                     className="w-full max-h-64 object-contain bg-muted"
                   />
+                  {status === "extracting" && (
+                    <div className="absolute inset-0 bg-background/70 backdrop-blur-sm flex flex-col items-center justify-center gap-2">
+                      <Loader2 className="w-6 h-6 animate-spin text-gold" />
+                      <span className="text-xs font-medium">L'IA analyse votre capture...</span>
+                    </div>
+                  )}
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     className="absolute bottom-2 right-2 px-3 py-1.5 rounded-full bg-background/80 text-xs font-medium hover:bg-background transition-colors"
