@@ -271,7 +271,7 @@ const SocialVerificationSheet = ({ isOpen, onClose, onUpdate, defaultPlatform }:
         )}
 
         {/* Form */}
-        {(status === "idle" || status === "uploading" || status === "analyzing") && (
+        {(status === "idle" || status === "extracting" || status === "uploading" || status === "analyzing") && (
           <div className="space-y-5">
             {/* Platform Select */}
             <div className="space-y-2">
