@@ -186,13 +186,57 @@ const Auth = () => {
   const navigate = useNavigate();
   const { user, role: userRole, loading: authLoading, signIn } = useAuth();
   const { required: inviteRequired } = useInviteCodesRequired();
+
+  // Invite code dialog state (in-page popup, no navigation)
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [inviteDialogCode, setInviteDialogCode] = useState("");
+  const [inviteDialogError, setInviteDialogError] = useState<string | null>(null);
+  const [inviteDialogValidating, setInviteDialogValidating] = useState(false);
+  const [hasValidatedCode, setHasValidatedCode] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return !!localStorage.getItem("invite_gate_code");
+  });
+
   const openInviteGate = () => {
-    localStorage.removeItem("invite_gate_code");
-    sessionStorage.setItem("invite_gate_force_prompt", "true");
-    window.dispatchEvent(new Event("invite-gate-reset"));
-    navigate("/");
+    setInviteDialogCode("");
+    setInviteDialogError(null);
+    setInviteDialogOpen(true);
   };
-  
+
+  const handleValidateInviteCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const normalized = inviteDialogCode.trim().toUpperCase();
+    setInviteDialogError(null);
+    if (!/^COLLAB-[A-Z0-9]{4}$/.test(normalized)) {
+      setInviteDialogError("Format invalide (ex: COLLAB-X7K9)");
+      return;
+    }
+    setInviteDialogValidating(true);
+    try {
+      const { data: claimed, error: rpcError } = await supabase.rpc(
+        "claim_invite_code",
+        { p_code: normalized }
+      );
+      if (rpcError) throw rpcError;
+      if (!claimed) {
+        setInviteDialogError("Code invalide ou déjà utilisé");
+        return;
+      }
+      // Persist + sync gate, then close
+      localStorage.setItem("invite_gate_code", normalized);
+      sessionStorage.removeItem("invite_gate_force_prompt");
+      window.dispatchEvent(new Event("invite-gate-reset"));
+      setFormData((prev) => ({ ...prev, inviteCode: normalized }));
+      setHasValidatedCode(true);
+      setInviteDialogOpen(false);
+      toast.success("Code validé ! Vous pouvez créer votre compte.");
+    } catch (err: any) {
+      setInviteDialogError(err.message || "Une erreur est survenue");
+    } finally {
+      setInviteDialogValidating(false);
+    }
+  };
+
   const [mode, setMode] = useState<AuthMode>("choice");
   const [step, setStep] = useState<SignupStep>(1);
   const [showPassword, setShowPassword] = useState(false);
@@ -691,7 +735,7 @@ const Auth = () => {
                 >
                   Se connecter
                 </Button>
-                {(!inviteRequired || !!localStorage.getItem("invite_gate_code")) && (
+                {(!inviteRequired || hasValidatedCode) && (
                   <Button 
                     onClick={() => setMode("signup")}
                     variant="outline"
@@ -701,18 +745,18 @@ const Auth = () => {
                     Créer un compte
                   </Button>
                 )}
-                {inviteRequired && !localStorage.getItem("invite_gate_code") && (
+                {inviteRequired && !hasValidatedCode && (
                   <p className="text-xs text-center text-muted-foreground px-4">
                     🔒 La création de compte nécessite un code d'invitation.
                   </p>
                 )}
-                {inviteRequired && (
+                {inviteRequired && !hasValidatedCode && (
                   <Button
                     onClick={openInviteGate}
                     className="w-full bg-gold/15 hover:bg-gold/25 border border-gold/40 text-gold font-semibold py-5 rounded-xl"
                   >
                     <Sparkles className="w-5 h-5 mr-2" />
-                    J'ai un code d'invitation
+                    J'ai un code d'activation
                   </Button>
                 )}
               </motion.div>
@@ -774,6 +818,65 @@ const Auth = () => {
               <p className="text-muted-foreground text-sm">Chargement...</p>
             )}
           </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* Invite Code Dialog (in-page popup) */}
+      <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
+        <DialogContent className="max-w-sm border-gold/30">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-gold" />
+              Code d'activation
+            </DialogTitle>
+            <DialogDescription>
+              Entrez votre code d'invitation au format COLLAB-XXXX pour débloquer la création de compte.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleValidateInviteCode} className="space-y-4 pt-2">
+            <Input
+              type="text"
+              value={inviteDialogCode}
+              onChange={(e) => {
+                setInviteDialogCode(e.target.value.toUpperCase());
+                setInviteDialogError(null);
+              }}
+              placeholder="COLLAB-XXXX"
+              maxLength={11}
+              autoFocus
+              autoComplete="off"
+              autoCapitalize="characters"
+              className={`h-14 bg-muted/50 border rounded-xl uppercase tracking-widest font-mono text-center text-lg ${
+                inviteDialogError ? "border-destructive" : "border-border focus:border-gold"
+              }`}
+            />
+            {inviteDialogError && (
+              <p className="text-destructive text-xs text-center">{inviteDialogError}</p>
+            )}
+            <Button
+              type="submit"
+              variant="gold"
+              size="lg"
+              className="w-full"
+              disabled={inviteDialogValidating}
+            >
+              {inviteDialogValidating ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Vérification...
+                </>
+              ) : (
+                <>
+                  Valider le code
+                  <Sparkles className="w-5 h-5" />
+                </>
+              )}
+            </Button>
+            <p className="text-[11px] text-center text-muted-foreground">
+              Pas de code ? Demandez-le sur Snap{" "}
+              <span className="text-gold font-semibold">@lazone_officiel</span>
+            </p>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

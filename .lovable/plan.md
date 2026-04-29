@@ -1,39 +1,35 @@
+Je vais corriger ce flux pour que le bouton “J’ai un code d’activation / d’invitation” affiche directement la saisie du code, au lieu de naviguer vers l’accueil.
 
+Plan de correction :
 
-## Diagnostic
+1. Remplacer la redirection du bouton dans `src/pages/Auth.tsx`
+   - Aujourd’hui, `openInviteGate()` met un flag puis fait `navigate("/")`.
+   - C’est ce qui provoque le retour à la page d’accueil et peut ensuite laisser l’app repartir vers le profil si l’utilisateur est connecté.
+   - Je vais faire ouvrir une fenêtre/pop-up de saisie du code directement depuis `/auth`.
 
-Le probleme principal est double :
+2. Ajouter un vrai pop-up de code sur la page Auth
+   - Créer un `Dialog` avec :
+     - champ `COLLAB-XXXX`
+     - bouton “Valider le code”
+     - message d’erreur clair si le code est invalide ou déjà utilisé
+     - loader pendant la vérification
+   - Le bouton “J’ai un code d’invitation” ouvrira ce Dialog sans changer de page.
 
-1. **Conflit de z-index** : Le chat est dans un conteneur `fixed inset-0 z-[60]`. Le `CreatorDetailSheet` utilise le `z-50` par defaut du composant Sheet, donc il s'ouvre DERRIERE le chat -- invisible pour l'utilisateur.
+3. Utiliser la même sécurité “code à usage unique”
+   - Le pop-up appellera `claim_invite_code` comme l’écran d’accès privé.
+   - Si le code est accepté, il sera immédiatement désactivé pour empêcher une deuxième utilisation.
+   - Le code sera enregistré localement uniquement pour permettre de continuer la création de compte.
 
-2. **Pas de page profil publique** : Il n'existe aucune route `/profile/:userId` dans l'application. Le bouton tente d'ouvrir un Sheet qui est cache par le chat.
+4. Corriger la suite d’inscription après validation du code
+   - Après validation, fermer le pop-up.
+   - Afficher le bouton “Créer un compte”.
+   - Pré-remplir le champ code de l’étape finale avec le code validé.
 
-## Solution : Navigation vers une page profil dediee
+5. Éviter les redirections automatiques indésirables
+   - Si l’utilisateur clique “J’ai un code” depuis `/auth`, il ne sera plus envoyé vers `/`.
+   - Si un utilisateur déjà connecté arrive sur `/auth` uniquement pour entrer un code, le pop-up pourra s’ouvrir sans que la page le renvoie immédiatement vers le profil.
 
-### 1. Creer une page `ProfileView` (`src/pages/ProfileView.tsx`)
-- Route : `/profile/:userId`
-- Recupere le profil complet + role depuis la base de donnees
-- Affiche les memes informations que `CreatorDetailSheet` (banner, avatar, bio, reseaux sociaux, portfolio, tarifs) mais en pleine page
-- Bouton retour pour revenir a la conversation
-- Si c'est un createur : afficher portfolio + tarifs + reseaux sociaux
-- Si c'est une marque : afficher description, secteur, site web
-
-### 2. Ajouter la route dans `App.tsx`
-- Ajouter `<Route path="/profile/:userId" element={<ProfileView />} />`
-
-### 3. Modifier `handleViewFullProfile` dans les 2 fichiers de messagerie
-- **`src/components/collabs/MessagesTab.tsx`** (cote marque)
-- **`src/pages/creator/Messages.tsx`** (cote createur)
-- Remplacer la logique qui ouvre un `CreatorDetailSheet` par un simple `navigate(/profile/${userId})`
-- Supprimer les etats `fullProfileCreator` et `showFullProfile` devenus inutiles
-- Supprimer l'import et le rendu du `CreatorDetailSheet`
-
-### 4. Modifier `ChatProfileSheet.tsx`
-- Le callback `onViewFullProfile` declenchera desormais la navigation directement
-
-### Fichiers modifies
-- `src/pages/ProfileView.tsx` (nouveau)
-- `src/App.tsx` (ajout route)
-- `src/components/collabs/MessagesTab.tsx` (simplification)
-- `src/pages/creator/Messages.tsx` (simplification)
-
+Détail technique :
+- Fichier principal à modifier : `src/pages/Auth.tsx`.
+- Je garderai `InviteGate.tsx` pour protéger les autres pages, mais le bouton de la page Auth ne dépendra plus de la redirection vers l’accueil.
+- Je vérifierai aussi que l’appel de validation côté inscription reste compatible avec les codes déjà “claim” par le pop-up.
