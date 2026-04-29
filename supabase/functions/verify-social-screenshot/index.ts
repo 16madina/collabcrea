@@ -42,6 +42,34 @@ serve(async (req) => {
       );
     }
 
+    // SECURITY GATE: identity must be verified before social verification
+    // This prevents someone from claiming a celebrity's social account using only a screenshot.
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("full_name, identity_verified")
+      .eq("user_id", verification.user_id)
+      .maybeSingle();
+
+    if (!profile?.identity_verified) {
+      await supabase
+        .from("social_verifications")
+        .update({
+          status: "rejected",
+          ai_reason: "Identité non vérifiée — vérifiez votre identité avant de lier un réseau social.",
+        })
+        .eq("id", verification_id);
+
+      return new Response(
+        JSON.stringify({
+          status: "rejected",
+          reason: "Vous devez d'abord vérifier votre identité (pièce + selfie) avant de pouvoir vérifier un réseau social.",
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const legalName = profile.full_name || "";
+
     // Get signed URL for the screenshot
     const { data: signedUrlData } = await supabase.storage
       .from("social-screenshots")
