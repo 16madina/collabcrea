@@ -881,8 +881,15 @@ const Auth = () => {
               )}
             </Button>
             <p className="text-[11px] text-center text-muted-foreground">
-              Pas de code ? Demandez-le sur Snap{" "}
-              <span className="text-gold font-semibold">@lazone_officiel</span>
+              Pas de code ?{" "}
+              <a
+                href="https://snapchat.com/add/lazone_officiel"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gold font-semibold underline underline-offset-2 hover:text-gold/80"
+              >
+                Demandez-le ici
+              </a>
             </p>
           </form>
         </DialogContent>
