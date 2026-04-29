@@ -113,11 +113,12 @@ const SocialVerificationSheet = ({ isOpen, onClose, onUpdate, defaultPlatform }:
       if (error) throw error;
 
       if (data?.found) {
-        if (data.page_name && !pageName.trim()) setPageName(data.page_name);
+        // SECURITY: Never auto-fill the page name from AI — that would defeat the verification
+        // (the AI would compare its own extraction with itself). Only pre-fill the follower count.
         if (data.followers && !claimedFollowers.trim()) setClaimedFollowers(data.followers);
         toast({
-          title: "✨ Extrait par l'IA",
-          description: "Vérifiez et corrigez si besoin avant de soumettre.",
+          title: "✨ Abonnés extraits par l'IA",
+          description: "Vérifiez le nombre et corrigez si besoin.",
         });
       }
     } catch (err) {
@@ -296,33 +297,32 @@ const SocialVerificationSheet = ({ isOpen, onClose, onUpdate, defaultPlatform }:
               </Select>
             </div>
 
-            {/* Page Name */}
+            {/* Page Name — MUST be filled before screenshot upload (security) */}
             <div className="space-y-2">
-              <Label>Nom de votre page / compte</Label>
+              <Label>
+                Nom de votre page / compte <span className="text-red-500">*</span>
+              </Label>
               <Input
                 placeholder={`Ex: ${platform === "youtube" ? "MaChaine" : platform === "tiktok" ? "@monpseudo" : "MonCompte"}`}
                 value={pageName}
                 onChange={(e) => setPageName(e.target.value)}
                 maxLength={100}
+                disabled={!platform}
               />
-            </div>
-
-            {/* Claimed Followers */}
-            <div className="space-y-2">
-              <Label>Nombre d'abonnés</Label>
-              <Input
-                placeholder="Ex: 50K, 1.2M, 15000"
-                value={claimedFollowers}
-                onChange={(e) => setClaimedFollowers(e.target.value)}
-                maxLength={20}
-              />
-            </div>
-
-            {/* Screenshot Upload */}
-            <div className="space-y-2">
-              <Label>Capture d'écran de votre page</Label>
               <p className="text-xs text-muted-foreground">
-                Prenez une capture d'écran montrant le nom de votre page et le nombre d'abonnés
+                Saisissez exactement le nom/pseudo affiché sur votre profil {selectedPlatform?.label || "réseau social"}.
+              </p>
+            </div>
+
+            {/* Screenshot Upload — locked until platform + name are filled */}
+            <div className="space-y-2">
+              <Label>
+                Capture d'écran de votre page <span className="text-red-500">*</span>
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                {!platform || !pageName.trim()
+                  ? "⚠️ Choisissez d'abord la plateforme et saisissez le nom de votre page."
+                  : "Prenez une capture montrant clairement le nom de votre page et le nombre d'abonnés."}
               </p>
 
               <input
@@ -331,6 +331,7 @@ const SocialVerificationSheet = ({ isOpen, onClose, onUpdate, defaultPlatform }:
                 accept="image/*"
                 className="hidden"
                 onChange={handleFileSelect}
+                disabled={!platform || !pageName.trim()}
               />
 
               {screenshotPreview ? (
@@ -357,12 +358,26 @@ const SocialVerificationSheet = ({ isOpen, onClose, onUpdate, defaultPlatform }:
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full h-40 rounded-2xl border-2 border-dashed border-muted-foreground/30 flex flex-col items-center justify-center gap-2 hover:border-gold/50 transition-colors"
+                  disabled={!platform || !pageName.trim()}
+                  className="w-full h-40 rounded-2xl border-2 border-dashed border-muted-foreground/30 flex flex-col items-center justify-center gap-2 hover:border-gold/50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <Upload className="w-8 h-8 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">Cliquez pour ajouter une capture</span>
+                  <span className="text-sm text-muted-foreground">
+                    {!platform || !pageName.trim() ? "Remplissez les champs ci-dessus" : "Cliquez pour ajouter une capture"}
+                  </span>
                 </button>
               )}
+            </div>
+
+            {/* Claimed Followers — auto-filled by AI after upload, editable */}
+            <div className="space-y-2">
+              <Label>Nombre d'abonnés <span className="text-red-500">*</span></Label>
+              <Input
+                placeholder="Ex: 50K, 1.2M, 15000"
+                value={claimedFollowers}
+                onChange={(e) => setClaimedFollowers(e.target.value)}
+                maxLength={20}
+              />
             </div>
 
             {/* Submit */}
