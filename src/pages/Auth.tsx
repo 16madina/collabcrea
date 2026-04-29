@@ -186,13 +186,57 @@ const Auth = () => {
   const navigate = useNavigate();
   const { user, role: userRole, loading: authLoading, signIn } = useAuth();
   const { required: inviteRequired } = useInviteCodesRequired();
+
+  // Invite code dialog state (in-page popup, no navigation)
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [inviteDialogCode, setInviteDialogCode] = useState("");
+  const [inviteDialogError, setInviteDialogError] = useState<string | null>(null);
+  const [inviteDialogValidating, setInviteDialogValidating] = useState(false);
+  const [hasValidatedCode, setHasValidatedCode] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return !!localStorage.getItem("invite_gate_code");
+  });
+
   const openInviteGate = () => {
-    localStorage.removeItem("invite_gate_code");
-    sessionStorage.setItem("invite_gate_force_prompt", "true");
-    window.dispatchEvent(new Event("invite-gate-reset"));
-    navigate("/");
+    setInviteDialogCode("");
+    setInviteDialogError(null);
+    setInviteDialogOpen(true);
   };
-  
+
+  const handleValidateInviteCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const normalized = inviteDialogCode.trim().toUpperCase();
+    setInviteDialogError(null);
+    if (!/^COLLAB-[A-Z0-9]{4}$/.test(normalized)) {
+      setInviteDialogError("Format invalide (ex: COLLAB-X7K9)");
+      return;
+    }
+    setInviteDialogValidating(true);
+    try {
+      const { data: claimed, error: rpcError } = await supabase.rpc(
+        "claim_invite_code",
+        { p_code: normalized }
+      );
+      if (rpcError) throw rpcError;
+      if (!claimed) {
+        setInviteDialogError("Code invalide ou déjà utilisé");
+        return;
+      }
+      // Persist + sync gate, then close
+      localStorage.setItem("invite_gate_code", normalized);
+      sessionStorage.removeItem("invite_gate_force_prompt");
+      window.dispatchEvent(new Event("invite-gate-reset"));
+      setFormData((prev) => ({ ...prev, inviteCode: normalized }));
+      setHasValidatedCode(true);
+      setInviteDialogOpen(false);
+      toast.success("Code validé ! Vous pouvez créer votre compte.");
+    } catch (err: any) {
+      setInviteDialogError(err.message || "Une erreur est survenue");
+    } finally {
+      setInviteDialogValidating(false);
+    }
+  };
+
   const [mode, setMode] = useState<AuthMode>("choice");
   const [step, setStep] = useState<SignupStep>(1);
   const [showPassword, setShowPassword] = useState(false);
