@@ -256,14 +256,30 @@ Respond using the tool provided.`,
     }
 
     const result = JSON.parse(toolCall.function.arguments);
-    const isVerified =
+
+    // Auto-verify ONLY if technical match + identity is plausibly the same person
+    const technicalMatch =
       result.name_matches &&
       result.followers_match &&
       result.is_correct_platform &&
       result.confidence >= 70;
 
-    const needsAdmin = !isVerified && result.confidence >= 40;
-    const status = isVerified ? "verified" : needsAdmin ? "pending_admin" : "rejected";
+    const isVerified = technicalMatch && result.identity_consistent === true;
+
+    // If technical match but identity flagged as inconsistent → ALWAYS admin review (possible impersonation)
+    // If partial confidence → admin review
+    // Otherwise reject
+    let status: string;
+    if (isVerified) {
+      status = "verified";
+    } else if (technicalMatch && !result.identity_consistent) {
+      // Technical match but suspected impersonation → admin must decide
+      status = "pending_admin";
+    } else if (result.confidence >= 40) {
+      status = "pending_admin";
+    } else {
+      status = "rejected";
+    }
 
     // Update verification record
     await supabase
