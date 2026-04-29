@@ -113,11 +113,12 @@ const SocialVerificationSheet = ({ isOpen, onClose, onUpdate, defaultPlatform }:
       if (error) throw error;
 
       if (data?.found) {
-        if (data.page_name && !pageName.trim()) setPageName(data.page_name);
+        // SECURITY: Never auto-fill the page name from AI — that would defeat the verification
+        // (the AI would compare its own extraction with itself). Only pre-fill the follower count.
         if (data.followers && !claimedFollowers.trim()) setClaimedFollowers(data.followers);
         toast({
-          title: "✨ Extrait par l'IA",
-          description: "Vérifiez et corrigez si besoin avant de soumettre.",
+          title: "✨ Abonnés extraits par l'IA",
+          description: "Vérifiez le nombre et corrigez si besoin.",
         });
       }
     } catch (err) {
