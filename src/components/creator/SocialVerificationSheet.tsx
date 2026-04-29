@@ -310,8 +310,8 @@ const SocialVerificationSheet = ({ isOpen, onClose, onUpdate, defaultPlatform }:
           </div>
         )}
 
-        {/* Form */}
-        {(status === "idle" || status === "extracting" || status === "uploading" || status === "analyzing") && (
+        {/* Form — hidden until identity is verified */}
+        {identityVerified !== false && (status === "idle" || status === "extracting" || status === "uploading" || status === "analyzing") && (
           <div className="space-y-5">
             {/* Platform Select */}
             <div className="space-y-2">
