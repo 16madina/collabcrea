@@ -105,20 +105,29 @@ serve(async (req) => {
             content: [
               {
                 type: "text",
-                text: `Analyze this social media screenshot. The user claims:
+                text: `Analyze this social media screenshot.
+
+USER CLAIM:
 - Platform: ${verification.platform}
-- Page/Account name: "${verification.page_name}"
-- Follower count: "${verification.claimed_followers}"
+- Page/Account name they entered: "${verification.page_name}"
+- Follower count they entered: "${verification.claimed_followers}"
+
+USER'S VERIFIED LEGAL IDENTITY (from their official ID document):
+- Legal name: "${legalName}"
 
 Your task:
-1. Extract the account/page name visible on the screenshot
-2. Extract the follower/subscriber count visible on the screenshot
-3. Determine if they match what the user claimed
+1. Extract the account/page name visible on the screenshot.
+2. Extract the follower/subscriber count visible on the screenshot.
+3. Determine if the screenshot's name matches what the user entered (allowing minor variations like "@dina" vs "Dina").
+4. Determine if the followers match (allow rounding: "49.8K" ≈ "50K").
+5. Confirm the screenshot is from the claimed platform.
+6. CRITICAL — Identity consistency: Could this social account plausibly belong to the person whose legal name is "${legalName}"?
+   - TRUE if: the social handle/display name contains, abbreviates, or is a known nickname/stage-name variation of the legal name (e.g. legal "Dina Diallo" → social "Dina" or "@dinadiallo" or "Miss Dee").
+   - TRUE if: the social name is a brand/stage name AND there is plausible visual context (profile photo, bio, etc.) suggesting same person.
+   - FALSE if: the social name appears to be a completely unrelated celebrity/influencer's identity (e.g. legal "John Smith" claiming "@kyliejenner") or there is clear evidence of impersonation.
+   - UNCERTAIN: when in doubt, return false — admin will review.
 
-IMPORTANT: 
-- For the name, allow minor variations (e.g. "@dina" matches "Dina", "Dina Official" matches "Dina")
-- For followers, allow reasonable rounding (e.g. "49.8K" matches "50K", "1.2M" matches "1200000")
-- The screenshot should clearly be from the claimed platform (${verification.platform})
+IMPORTANT: A screenshot of someone else's public profile is easy to obtain. We rely on you to flag suspicious mismatches between legal identity and social identity.
 
 Respond using the tool provided.`,
               },
