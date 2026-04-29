@@ -42,7 +42,7 @@ const PLATFORMS = [
   { value: "facebook", label: "Facebook", icon: FacebookIcon },
 ] as const;
 
-type VerificationStatus = "idle" | "uploading" | "analyzing" | "verified" | "rejected" | "pending_admin";
+type VerificationStatus = "idle" | "extracting" | "uploading" | "analyzing" | "verified" | "rejected" | "pending_admin";
 
 const SocialVerificationSheet = ({ isOpen, onClose, onUpdate, defaultPlatform }: SocialVerificationSheetProps) => {
   const { user } = useAuth();
