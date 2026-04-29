@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { Camera, Upload, CheckCircle, XCircle, Clock, Loader2 } from "lucide-react";
+import { Camera, Upload, CheckCircle, XCircle, Clock, Loader2, ShieldAlert } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -56,12 +57,26 @@ const SocialVerificationSheet = ({ isOpen, onClose, onUpdate, defaultPlatform }:
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const [status, setStatus] = useState<VerificationStatus>("idle");
   const [resultMessage, setResultMessage] = useState("");
+  const [identityVerified, setIdentityVerified] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (isOpen && defaultPlatform) {
       setPlatform(defaultPlatform);
     }
   }, [isOpen, defaultPlatform]);
+
+  // Check identity verification status when sheet opens
+  useEffect(() => {
+    if (!isOpen || !user) return;
+    (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("identity_verified")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      setIdentityVerified(!!data?.identity_verified);
+    })();
+  }, [isOpen, user]);
 
   const resetForm = () => {
     setPlatform("");
@@ -225,6 +240,30 @@ const SocialVerificationSheet = ({ isOpen, onClose, onUpdate, defaultPlatform }:
           </p>
         </SheetHeader>
 
+        {/* Identity gate — block social verification if user hasn't verified their identity */}
+        {identityVerified === false && (
+          <div className="mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30">
+            <div className="flex items-start gap-3">
+              <ShieldAlert className="w-6 h-6 text-amber-500 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="font-semibold text-amber-700 dark:text-amber-400">
+                  Vérification d'identité requise
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Pour éviter l'usurpation d'identité, vous devez d'abord vérifier votre identité
+                  (pièce d'identité + selfie) avant de pouvoir lier un réseau social.
+                </p>
+                <Link to="/creator/profile?tab=security">
+                  <Button variant="gold" size="sm" className="mt-3" onClick={() => onClose()}>
+                    <ShieldAlert className="w-4 h-4 mr-2" />
+                    Vérifier mon identité
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Result States */}
         {status === "verified" && (
           <div className="mb-6 p-4 rounded-2xl bg-green-500/10 border border-green-500/30">
@@ -271,8 +310,8 @@ const SocialVerificationSheet = ({ isOpen, onClose, onUpdate, defaultPlatform }:
           </div>
         )}
 
-        {/* Form */}
-        {(status === "idle" || status === "extracting" || status === "uploading" || status === "analyzing") && (
+        {/* Form — hidden until identity is verified */}
+        {identityVerified !== false && (status === "idle" || status === "extracting" || status === "uploading" || status === "analyzing") && (
           <div className="space-y-5">
             {/* Platform Select */}
             <div className="space-y-2">

@@ -42,6 +42,34 @@ serve(async (req) => {
       );
     }
 
+    // SECURITY GATE: identity must be verified before social verification
+    // This prevents someone from claiming a celebrity's social account using only a screenshot.
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("full_name, identity_verified")
+      .eq("user_id", verification.user_id)
+      .maybeSingle();
+
+    if (!profile?.identity_verified) {
+      await supabase
+        .from("social_verifications")
+        .update({
+          status: "rejected",
+          ai_reason: "Identité non vérifiée — vérifiez votre identité avant de lier un réseau social.",
+        })
+        .eq("id", verification_id);
+
+      return new Response(
+        JSON.stringify({
+          status: "rejected",
+          reason: "Vous devez d'abord vérifier votre identité (pièce + selfie) avant de pouvoir vérifier un réseau social.",
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const legalName = profile.full_name || "";
+
     // Get signed URL for the screenshot
     const { data: signedUrlData } = await supabase.storage
       .from("social-screenshots")
@@ -77,20 +105,29 @@ serve(async (req) => {
             content: [
               {
                 type: "text",
-                text: `Analyze this social media screenshot. The user claims:
+                text: `Analyze this social media screenshot.
+
+USER CLAIM:
 - Platform: ${verification.platform}
-- Page/Account name: "${verification.page_name}"
-- Follower count: "${verification.claimed_followers}"
+- Page/Account name they entered: "${verification.page_name}"
+- Follower count they entered: "${verification.claimed_followers}"
+
+USER'S VERIFIED LEGAL IDENTITY (from their official ID document):
+- Legal name: "${legalName}"
 
 Your task:
-1. Extract the account/page name visible on the screenshot
-2. Extract the follower/subscriber count visible on the screenshot
-3. Determine if they match what the user claimed
+1. Extract the account/page name visible on the screenshot.
+2. Extract the follower/subscriber count visible on the screenshot.
+3. Determine if the screenshot's name matches what the user entered (allowing minor variations like "@dina" vs "Dina").
+4. Determine if the followers match (allow rounding: "49.8K" ≈ "50K").
+5. Confirm the screenshot is from the claimed platform.
+6. CRITICAL — Identity consistency: Could this social account plausibly belong to the person whose legal name is "${legalName}"?
+   - TRUE if: the social handle/display name contains, abbreviates, or is a known nickname/stage-name variation of the legal name (e.g. legal "Dina Diallo" → social "Dina" or "@dinadiallo" or "Miss Dee").
+   - TRUE if: the social name is a brand/stage name AND there is plausible visual context (profile photo, bio, etc.) suggesting same person.
+   - FALSE if: the social name appears to be a completely unrelated celebrity/influencer's identity (e.g. legal "John Smith" claiming "@kyliejenner") or there is clear evidence of impersonation.
+   - UNCERTAIN: when in doubt, return false — admin will review.
 
-IMPORTANT: 
-- For the name, allow minor variations (e.g. "@dina" matches "Dina", "Dina Official" matches "Dina")
-- For followers, allow reasonable rounding (e.g. "49.8K" matches "50K", "1.2M" matches "1200000")
-- The screenshot should clearly be from the claimed platform (${verification.platform})
+IMPORTANT: A screenshot of someone else's public profile is easy to obtain. We rely on you to flag suspicious mismatches between legal identity and social identity.
 
 Respond using the tool provided.`,
               },
@@ -132,13 +169,17 @@ Respond using the tool provided.`,
                     type: "boolean",
                     description: "Whether the screenshot appears to be from the claimed platform",
                   },
+                  identity_consistent: {
+                    type: "boolean",
+                    description: "Whether the social account name plausibly belongs to the person with the verified legal name. False if it looks like impersonation of someone else.",
+                  },
                   confidence: {
                     type: "number",
-                    description: "Confidence score from 0 to 100 that this is a legitimate screenshot",
+                    description: "Confidence score from 0 to 100 that this is a legitimate screenshot owned by this user",
                   },
                   reason: {
                     type: "string",
-                    description: "Brief explanation of the verification result",
+                    description: "Brief explanation of the verification result, especially around identity consistency",
                   },
                 },
                 required: [
@@ -147,6 +188,7 @@ Respond using the tool provided.`,
                   "name_matches",
                   "followers_match",
                   "is_correct_platform",
+                  "identity_consistent",
                   "confidence",
                   "reason",
                 ],
@@ -214,14 +256,30 @@ Respond using the tool provided.`,
     }
 
     const result = JSON.parse(toolCall.function.arguments);
-    const isVerified =
+
+    // Auto-verify ONLY if technical match + identity is plausibly the same person
+    const technicalMatch =
       result.name_matches &&
       result.followers_match &&
       result.is_correct_platform &&
       result.confidence >= 70;
 
-    const needsAdmin = !isVerified && result.confidence >= 40;
-    const status = isVerified ? "verified" : needsAdmin ? "pending_admin" : "rejected";
+    const isVerified = technicalMatch && result.identity_consistent === true;
+
+    // If technical match but identity flagged as inconsistent → ALWAYS admin review (possible impersonation)
+    // If partial confidence → admin review
+    // Otherwise reject
+    let status: string;
+    if (isVerified) {
+      status = "verified";
+    } else if (technicalMatch && !result.identity_consistent) {
+      // Technical match but suspected impersonation → admin must decide
+      status = "pending_admin";
+    } else if (result.confidence >= 40) {
+      status = "pending_admin";
+    } else {
+      status = "rejected";
+    }
 
     // Update verification record
     await supabase
