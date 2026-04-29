@@ -180,7 +180,7 @@ const SocialEditSheet = ({ isOpen, onClose, initialData, onUpdate }: SocialEditS
                 <FormField
                   key={name}
                   control={form.control}
-                  name={name}
+                  name={name as keyof SocialFormData}
                   render={({ field }) => (
                     <FormItem>
                       <div className="flex items-center gap-3">
