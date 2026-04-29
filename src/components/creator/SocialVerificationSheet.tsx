@@ -42,7 +42,7 @@ const PLATFORMS = [
   { value: "facebook", label: "Facebook", icon: FacebookIcon },
 ] as const;
 
-type VerificationStatus = "idle" | "uploading" | "analyzing" | "verified" | "rejected" | "pending_admin";
+type VerificationStatus = "idle" | "extracting" | "uploading" | "analyzing" | "verified" | "rejected" | "pending_admin";
 
 const SocialVerificationSheet = ({ isOpen, onClose, onUpdate, defaultPlatform }: SocialVerificationSheetProps) => {
   const { user } = useAuth();
@@ -73,7 +73,7 @@ const SocialVerificationSheet = ({ isOpen, onClose, onUpdate, defaultPlatform }:
     setResultMessage("");
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -86,6 +86,46 @@ const SocialVerificationSheet = ({ isOpen, onClose, onUpdate, defaultPlatform }:
     const reader = new FileReader();
     reader.onload = (ev) => setScreenshotPreview(ev.target?.result as string);
     reader.readAsDataURL(file);
+
+    // Auto-extract page name + followers via AI if platform already selected
+    if (platform) {
+      await extractFromImage(file);
+    }
+  };
+
+  const extractFromImage = async (file: File) => {
+    setStatus("extracting");
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result as string;
+          resolve(result.split(",")[1]); // strip data:...;base64,
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const { data, error } = await supabase.functions.invoke("extract-social-screenshot", {
+        body: { image_base64: base64, mime_type: file.type, platform },
+      });
+
+      if (error) throw error;
+
+      if (data?.found) {
+        if (data.page_name && !pageName.trim()) setPageName(data.page_name);
+        if (data.followers && !claimedFollowers.trim()) setClaimedFollowers(data.followers);
+        toast({
+          title: "✨ Extrait par l'IA",
+          description: "Vérifiez et corrigez si besoin avant de soumettre.",
+        });
+      }
+    } catch (err) {
+      console.error("Auto-extract error:", err);
+      // Silent fail – user can fill manually
+    } finally {
+      setStatus("idle");
+    }
   };
 
   const handleSubmit = async () => {
@@ -231,7 +271,7 @@ const SocialVerificationSheet = ({ isOpen, onClose, onUpdate, defaultPlatform }:
         )}
 
         {/* Form */}
-        {(status === "idle" || status === "uploading" || status === "analyzing") && (
+        {(status === "idle" || status === "extracting" || status === "uploading" || status === "analyzing") && (
           <div className="space-y-5">
             {/* Platform Select */}
             <div className="space-y-2">
@@ -300,6 +340,12 @@ const SocialVerificationSheet = ({ isOpen, onClose, onUpdate, defaultPlatform }:
                     alt="Capture d'écran"
                     className="w-full max-h-64 object-contain bg-muted"
                   />
+                  {status === "extracting" && (
+                    <div className="absolute inset-0 bg-background/70 backdrop-blur-sm flex flex-col items-center justify-center gap-2">
+                      <Loader2 className="w-6 h-6 animate-spin text-gold" />
+                      <span className="text-xs font-medium">L'IA analyse votre capture...</span>
+                    </div>
+                  )}
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     className="absolute bottom-2 right-2 px-3 py-1.5 rounded-full bg-background/80 text-xs font-medium hover:bg-background transition-colors"
