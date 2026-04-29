@@ -57,12 +57,26 @@ const SocialVerificationSheet = ({ isOpen, onClose, onUpdate, defaultPlatform }:
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const [status, setStatus] = useState<VerificationStatus>("idle");
   const [resultMessage, setResultMessage] = useState("");
+  const [identityVerified, setIdentityVerified] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (isOpen && defaultPlatform) {
       setPlatform(defaultPlatform);
     }
   }, [isOpen, defaultPlatform]);
+
+  // Check identity verification status when sheet opens
+  useEffect(() => {
+    if (!isOpen || !user) return;
+    (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("identity_verified")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      setIdentityVerified(!!data?.identity_verified);
+    })();
+  }, [isOpen, user]);
 
   const resetForm = () => {
     setPlatform("");
