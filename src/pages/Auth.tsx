@@ -735,7 +735,7 @@ const Auth = () => {
                 >
                   Se connecter
                 </Button>
-                {(!inviteRequired || !!localStorage.getItem("invite_gate_code")) && (
+                {(!inviteRequired || hasValidatedCode) && (
                   <Button 
                     onClick={() => setMode("signup")}
                     variant="outline"
@@ -745,18 +745,18 @@ const Auth = () => {
                     Créer un compte
                   </Button>
                 )}
-                {inviteRequired && !localStorage.getItem("invite_gate_code") && (
+                {inviteRequired && !hasValidatedCode && (
                   <p className="text-xs text-center text-muted-foreground px-4">
                     🔒 La création de compte nécessite un code d'invitation.
                   </p>
                 )}
-                {inviteRequired && (
+                {inviteRequired && !hasValidatedCode && (
                   <Button
                     onClick={openInviteGate}
                     className="w-full bg-gold/15 hover:bg-gold/25 border border-gold/40 text-gold font-semibold py-5 rounded-xl"
                   >
                     <Sparkles className="w-5 h-5 mr-2" />
-                    J'ai un code d'invitation
+                    J'ai un code d'activation
                   </Button>
                 )}
               </motion.div>
