@@ -773,7 +773,13 @@ const Auth = () => {
               errors={loginErrors}
               isSubmitting={isSubmitting}
               onSubmit={handleLogin}
-              onSwitchToSignup={() => setMode("signup")}
+              onSwitchToSignup={() => {
+                if (inviteRequired && !hasValidatedCode) {
+                  openInviteGate();
+                } else {
+                  setMode("signup");
+                }
+              }}
             />
           ) : (
             <SignupForm
