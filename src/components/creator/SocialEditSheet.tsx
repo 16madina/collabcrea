@@ -169,12 +169,12 @@ const SocialEditSheet = ({ isOpen, onClose, initialData, onUpdate }: SocialEditS
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             {([
-              { name: "youtube_followers", platform: "youtube", label: "YouTube", placeholder: "Ex: 150K", Icon: YouTubeIcon, connectBtn: "youtube" },
-              { name: "instagram_followers", platform: "instagram", label: "Instagram", placeholder: "Ex: 250K", Icon: InstagramIcon },
-              { name: "tiktok_followers", platform: "tiktok", label: "TikTok", placeholder: "Ex: 500K", Icon: TikTokIcon, connectBtn: "tiktok" },
-              { name: "snapchat_followers", platform: "snapchat", label: "Snapchat", placeholder: "Ex: 100K", Icon: SnapchatIcon },
-              { name: "facebook_followers", platform: "facebook", label: "Facebook", placeholder: "Ex: 200K", Icon: FacebookIcon },
-            ] as const).map(({ name, platform, label, placeholder, Icon, connectBtn }) => {
+              { name: "youtube_followers", platform: "youtube", label: "YouTube", placeholder: "Ex: 150K", Icon: YouTubeIcon, connectBtn: "youtube" as string | undefined },
+              { name: "instagram_followers", platform: "instagram", label: "Instagram", placeholder: "Ex: 250K", Icon: InstagramIcon, connectBtn: undefined as string | undefined },
+              { name: "tiktok_followers", platform: "tiktok", label: "TikTok", placeholder: "Ex: 500K", Icon: TikTokIcon, connectBtn: "tiktok" as string | undefined },
+              { name: "snapchat_followers", platform: "snapchat", label: "Snapchat", placeholder: "Ex: 100K", Icon: SnapchatIcon, connectBtn: undefined as string | undefined },
+              { name: "facebook_followers", platform: "facebook", label: "Facebook", placeholder: "Ex: 200K", Icon: FacebookIcon, connectBtn: undefined as string | undefined },
+            ]).map(({ name, platform, label, placeholder, Icon, connectBtn }) => {
               const isVerified = verificationStatuses[platform] === "verified";
               return (
                 <FormField
