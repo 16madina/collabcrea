@@ -883,7 +883,7 @@ const Auth = () => {
             <p className="text-[11px] text-center text-muted-foreground">
               Pas de code ?{" "}
               <a
-                href="https://snapchat.com/add/lazone_officiel"
+                href="https://snapchat.com/t/7cYoQpWW"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gold font-semibold underline underline-offset-2 hover:text-gold/80"
