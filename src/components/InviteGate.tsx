@@ -186,13 +186,15 @@ const InviteGate = ({ children }: InviteGateProps) => {
 
           <div className="mt-6 pt-6 border-t border-border/50 text-center">
             <p className="text-xs text-muted-foreground">
-              Pas encore de code ?
-            </p>
-            <p className="text-xs text-foreground mt-1">
-              Ajoute-moi sur Snap{" "}
-              <span className="text-gold font-semibold">@lazone_officiel</span>
-              <br />
-              et demande le tien 👻
+              Pas encore de code ?{" "}
+              <a
+                href="https://snapchat.com/add/lazone_officiel"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gold font-semibold underline underline-offset-2 hover:text-gold/80"
+              >
+                Demandez-le ici
+              </a>
             </p>
           </div>
 
