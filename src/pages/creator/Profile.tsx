@@ -91,7 +91,7 @@ const CreatorProfile = () => {
     (searchParams.get("tab") as ProfileTabType) || "info"
   );
 
-  const fetchProfile = async () => {
+  const fetchProfile = async (attempt = 0): Promise<void> => {
     if (!user) {
       setLoading(false);
       navigate("/auth");
@@ -99,13 +99,28 @@ const CreatorProfile = () => {
     }
 
     try {
-      const { data, error } = await supabase
+      // Race the query against a 10s timeout so iOS WKWebView fetches
+      // that silently hang can't freeze the loading screen forever.
+      const queryPromise = supabase
         .from("profiles")
         .select("*")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
+
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Request timeout")), 10000)
+      );
+
+      const { data, error } = (await Promise.race([
+        queryPromise,
+        timeoutPromise,
+      ])) as Awaited<typeof queryPromise>;
 
       if (error) throw error;
+      if (!data) {
+        setLoading(false);
+        return;
+      }
 
       setProfileData({
         full_name: data.full_name,
@@ -128,10 +143,18 @@ const CreatorProfile = () => {
         banner_url: data.banner_url,
         created_at: data.created_at,
       });
+      setLoading(false);
     } catch (error) {
       console.error("Error fetching profile:", error);
-    } finally {
+      // Retry transient network failures (typical of iOS "Load failed")
+      if (attempt < 2) {
+        setTimeout(() => fetchProfile(attempt + 1), 1500 * (attempt + 1));
+        return;
+      }
       setLoading(false);
+      toast.error("Connexion instable", {
+        description: "Impossible de charger ton profil. Vérifie ta connexion et réessaie.",
+      });
     }
   };
 
