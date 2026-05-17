@@ -19,7 +19,7 @@ import AdminInviteCodesTab from "@/components/admin/AdminInviteCodesTab";
 import logoCollabCrea from "@/assets/logo-collabcrea.png";
 
 const AdminDashboard = () => {
-  const { isAdmin, loading: adminLoading } = useAdmin();
+  const { isAdmin, loading: adminLoading, errored: adminErrored } = useAdmin();
   const { user, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("users");
@@ -27,10 +27,12 @@ const AdminDashboard = () => {
   useEffect(() => {
     if (!authLoading && !user) {
       navigate("/auth");
-    } else if (!adminLoading && !isAdmin && user) {
+    } else if (!adminLoading && !adminErrored && !isAdmin && user) {
+      // Only redirect when we have a confirmed non-admin result.
+      // On network errors we keep the user on the page so they can retry.
       navigate("/");
     }
-  }, [user, isAdmin, authLoading, adminLoading, navigate]);
+  }, [user, isAdmin, authLoading, adminLoading, adminErrored, navigate]);
 
   if (authLoading || adminLoading) {
     return (
