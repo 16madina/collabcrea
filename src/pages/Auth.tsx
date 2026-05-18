@@ -512,6 +512,7 @@ const Auth = () => {
           } else {
             // Clear the gate-stored code so it's not reused
             localStorage.removeItem("invite_gate_code");
+            localStorage.removeItem("invite_gate_version");
           }
         }
 
