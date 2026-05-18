@@ -1041,6 +1041,10 @@ export type Database = {
         Returns: undefined
       }
       validate_invite_code: { Args: { p_code: string }; Returns: boolean }
+      vault_upsert_service_role_key: {
+        Args: { p_value: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "creator" | "brand" | "admin"
