@@ -132,6 +132,23 @@ function buildHtml(params: { type: AuthEmailType; actionLink: string; userName?:
   `.trim();
 }
 
+// Simple in-memory rate limiter (per email, per IP). Mitigates spam abuse.
+const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
+const RATE_LIMIT_MAX = 3; // max 3 emails / minute per key
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+function checkRateLimit(key: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(key);
+  if (!entry || entry.resetAt < now) {
+    rateLimitMap.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+  if (entry.count >= RATE_LIMIT_MAX) return false;
+  entry.count += 1;
+  return true;
+}
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -146,6 +163,16 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (!body?.email || !body?.type) {
       throw new Error("Email and type are required");
+    }
+
+    // Rate limit by normalized email + caller IP
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() || "unknown";
+    const emailKey = body.email.trim().toLowerCase();
+    if (!checkRateLimit(`email:${emailKey}`) || !checkRateLimit(`ip:${ip}`)) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Too many requests. Please try again later." }),
+        { status: 429, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
 
     const redirectTo =
