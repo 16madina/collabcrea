@@ -440,6 +440,7 @@ const Auth = () => {
       // Going back to home: if invite gate is active, clear stored code so user re-enters it
       if (inviteRequired) {
         localStorage.removeItem("invite_gate_code");
+        localStorage.removeItem("invite_gate_version");
       }
       navigate("/");
     }
