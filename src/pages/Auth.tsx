@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, Link } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -182,10 +182,14 @@ const initialFormData: SignupFormData = {
   inviteCode: "",
 };
 
+const INVITE_CODE_STORAGE_KEY = "invite_gate_code";
+const INVITE_VERSION_STORAGE_KEY = "invite_gate_version";
+
 const Auth = () => {
   const navigate = useNavigate();
   const { user, role: userRole, loading: authLoading, signIn } = useAuth();
-  const { required: inviteRequired, updatedAt: inviteUpdatedAt } = useInviteCodesRequired();
+  const { required: inviteRequired, updatedAt: inviteUpdatedAt, loading: inviteSettingLoading } = useInviteCodesRequired();
+  const autoPromptedVersionRef = useRef<string | null>(null);
 
   // Invite code dialog state (in-page popup, no navigation)
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
