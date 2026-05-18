@@ -36,6 +36,7 @@ export const usePushNotifications = () => {
     window.addEventListener('FCMToken' as any, handleFCMToken);
     
     return () => {
+      clearTimeout(t);
       window.removeEventListener('FCMToken' as any, handleFCMToken);
     };
   }, []);
