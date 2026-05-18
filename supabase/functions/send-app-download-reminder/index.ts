@@ -9,6 +9,7 @@ const corsHeaders = {
 };
 
 const IOS_URL = "https://apps.apple.com/ca/app/collabcrea/id6758926846?l=fr-CA";
+const ANDROID_URL = "https://play.google.com/store/apps/details?id=com.collabcrea.app";
 const WEB_URL = "https://collabcrea.com";
 const LOGO_URL =
   "https://fkfdjibqpmdaobjrryja.supabase.co/storage/v1/object/public/email-assets/logo-collabcrea.png?v=1";
@@ -57,9 +58,10 @@ function buildHtml(name: string | null) {
            style="display:inline-block; background:#000000; color:#ffffff; text-decoration:none; padding:12px 24px; border-radius:10px; font-weight:600; font-size:14px; margin:4px;">
            Télécharger sur l'App Store
         </a>
-        <p style="color:rgba(255,255,255,0.5); font-size:12px; margin:16px 0 0;">
-          Android : disponible très bientôt sur Google Play 🤖
-        </p>
+        <a href="${ANDROID_URL}" target="_blank"
+           style="display:inline-block; background:#000000; color:#ffffff; text-decoration:none; padding:12px 24px; border-radius:10px; font-weight:600; font-size:14px; margin:4px;">
+           Télécharger sur Google Play
+        </a>
       </div>
     </div>
     <div style="padding:20px 40px; text-align:center; background:rgba(0,0,0,0.25);">
