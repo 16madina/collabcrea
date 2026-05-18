@@ -111,9 +111,16 @@ const AdminInviteCodesTab = () => {
         ? "✅ Système activé : un code est requis à l'inscription"
         : "🔓 Système désactivé : inscription libre"
     );
-    setTimeout(() => {
-      localToggleRef.current = false;
-    }, 1000);
+    // Déconnecte l'admin et redirige vers /auth pour forcer la re-validation du gate
+    setTimeout(async () => {
+      try {
+        sessionStorage.setItem("invite_gate_force_prompt", "true");
+        await signOut();
+      } finally {
+        localToggleRef.current = false;
+        window.location.href = "/auth";
+      }
+    }, 600);
   };
 
   const generateCodes = async (count: number) => {
