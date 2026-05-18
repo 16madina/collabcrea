@@ -222,13 +222,9 @@ const Auth = () => {
     setHasValidatedCode(!!stored && unlockedThisSession);
   }, [inviteSettingLoading, authLoading, user, inviteRequired, inviteUpdatedAt]);
 
-  useEffect(() => {
-    if (inviteSettingLoading || authLoading || user || !inviteRequired || hasValidatedCode) return;
-    const promptVersion = inviteUpdatedAt ?? "required";
-    if (autoPromptedVersionRef.current === promptVersion) return;
-    autoPromptedVersionRef.current = promptVersion;
-    openInviteGate();
-  }, [inviteSettingLoading, authLoading, user, inviteRequired, hasValidatedCode, inviteUpdatedAt]);
+  // Note: le code d'invitation est requis uniquement pour la création
+  // d'un nouveau compte. Les utilisateurs existants peuvent se connecter
+  // sans code. On n'auto-ouvre donc plus la popup à l'arrivée sur /auth.
 
   const openInviteGate = (nextMode?: AuthMode) => {
     setPendingInviteMode(nextMode ?? null);
