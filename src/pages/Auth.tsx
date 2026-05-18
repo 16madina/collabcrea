@@ -185,7 +185,7 @@ const initialFormData: SignupFormData = {
 const Auth = () => {
   const navigate = useNavigate();
   const { user, role: userRole, loading: authLoading, signIn } = useAuth();
-  const { required: inviteRequired } = useInviteCodesRequired();
+  const { required: inviteRequired, updatedAt: inviteUpdatedAt } = useInviteCodesRequired();
 
   // Invite code dialog state (in-page popup, no navigation)
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
@@ -196,6 +196,19 @@ const Auth = () => {
     if (typeof window === "undefined") return false;
     return !!localStorage.getItem("invite_gate_code");
   });
+
+  // Si l'admin a re-toggle l'accès privé depuis le dernier unlock,
+  // on invalide le code stocké localement.
+  useEffect(() => {
+    if (!inviteUpdatedAt) return;
+    const stored = localStorage.getItem("invite_gate_code");
+    const storedVersion = localStorage.getItem("invite_gate_version");
+    if (stored && storedVersion !== inviteUpdatedAt) {
+      localStorage.removeItem("invite_gate_code");
+      localStorage.removeItem("invite_gate_version");
+      setHasValidatedCode(false);
+    }
+  }, [inviteUpdatedAt]);
 
   const openInviteGate = () => {
     setInviteDialogCode("");
