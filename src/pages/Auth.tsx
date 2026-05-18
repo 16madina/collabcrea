@@ -197,6 +197,7 @@ const Auth = () => {
   const [inviteDialogCode, setInviteDialogCode] = useState("");
   const [inviteDialogError, setInviteDialogError] = useState<string | null>(null);
   const [inviteDialogValidating, setInviteDialogValidating] = useState(false);
+  const [pendingInviteMode, setPendingInviteMode] = useState<AuthMode | null>(null);
   const [hasValidatedCode, setHasValidatedCode] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     return !!localStorage.getItem(INVITE_CODE_STORAGE_KEY)
@@ -229,7 +230,8 @@ const Auth = () => {
     openInviteGate();
   }, [inviteSettingLoading, authLoading, user, inviteRequired, hasValidatedCode, inviteUpdatedAt]);
 
-  const openInviteGate = () => {
+  const openInviteGate = (nextMode?: AuthMode) => {
+    setPendingInviteMode(nextMode ?? null);
     setInviteDialogCode("");
     setInviteDialogError(null);
     setInviteDialogOpen(true);
@@ -263,9 +265,12 @@ const Auth = () => {
       setFormData((prev) => ({ ...prev, inviteCode: normalized }));
       setHasValidatedCode(true);
       setInviteDialogOpen(false);
-      setMode("signup");
-      setStep(1);
-      toast.success("Code validé ! Vous pouvez créer votre compte.");
+      if (pendingInviteMode) {
+        setMode(pendingInviteMode);
+        if (pendingInviteMode === "signup") setStep(1);
+      }
+      setPendingInviteMode(null);
+      toast.success("Code validé ! Vous pouvez continuer.");
     } catch (err: any) {
       setInviteDialogError(err.message || "Une erreur est survenue");
     } finally {
