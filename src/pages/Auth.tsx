@@ -222,13 +222,9 @@ const Auth = () => {
     setHasValidatedCode(!!stored && unlockedThisSession);
   }, [inviteSettingLoading, authLoading, user, inviteRequired, inviteUpdatedAt]);
 
-  useEffect(() => {
-    if (inviteSettingLoading || authLoading || user || !inviteRequired || hasValidatedCode) return;
-    const promptVersion = inviteUpdatedAt ?? "required";
-    if (autoPromptedVersionRef.current === promptVersion) return;
-    autoPromptedVersionRef.current = promptVersion;
-    openInviteGate();
-  }, [inviteSettingLoading, authLoading, user, inviteRequired, hasValidatedCode, inviteUpdatedAt]);
+  // Note: le code d'invitation est requis uniquement pour la création
+  // d'un nouveau compte. Les utilisateurs existants peuvent se connecter
+  // sans code. On n'auto-ouvre donc plus la popup à l'arrivée sur /auth.
 
   const openInviteGate = (nextMode?: AuthMode) => {
     setPendingInviteMode(nextMode ?? null);
@@ -649,11 +645,8 @@ const Auth = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (inviteRequired && !hasValidatedCode) {
-      openInviteGate("login");
-      toast.error("Veuillez valider votre code d'invitation avant de vous connecter.");
-      return;
-    }
+    // Connexion ouverte à tous les utilisateurs existants — le code
+    // d'invitation n'est exigé que pour la création de nouveau compte.
 
     const newErrors: { email?: string; password?: string } = {};
 
@@ -797,7 +790,7 @@ const Auth = () => {
                 )}
                 {inviteRequired && !hasValidatedCode && (
                   <p className="text-xs text-center text-muted-foreground px-4">
-                    🔒 La connexion et la création de compte nécessitent un code d'invitation.
+                    🔒 La création de compte nécessite un code d'invitation. La connexion reste ouverte aux membres existants.
                   </p>
                 )}
                 {inviteRequired && !hasValidatedCode && (
