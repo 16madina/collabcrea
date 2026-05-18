@@ -9,6 +9,7 @@ const corsHeaders = {
 };
 
 const IOS_URL = "https://apps.apple.com/ca/app/collabcrea/id6758926846?l=fr-CA";
+const ANDROID_URL = "https://play.google.com/store/apps/details?id=com.collabcrea.app";
 const WEB_URL = "https://collabcrea.com";
 const LOGO_URL =
   "https://fkfdjibqpmdaobjrryja.supabase.co/storage/v1/object/public/email-assets/logo-collabcrea.png?v=1";
