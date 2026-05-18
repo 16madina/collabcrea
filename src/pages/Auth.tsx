@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, Link } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -182,10 +182,15 @@ const initialFormData: SignupFormData = {
   inviteCode: "",
 };
 
+const INVITE_CODE_STORAGE_KEY = "invite_gate_code";
+const INVITE_VERSION_STORAGE_KEY = "invite_gate_version";
+const INVITE_SESSION_UNLOCK_KEY = "invite_gate_unlocked_session";
+
 const Auth = () => {
   const navigate = useNavigate();
   const { user, role: userRole, loading: authLoading, signIn } = useAuth();
-  const { required: inviteRequired, updatedAt: inviteUpdatedAt } = useInviteCodesRequired();
+  const { required: inviteRequired, updatedAt: inviteUpdatedAt, loading: inviteSettingLoading } = useInviteCodesRequired();
+  const autoPromptedVersionRef = useRef<string | null>(null);
 
   // Invite code dialog state (in-page popup, no navigation)
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
@@ -194,21 +199,35 @@ const Auth = () => {
   const [inviteDialogValidating, setInviteDialogValidating] = useState(false);
   const [hasValidatedCode, setHasValidatedCode] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
-    return !!localStorage.getItem("invite_gate_code");
+    return !!localStorage.getItem(INVITE_CODE_STORAGE_KEY)
+      && sessionStorage.getItem(INVITE_SESSION_UNLOCK_KEY) === "true";
   });
 
-  // Si l'admin a re-toggle l'accès privé depuis le dernier unlock,
-  // on invalide le code stocké localement.
+  // Un code stocké ne déverrouille /auth que s'il a été validé pendant
+  // cette session. Après une déconnexion, on purge donc tout reliquat local.
   useEffect(() => {
-    if (!inviteUpdatedAt) return;
-    const stored = localStorage.getItem("invite_gate_code");
-    const storedVersion = localStorage.getItem("invite_gate_version");
-    if (stored && storedVersion !== inviteUpdatedAt) {
-      localStorage.removeItem("invite_gate_code");
-      localStorage.removeItem("invite_gate_version");
+    if (inviteSettingLoading || authLoading || user || !inviteRequired) return;
+    const stored = localStorage.getItem(INVITE_CODE_STORAGE_KEY);
+    const storedVersion = localStorage.getItem(INVITE_VERSION_STORAGE_KEY);
+    const unlockedThisSession = sessionStorage.getItem(INVITE_SESSION_UNLOCK_KEY) === "true";
+
+    if (stored && (!unlockedThisSession || (inviteUpdatedAt && storedVersion !== inviteUpdatedAt))) {
+      localStorage.removeItem(INVITE_CODE_STORAGE_KEY);
+      localStorage.removeItem(INVITE_VERSION_STORAGE_KEY);
       setHasValidatedCode(false);
+      setFormData((prev) => ({ ...prev, inviteCode: "" }));
+      return;
     }
-  }, [inviteUpdatedAt]);
+    setHasValidatedCode(!!stored && unlockedThisSession);
+  }, [inviteSettingLoading, authLoading, user, inviteRequired, inviteUpdatedAt]);
+
+  useEffect(() => {
+    if (inviteSettingLoading || authLoading || user || !inviteRequired || hasValidatedCode) return;
+    const promptVersion = inviteUpdatedAt ?? "required";
+    if (autoPromptedVersionRef.current === promptVersion) return;
+    autoPromptedVersionRef.current = promptVersion;
+    openInviteGate();
+  }, [inviteSettingLoading, authLoading, user, inviteRequired, hasValidatedCode, inviteUpdatedAt]);
 
   const openInviteGate = () => {
     setInviteDialogCode("");
@@ -236,9 +255,10 @@ const Auth = () => {
         return;
       }
       // Persist + sync gate, then close
-      localStorage.setItem("invite_gate_code", normalized);
-      if (inviteUpdatedAt) localStorage.setItem("invite_gate_version", inviteUpdatedAt);
+      localStorage.setItem(INVITE_CODE_STORAGE_KEY, normalized);
+      if (inviteUpdatedAt) localStorage.setItem(INVITE_VERSION_STORAGE_KEY, inviteUpdatedAt);
       sessionStorage.removeItem("invite_gate_force_prompt");
+      sessionStorage.setItem(INVITE_SESSION_UNLOCK_KEY, "true");
       window.dispatchEvent(new Event("invite-gate-reset"));
       setFormData((prev) => ({ ...prev, inviteCode: normalized }));
       setHasValidatedCode(true);
@@ -260,7 +280,7 @@ const Auth = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<SignupFormData>(() => {
     const storedCode = typeof window !== "undefined"
-      ? localStorage.getItem("invite_gate_code") || ""
+      ? localStorage.getItem(INVITE_CODE_STORAGE_KEY) || ""
       : "";
     return { ...initialFormData, inviteCode: storedCode };
   });
@@ -439,8 +459,8 @@ const Auth = () => {
     } else {
       // Going back to home: if invite gate is active, clear stored code so user re-enters it
       if (inviteRequired) {
-        localStorage.removeItem("invite_gate_code");
-        localStorage.removeItem("invite_gate_version");
+        localStorage.removeItem(INVITE_CODE_STORAGE_KEY);
+        localStorage.removeItem(INVITE_VERSION_STORAGE_KEY);
       }
       navigate("/");
     }
@@ -511,8 +531,9 @@ const Auth = () => {
             // Don't block signup — code was validated just before
           } else {
             // Clear the gate-stored code so it's not reused
-            localStorage.removeItem("invite_gate_code");
-            localStorage.removeItem("invite_gate_version");
+            localStorage.removeItem(INVITE_CODE_STORAGE_KEY);
+            localStorage.removeItem(INVITE_VERSION_STORAGE_KEY);
+            sessionStorage.removeItem(INVITE_SESSION_UNLOCK_KEY);
           }
         }
 
@@ -660,7 +681,7 @@ const Auth = () => {
     }
   };
 
-  if (authLoading) {
+  if (authLoading || inviteSettingLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-gold animate-spin" />

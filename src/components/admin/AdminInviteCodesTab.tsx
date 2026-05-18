@@ -31,7 +31,7 @@ const AdminInviteCodesTab = () => {
   const [bulkCount, setBulkCount] = useState("10");
   const [note, setNote] = useState("");
   const [filter, setFilter] = useState<"all" | "available" | "used">("all");
-  const { required } = useInviteCodesRequired();
+  const { required, loading: settingLoading } = useInviteCodesRequired();
   const localToggleRef = useRef(false);
   const initialSyncDone = useRef(false);
 
@@ -74,6 +74,7 @@ const AdminInviteCodesTab = () => {
 
   // Sync toggle state with Realtime changes (other tabs / devices)
   useEffect(() => {
+    if (settingLoading) return;
     if (!initialSyncDone.current) {
       setSystemEnabled(required);
       initialSyncDone.current = true;
@@ -88,13 +89,13 @@ const AdminInviteCodesTab = () => {
           : "🔓 Accès privé mis à jour : désactivé depuis un autre onglet/appareil"
       );
     }
-  }, [required, systemEnabled]);
+  }, [required, systemEnabled, settingLoading]);
 
   const toggleSystem = async (enabled: boolean) => {
     localToggleRef.current = true;
     const { error } = await supabase
       .from("app_settings")
-      .update({ value: enabled })
+      .update({ value: enabled, updated_at: new Date().toISOString() })
       .eq("key", "invite_codes_required");
 
     if (error) {
