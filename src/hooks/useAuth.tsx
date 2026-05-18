@@ -195,6 +195,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem("invite_gate_code");
     localStorage.removeItem("invite_gate_version");
     sessionStorage.removeItem("invite_gate_force_prompt");
+    sessionStorage.removeItem("invite_gate_unlocked_session");
     window.dispatchEvent(new Event("invite-gate-reset"));
     setUser(null);
     setSession(null);
