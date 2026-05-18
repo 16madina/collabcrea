@@ -3,5 +3,5 @@
     <string name="app_name">collabcrea</string>
     <string name="title_activity_main">collabcrea</string>
     <string name="package_name">com.collabcrea.app</string>
-    <string name="custom_url_scheme">com.collabcrea.app</string>
+    <string name="custom_url_scheme">collabcrea</string>
 </resources>
