@@ -43,7 +43,7 @@ function buildHtml(name: string | null) {
         Une fois ces étapes terminées, vous pourrez démarrer vos premières collaborations rémunérées 💸
       </p>
       <div style="text-align:center; margin:0 0 24px;">
-        <a href="${WEB_URL}/auth" target="_blank"
+        <a href="${WEB_URL}/ouvrir?to=/creator/profile" target="_blank"
            style="display:inline-block; background:linear-gradient(135deg,#d4af37 0%,#f4d03f 50%,#d4af37 100%); color:#1a0a2e; text-decoration:none; padding:16px 36px; border-radius:12px; font-weight:700; font-size:16px;">
           Vérifier mon profil →
         </a>
