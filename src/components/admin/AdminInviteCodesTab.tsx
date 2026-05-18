@@ -33,6 +33,7 @@ const AdminInviteCodesTab = () => {
   const [note, setNote] = useState("");
   const [filter, setFilter] = useState<"all" | "available" | "used">("all");
   const { required, loading: settingLoading } = useInviteCodesRequired();
+  const { signOut } = useAuth();
   const localToggleRef = useRef(false);
   const initialSyncDone = useRef(false);
 
