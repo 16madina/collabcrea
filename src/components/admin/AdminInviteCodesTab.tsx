@@ -31,20 +31,16 @@ const AdminInviteCodesTab = () => {
   const [bulkCount, setBulkCount] = useState("10");
   const [note, setNote] = useState("");
   const [filter, setFilter] = useState<"all" | "available" | "used">("all");
+  const { required } = useInviteCodesRequired();
+  const localToggleRef = useRef(false);
+  const initialSyncDone = useRef(false);
 
-  const loadData = async () => {
+  const loadCodes = async () => {
     setLoading(true);
-    const [{ data: codesData }, { data: settingData }] = await Promise.all([
-      supabase
-        .from("invite_codes")
-        .select("*")
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("app_settings")
-        .select("value")
-        .eq("key", "invite_codes_required")
-        .maybeSingle(),
-    ]);
+    const { data: codesData } = await supabase
+      .from("invite_codes")
+      .select("*")
+      .order("created_at", { ascending: false });
 
     if (codesData) {
       // Fetch profiles for used codes
@@ -69,15 +65,33 @@ const AdminInviteCodesTab = () => {
       );
     }
 
-    setSystemEnabled(settingData?.value === true);
     setLoading(false);
   };
 
   useEffect(() => {
-    loadData();
+    loadCodes();
   }, []);
 
+  // Sync toggle state with Realtime changes (other tabs / devices)
+  useEffect(() => {
+    if (!initialSyncDone.current) {
+      setSystemEnabled(required);
+      initialSyncDone.current = true;
+      return;
+    }
+    if (localToggleRef.current) return;
+    if (required !== systemEnabled) {
+      setSystemEnabled(required);
+      toast.success(
+        required
+          ? "🔒 Accès privé mis à jour : activé depuis un autre onglet/appareil"
+          : "🔓 Accès privé mis à jour : désactivé depuis un autre onglet/appareil"
+      );
+    }
+  }, [required, systemEnabled]);
+
   const toggleSystem = async (enabled: boolean) => {
+    localToggleRef.current = true;
     const { error } = await supabase
       .from("app_settings")
       .update({ value: enabled })
@@ -85,6 +99,7 @@ const AdminInviteCodesTab = () => {
 
     if (error) {
       toast.error("Erreur lors du changement");
+      localToggleRef.current = false;
       return;
     }
     setSystemEnabled(enabled);
@@ -93,6 +108,9 @@ const AdminInviteCodesTab = () => {
         ? "✅ Système activé : un code est requis à l'inscription"
         : "🔓 Système désactivé : inscription libre"
     );
+    setTimeout(() => {
+      localToggleRef.current = false;
+    }, 1000);
   };
 
   const generateCodes = async (count: number) => {
