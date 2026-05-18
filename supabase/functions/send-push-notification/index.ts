@@ -112,43 +112,40 @@ Deno.serve(async (req) => {
     // Create Supabase admin client
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Authentication check - skip for testing/internal calls
-    // In production, uncomment the admin verification block below
-    const authHeader = req.headers.get("Authorization");
-    const skipAuth = req.headers.get("X-Skip-Auth") === "true";
-    
-    console.log("Auth check - skipAuth:", skipAuth, "hasAuthHeader:", !!authHeader);
-    
-    // For now, allow all calls for testing. In production, enable admin check:
-    /*
-    if (authHeader && !skipAuth) {
-      const token = authHeader.replace("Bearer ", "").trim();
-      if (token && token.length > 20) {
-        const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-        
-        if (authError || !user) {
-          return new Response(
-            JSON.stringify({ error: "Unauthorized" }),
-            { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
+    // Authentication: accept either (1) service-role key (used by DB triggers) or
+    // (2) a valid admin user JWT. Reject all other callers.
+    const authHeader = req.headers.get("Authorization") || "";
+    const token = authHeader.replace(/^Bearer\s+/i, "").trim();
 
-        const { data: roleData } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", user.id)
-          .eq("role", "admin")
-          .single();
+    if (!token) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-        if (!roleData) {
-          return new Response(
-            JSON.stringify({ error: "Admin access required" }),
-            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
+    const isServiceRole = token === supabaseServiceKey;
+    if (!isServiceRole) {
+      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+      if (authError || !user) {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      const { data: roleData } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+      if (!roleData) {
+        return new Response(
+          JSON.stringify({ error: "Admin access required" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
     }
-    */
 
     const payload: PushPayload = await req.json();
     console.log("Received payload:", payload);
