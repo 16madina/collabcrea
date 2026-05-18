@@ -161,7 +161,7 @@ const AdminInviteCodesTab = () => {
       toast.error("Erreur");
       return;
     }
-    await loadData();
+    await loadCodes();
   };
 
   const deleteCode = async (id: string) => {
