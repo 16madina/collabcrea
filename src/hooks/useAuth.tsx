@@ -110,23 +110,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     );
 
     // THEN check for existing session - this handles the initial load
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!mounted || initialSessionHandled) return;
-      initialSessionHandled = true;
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        if (!mounted || initialSessionHandled) return;
+        initialSessionHandled = true;
 
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchUserData(session.user.id).finally(() => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          fetchUserData(session.user.id).finally(() => {
+            if (mounted) setLoading(false);
+          });
+        } else {
           if (mounted) setLoading(false);
-        });
-      } else {
-        if (mounted) setLoading(false);
+        }
+      })
+      .catch((err) => {
+        console.warn("[useAuth] getSession failed:", err);
+        if (!mounted) return;
+        initialSessionHandled = true;
+        setLoading(false);
+      });
+
+    // Failsafe: si getSession ne répond pas en 8s (réseau Capacitor lent
+    // ou WebView bloquée), on débloque le chargement pour éviter un
+    // spinner infini sur iOS/Android.
+    const failsafe = setTimeout(() => {
+      if (mounted && !initialSessionHandled) {
+        console.warn("[useAuth] failsafe timeout - unblocking loading");
+        initialSessionHandled = true;
+        setLoading(false);
       }
-    });
+    }, 8000);
 
     return () => {
       mounted = false;
+      clearTimeout(failsafe);
       subscription.unsubscribe();
     };
   }, []);
