@@ -124,9 +124,9 @@ const AdminInviteCodesTab = () => {
         if (error) throw error;
         if (data && data[0]) generated.push(data[0].code);
       }
-      toast.success(`${generated.length} code(s) généré(s)`);
+    toast.success(`${generated.length} code(s) généré(s)`);
       setNote("");
-      await loadData();
+      await loadCodes();
     } catch (e: any) {
       toast.error(e.message || "Erreur");
     } finally {
