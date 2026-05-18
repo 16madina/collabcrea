@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.send-identity-rejection-email]
 verify_jwt = false
+
+[functions.send-app-download-reminder]
+verify_jwt = false
