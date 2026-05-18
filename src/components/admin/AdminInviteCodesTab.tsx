@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Copy, Plus, Ticket, Power, Trash2, CheckCircle2, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { useInviteCodesRequired } from "@/hooks/useInviteCodesRequired";
 
 interface InviteCode {
   id: string;
