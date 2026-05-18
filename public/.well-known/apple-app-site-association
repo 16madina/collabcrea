@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "TEAMID.com.collabcrea.app",
+        "paths": ["/ouvrir", "/ouvrir/*", "/open", "/open/*"]
+      }
+    ]
+  }
+}
