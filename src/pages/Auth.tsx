@@ -790,7 +790,7 @@ const Auth = () => {
                 )}
                 {inviteRequired && !hasValidatedCode && (
                   <p className="text-xs text-center text-muted-foreground px-4">
-                    🔒 La connexion et la création de compte nécessitent un code d'invitation.
+                    🔒 La création de compte nécessite un code d'invitation. La connexion reste ouverte aux membres existants.
                   </p>
                 )}
                 {inviteRequired && !hasValidatedCode && (
