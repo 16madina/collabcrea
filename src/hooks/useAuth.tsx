@@ -39,39 +39,48 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isFetching, setIsFetching] = useState(false);
 
   const fetchUserData = async (userId: string) => {
-    // Prevent duplicate calls
+    // Prevent duplicate concurrent calls
     if (isFetching) return;
     setIsFetching(true);
 
-    try {
-      // Fetch profile and roles in parallel
-      const [profileResult, rolesResult] = await Promise.all([
-        supabase
-          .from("profiles")
-          .select("*")
-          .eq("user_id", userId)
-          .single(),
-        supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", userId),
+    // Timeout failsafe: si une requête reste bloquée (réseau Capacitor),
+    // on n'attend pas indéfiniment.
+    const withTimeout = <T,>(p: Promise<T>, ms = 8000): Promise<T> =>
+      Promise.race([
+        p,
+        new Promise<T>((_, reject) =>
+          setTimeout(() => reject(new Error("fetchUserData timeout")), ms)
+        ),
       ]);
+
+    try {
+      const [profileResult, rolesResult] = await withTimeout(
+        Promise.all([
+          supabase
+            .from("profiles")
+            .select("*")
+            .eq("user_id", userId)
+            .maybeSingle(),
+          supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", userId),
+        ])
+      );
 
       if (profileResult.data) {
         setProfile(profileResult.data);
       }
 
-      // Handle multiple roles - prioritize creator/brand over admin
       if (rolesResult.data && rolesResult.data.length > 0) {
-        const roles = rolesResult.data.map(r => r.role);
-        // Find primary role (creator or brand), ignore admin for redirection
-        const primaryRole = roles.find(r => r === "creator" || r === "brand");
+        const roles = rolesResult.data.map((r) => r.role);
+        const primaryRole = roles.find((r) => r === "creator" || r === "brand");
         if (primaryRole) {
           setRole(primaryRole as AppRole);
         }
       }
     } catch (error) {
-      console.error("Error fetching user data:", error);
+      console.warn("[useAuth] fetchUserData error:", error);
     } finally {
       setIsFetching(false);
     }
@@ -110,23 +119,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     );
 
     // THEN check for existing session - this handles the initial load
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!mounted || initialSessionHandled) return;
-      initialSessionHandled = true;
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        if (!mounted || initialSessionHandled) return;
+        initialSessionHandled = true;
 
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchUserData(session.user.id).finally(() => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          fetchUserData(session.user.id).finally(() => {
+            if (mounted) setLoading(false);
+          });
+        } else {
           if (mounted) setLoading(false);
-        });
-      } else {
-        if (mounted) setLoading(false);
+        }
+      })
+      .catch((err) => {
+        console.warn("[useAuth] getSession failed:", err);
+        if (!mounted) return;
+        initialSessionHandled = true;
+        setLoading(false);
+      });
+
+    // Failsafe: si getSession ne répond pas en 8s (réseau Capacitor lent
+    // ou WebView bloquée), on débloque le chargement pour éviter un
+    // spinner infini sur iOS/Android.
+    const failsafe = setTimeout(() => {
+      if (mounted && !initialSessionHandled) {
+        console.warn("[useAuth] failsafe timeout - unblocking loading");
+        initialSessionHandled = true;
+        setLoading(false);
       }
-    });
+    }, 8000);
 
     return () => {
       mounted = false;
+      clearTimeout(failsafe);
       subscription.unsubscribe();
     };
   }, []);

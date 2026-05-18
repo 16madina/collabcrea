@@ -38,15 +38,37 @@ export function useInviteCodesRequired() {
     };
 
     const fetchValue = async () => {
-      const { data } = await supabase
-        .from("app_settings")
-        .select("value, updated_at")
-        .eq("key", "invite_codes_required")
-        .maybeSingle();
-      apply(data?.value, (data?.updated_at as string | undefined) ?? null);
+      try {
+        const { data, error } = await supabase
+          .from("app_settings")
+          .select("value, updated_at")
+          .eq("key", "invite_codes_required")
+          .maybeSingle();
+        if (error) {
+          console.warn("[useInviteCodesRequired] fetch error:", error.message);
+          apply(false, null);
+          return;
+        }
+        apply(data?.value, (data?.updated_at as string | undefined) ?? null);
+      } catch (err) {
+        console.warn("[useInviteCodesRequired] fetch threw:", err);
+        // Fail-open: ne pas bloquer le chargement de l'app
+        apply(false, null);
+      }
     };
 
-    fetchValue();
+    // Failsafe: si la requête ne répond pas en 5s (réseau Capacitor lent),
+    // on débloque le chargement pour éviter un spinner infini.
+    const failsafe = setTimeout(() => {
+      if (mounted) {
+        setLoading((prev) => {
+          if (prev) console.warn("[useInviteCodesRequired] failsafe timeout");
+          return false;
+        });
+      }
+    }, 5000);
+
+    fetchValue().finally(() => clearTimeout(failsafe));
 
     const channel = supabase
       .channel("app_settings_invite_gate")
