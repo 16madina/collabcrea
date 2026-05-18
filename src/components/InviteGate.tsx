@@ -9,6 +9,7 @@ import { useInviteCodesRequired } from "@/hooks/useInviteCodesRequired";
 import logoCollabCrea from "@/assets/logo-collabcrea.png";
 
 const STORAGE_KEY = "invite_gate_code";
+const STORAGE_VERSION_KEY = "invite_gate_version";
 const FORCE_PROMPT_KEY = "invite_gate_force_prompt";
 
 interface InviteGateProps {
