@@ -237,6 +237,7 @@ const Auth = () => {
       }
       // Persist + sync gate, then close
       localStorage.setItem("invite_gate_code", normalized);
+      if (inviteUpdatedAt) localStorage.setItem("invite_gate_version", inviteUpdatedAt);
       sessionStorage.removeItem("invite_gate_force_prompt");
       window.dispatchEvent(new Event("invite-gate-reset"));
       setFormData((prev) => ({ ...prev, inviteCode: normalized }));
