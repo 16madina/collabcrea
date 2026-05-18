@@ -797,7 +797,7 @@ const Auth = () => {
                 )}
                 {inviteRequired && !hasValidatedCode && (
                   <p className="text-xs text-center text-muted-foreground px-4">
-                    🔒 La création de compte nécessite un code d'invitation.
+                    🔒 La connexion et la création de compte nécessitent un code d'invitation.
                   </p>
                 )}
                 {inviteRequired && !hasValidatedCode && (
@@ -886,7 +886,7 @@ const Auth = () => {
               Code d'activation
             </DialogTitle>
             <DialogDescription>
-              Entrez votre code d'invitation au format COLLAB-XXXX pour débloquer la création de compte.
+              Entrez votre code d'invitation au format COLLAB-XXXX pour débloquer la connexion et la création de compte.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleValidateInviteCode} className="space-y-4 pt-2">
