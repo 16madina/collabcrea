@@ -171,7 +171,7 @@ const AdminInviteCodesTab = () => {
       toast.error("Erreur");
       return;
     }
-    await loadData();
+    await loadCodes();
   };
 
   const filteredCodes = codes.filter((c) => {
