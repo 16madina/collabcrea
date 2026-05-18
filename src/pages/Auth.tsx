@@ -645,11 +645,8 @@ const Auth = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (inviteRequired && !hasValidatedCode) {
-      openInviteGate("login");
-      toast.error("Veuillez valider votre code d'invitation avant de vous connecter.");
-      return;
-    }
+    // Connexion ouverte à tous les utilisateurs existants — le code
+    // d'invitation n'est exigé que pour la création de nouveau compte.
 
     const newErrors: { email?: string; password?: string } = {};
 
