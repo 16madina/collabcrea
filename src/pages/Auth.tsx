@@ -249,8 +249,8 @@ const Auth = () => {
         return;
       }
       // Persist + sync gate, then close
-      localStorage.setItem("invite_gate_code", normalized);
-      if (inviteUpdatedAt) localStorage.setItem("invite_gate_version", inviteUpdatedAt);
+      localStorage.setItem(INVITE_CODE_STORAGE_KEY, normalized);
+      if (inviteUpdatedAt) localStorage.setItem(INVITE_VERSION_STORAGE_KEY, inviteUpdatedAt);
       sessionStorage.removeItem("invite_gate_force_prompt");
       window.dispatchEvent(new Event("invite-gate-reset"));
       setFormData((prev) => ({ ...prev, inviteCode: normalized }));
@@ -273,7 +273,7 @@ const Auth = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<SignupFormData>(() => {
     const storedCode = typeof window !== "undefined"
-      ? localStorage.getItem("invite_gate_code") || ""
+      ? localStorage.getItem(INVITE_CODE_STORAGE_KEY) || ""
       : "";
     return { ...initialFormData, inviteCode: storedCode };
   });
@@ -452,8 +452,8 @@ const Auth = () => {
     } else {
       // Going back to home: if invite gate is active, clear stored code so user re-enters it
       if (inviteRequired) {
-        localStorage.removeItem("invite_gate_code");
-        localStorage.removeItem("invite_gate_version");
+        localStorage.removeItem(INVITE_CODE_STORAGE_KEY);
+        localStorage.removeItem(INVITE_VERSION_STORAGE_KEY);
       }
       navigate("/");
     }
@@ -524,8 +524,8 @@ const Auth = () => {
             // Don't block signup — code was validated just before
           } else {
             // Clear the gate-stored code so it's not reused
-            localStorage.removeItem("invite_gate_code");
-            localStorage.removeItem("invite_gate_version");
+            localStorage.removeItem(INVITE_CODE_STORAGE_KEY);
+            localStorage.removeItem(INVITE_VERSION_STORAGE_KEY);
           }
         }
 
