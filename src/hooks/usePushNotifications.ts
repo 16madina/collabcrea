@@ -17,7 +17,13 @@ export const usePushNotifications = () => {
     }
 
     setIsSupported(true);
-    registerPushNotifications();
+    // Différer pour ne jamais bloquer le démarrage de l'app si Firebase
+    // n'est pas initialisé côté natif (sinon crash Android au boot).
+    const t = setTimeout(() => {
+      registerPushNotifications().catch((e) => {
+        console.warn('Push registration failed (non-fatal):', e);
+      });
+    }, 2000);
     
     // Listen for FCM Token from native bridge (iOS sends FCM token via notification)
     const handleFCMToken = (event: CustomEvent<{ token: string }>) => {
