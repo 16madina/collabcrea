@@ -22,6 +22,23 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- Deep link: collabcrea://... -->
+            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="collabcrea" />
+            </intent-filter>
+
+            <!-- App Links HTTPS (collabcrea.com/ouvrir, /open) -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="collabcrea.com" android:pathPrefix="/ouvrir" />
+                <data android:scheme="https" android:host="collabcrea.com" android:pathPrefix="/open" />
+            </intent-filter>
+
         </activity>
 
         <provider
