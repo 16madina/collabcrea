@@ -198,21 +198,30 @@ const Auth = () => {
   const [inviteDialogValidating, setInviteDialogValidating] = useState(false);
   const [hasValidatedCode, setHasValidatedCode] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
-    return !!localStorage.getItem("invite_gate_code");
+    return !!localStorage.getItem(INVITE_CODE_STORAGE_KEY);
   });
 
   // Si l'admin a re-toggle l'accès privé depuis le dernier unlock,
   // on invalide le code stocké localement.
   useEffect(() => {
     if (!inviteUpdatedAt) return;
-    const stored = localStorage.getItem("invite_gate_code");
-    const storedVersion = localStorage.getItem("invite_gate_version");
+    const stored = localStorage.getItem(INVITE_CODE_STORAGE_KEY);
+    const storedVersion = localStorage.getItem(INVITE_VERSION_STORAGE_KEY);
     if (stored && storedVersion !== inviteUpdatedAt) {
-      localStorage.removeItem("invite_gate_code");
-      localStorage.removeItem("invite_gate_version");
+      localStorage.removeItem(INVITE_CODE_STORAGE_KEY);
+      localStorage.removeItem(INVITE_VERSION_STORAGE_KEY);
       setHasValidatedCode(false);
+      setFormData((prev) => ({ ...prev, inviteCode: "" }));
     }
   }, [inviteUpdatedAt]);
+
+  useEffect(() => {
+    if (inviteSettingLoading || authLoading || user || !inviteRequired || hasValidatedCode) return;
+    const promptVersion = inviteUpdatedAt ?? "required";
+    if (autoPromptedVersionRef.current === promptVersion) return;
+    autoPromptedVersionRef.current = promptVersion;
+    openInviteGate();
+  }, [inviteSettingLoading, authLoading, user, inviteRequired, hasValidatedCode, inviteUpdatedAt]);
 
   const openInviteGate = () => {
     setInviteDialogCode("");
