@@ -199,7 +199,8 @@ const Auth = () => {
   const [inviteDialogValidating, setInviteDialogValidating] = useState(false);
   const [hasValidatedCode, setHasValidatedCode] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
-    return !!localStorage.getItem(INVITE_CODE_STORAGE_KEY);
+    return !!localStorage.getItem(INVITE_CODE_STORAGE_KEY)
+      && sessionStorage.getItem(INVITE_SESSION_UNLOCK_KEY) === "true";
   });
 
   // Un code stocké ne déverrouille /auth que s'il a été validé pendant
