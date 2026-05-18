@@ -39,39 +39,48 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isFetching, setIsFetching] = useState(false);
 
   const fetchUserData = async (userId: string) => {
-    // Prevent duplicate calls
+    // Prevent duplicate concurrent calls
     if (isFetching) return;
     setIsFetching(true);
 
-    try {
-      // Fetch profile and roles in parallel
-      const [profileResult, rolesResult] = await Promise.all([
-        supabase
-          .from("profiles")
-          .select("*")
-          .eq("user_id", userId)
-          .single(),
-        supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", userId),
+    // Timeout failsafe: si une requête reste bloquée (réseau Capacitor),
+    // on n'attend pas indéfiniment.
+    const withTimeout = <T,>(p: Promise<T>, ms = 8000): Promise<T> =>
+      Promise.race([
+        p,
+        new Promise<T>((_, reject) =>
+          setTimeout(() => reject(new Error("fetchUserData timeout")), ms)
+        ),
       ]);
+
+    try {
+      const [profileResult, rolesResult] = await withTimeout(
+        Promise.all([
+          supabase
+            .from("profiles")
+            .select("*")
+            .eq("user_id", userId)
+            .maybeSingle(),
+          supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", userId),
+        ])
+      );
 
       if (profileResult.data) {
         setProfile(profileResult.data);
       }
 
-      // Handle multiple roles - prioritize creator/brand over admin
       if (rolesResult.data && rolesResult.data.length > 0) {
-        const roles = rolesResult.data.map(r => r.role);
-        // Find primary role (creator or brand), ignore admin for redirection
-        const primaryRole = roles.find(r => r === "creator" || r === "brand");
+        const roles = rolesResult.data.map((r) => r.role);
+        const primaryRole = roles.find((r) => r === "creator" || r === "brand");
         if (primaryRole) {
           setRole(primaryRole as AppRole);
         }
       }
     } catch (error) {
-      console.error("Error fetching user data:", error);
+      console.warn("[useAuth] fetchUserData error:", error);
     } finally {
       setIsFetching(false);
     }
