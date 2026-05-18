@@ -30,6 +30,7 @@ import ProfileView from "./pages/ProfileView";
 import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import ChildSafety from "./pages/ChildSafety";
+import OpenApp from "./pages/OpenApp";
 
 const queryClient = new QueryClient();
 
@@ -77,6 +78,8 @@ const AppContent = () => {
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/child-safety" element={<ChildSafety />} />
+          <Route path="/ouvrir" element={<OpenApp />} />
+          <Route path="/open" element={<OpenApp />} />
           <Route path="/profile/:userId" element={<ProfileView />} />
           <Route path="/user-details/:userId" element={<ProfileView />} />
           {/* Creator Routes */}
