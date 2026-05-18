@@ -29,7 +29,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Bell, Plus, Edit, Trash2, Send, Users, Megaphone, Smartphone } from "lucide-react";
+import { Bell, Plus, Edit, Trash2, Send, Users, Megaphone, Smartphone, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -414,6 +414,53 @@ const AdminNotificationsTab = () => {
               </div>
             </SheetContent>
           </Sheet>
+        </CardContent>
+      </Card>
+
+      {/* App Download Reminder Email */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Mail className="w-5 h-5 text-gold" />
+            Email — Rappel "Finaliser & Télécharger l'app"
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-xs text-muted-foreground">
+            Envoie un email à <strong>tous les utilisateurs inscrits</strong> leur demandant de vérifier leur email, faire vérifier leur profil, ajouter leurs réseaux sociaux et télécharger l'app iOS.
+          </p>
+          <Button
+            variant="gold"
+            className="w-full"
+            disabled={isProcessing}
+            onClick={async () => {
+              if (!confirm("Envoyer l'email de rappel à TOUS les utilisateurs ?")) return;
+              setIsProcessing(true);
+              try {
+                const { data, error } = await supabase.functions.invoke("send-app-download-reminder", {
+                  body: {},
+                });
+                if (error) throw error;
+                await supabase.from("admin_logs").insert({
+                  admin_id: currentUser!.id,
+                  action_type: "app_download_reminder_email",
+                  details: data,
+                });
+                toast({
+                  title: "Emails envoyés",
+                  description: `${data?.sent ?? 0} envoyés, ${data?.failed ?? 0} échecs sur ${data?.total ?? 0} utilisateurs.`,
+                });
+              } catch (e: any) {
+                console.error(e);
+                toast({ title: "Erreur", description: e.message, variant: "destructive" });
+              } finally {
+                setIsProcessing(false);
+              }
+            }}
+          >
+            <Mail className="w-4 h-4 mr-2" />
+            {isProcessing ? "Envoi en cours..." : "Envoyer l'email à tous"}
+          </Button>
         </CardContent>
       </Card>
 
