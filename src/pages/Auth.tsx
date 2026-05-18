@@ -184,6 +184,7 @@ const initialFormData: SignupFormData = {
 
 const INVITE_CODE_STORAGE_KEY = "invite_gate_code";
 const INVITE_VERSION_STORAGE_KEY = "invite_gate_version";
+const INVITE_SESSION_UNLOCK_KEY = "invite_gate_unlocked_session";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -201,19 +202,23 @@ const Auth = () => {
     return !!localStorage.getItem(INVITE_CODE_STORAGE_KEY);
   });
 
-  // Si l'admin a re-toggle l'accès privé depuis le dernier unlock,
-  // on invalide le code stocké localement.
+  // Un code stocké ne déverrouille /auth que s'il a été validé pendant
+  // cette session. Après une déconnexion, on purge donc tout reliquat local.
   useEffect(() => {
-    if (!inviteUpdatedAt) return;
+    if (inviteSettingLoading || authLoading || user || !inviteRequired) return;
     const stored = localStorage.getItem(INVITE_CODE_STORAGE_KEY);
     const storedVersion = localStorage.getItem(INVITE_VERSION_STORAGE_KEY);
-    if (stored && storedVersion !== inviteUpdatedAt) {
+    const unlockedThisSession = sessionStorage.getItem(INVITE_SESSION_UNLOCK_KEY) === "true";
+
+    if (stored && (!unlockedThisSession || (inviteUpdatedAt && storedVersion !== inviteUpdatedAt))) {
       localStorage.removeItem(INVITE_CODE_STORAGE_KEY);
       localStorage.removeItem(INVITE_VERSION_STORAGE_KEY);
       setHasValidatedCode(false);
       setFormData((prev) => ({ ...prev, inviteCode: "" }));
+      return;
     }
-  }, [inviteUpdatedAt]);
+    setHasValidatedCode(!!stored && unlockedThisSession);
+  }, [inviteSettingLoading, authLoading, user, inviteRequired, inviteUpdatedAt]);
 
   useEffect(() => {
     if (inviteSettingLoading || authLoading || user || !inviteRequired || hasValidatedCode) return;
@@ -252,6 +257,7 @@ const Auth = () => {
       localStorage.setItem(INVITE_CODE_STORAGE_KEY, normalized);
       if (inviteUpdatedAt) localStorage.setItem(INVITE_VERSION_STORAGE_KEY, inviteUpdatedAt);
       sessionStorage.removeItem("invite_gate_force_prompt");
+      sessionStorage.setItem(INVITE_SESSION_UNLOCK_KEY, "true");
       window.dispatchEvent(new Event("invite-gate-reset"));
       setFormData((prev) => ({ ...prev, inviteCode: normalized }));
       setHasValidatedCode(true);
@@ -526,6 +532,7 @@ const Auth = () => {
             // Clear the gate-stored code so it's not reused
             localStorage.removeItem(INVITE_CODE_STORAGE_KEY);
             localStorage.removeItem(INVITE_VERSION_STORAGE_KEY);
+            sessionStorage.removeItem(INVITE_SESSION_UNLOCK_KEY);
           }
         }
 
