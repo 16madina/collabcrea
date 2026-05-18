@@ -1,49 +1,53 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-// v2 — bust old stale caches that may have stored "true" before admin toggled it off
-const CACHE_KEY = "invite_codes_required_cache_v2";
-
-function readCache(): boolean | null {
-  if (typeof window === "undefined") return null;
-  const raw = sessionStorage.getItem(CACHE_KEY);
-  if (raw === "true") return true;
-  if (raw === "false") return false;
-  return null;
-}
-
-function writeCache(value: boolean) {
-  try {
-    sessionStorage.setItem(CACHE_KEY, value ? "true" : "false");
-  } catch {
-    // ignore
-  }
-}
-
+/**
+ * Source de vérité unique pour l'accès privé.
+ * - Toujours relu depuis le serveur au montage (pas de cache persistant
+ *   qui pourrait masquer un changement admin après déconnexion).
+ * - Écoute Realtime pour réagir instantanément aux toggles admin.
+ * - Expose `updatedAt` pour permettre aux écrans (InviteGate, /auth) de
+ *   versionner leur déverrouillage local et l'invalider si l'admin a
+ *   changé le réglage depuis.
+ */
 export function useInviteCodesRequired() {
-  const cached = readCache();
-  const [required, setRequired] = useState<boolean>(cached ?? false);
-  const [loading, setLoading] = useState(cached === null);
+  const [required, setRequired] = useState<boolean>(false);
+  const [updatedAt, setUpdatedAt] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
 
+    const apply = (value: unknown, ts: string | null) => {
+      if (!mounted) return;
+      const v = value === true;
+      setRequired(v);
+      setUpdatedAt(ts);
+      setLoading(false);
+      try {
+        // Notifie les autres composants du tab (InviteGate, /auth) pour
+        // qu'ils ré-évaluent leur déverrouillage local.
+        window.dispatchEvent(
+          new CustomEvent("invite-gate-setting-changed", {
+            detail: { required: v, updatedAt: ts },
+          }),
+        );
+      } catch {
+        /* ignore */
+      }
+    };
+
     const fetchValue = async () => {
       const { data } = await supabase
         .from("app_settings")
-        .select("value")
+        .select("value, updated_at")
         .eq("key", "invite_codes_required")
         .maybeSingle();
-      if (!mounted) return;
-      const value = data?.value === true;
-      setRequired(value);
-      setLoading(false);
-      writeCache(value);
+      apply(data?.value, (data?.updated_at as string | undefined) ?? null);
     };
 
     fetchValue();
 
-    // Realtime: react instantly when an admin toggles the setting
     const channel = supabase
       .channel("app_settings_invite_gate")
       .on(
@@ -55,10 +59,10 @@ export function useInviteCodesRequired() {
           filter: "key=eq.invite_codes_required",
         },
         (payload) => {
-          const newVal = (payload.new as { value?: unknown } | null)?.value === true;
-          if (!mounted) return;
-          setRequired(newVal);
-          writeCache(newVal);
+          const row = payload.new as
+            | { value?: unknown; updated_at?: string }
+            | null;
+          apply(row?.value, row?.updated_at ?? new Date().toISOString());
         },
       )
       .subscribe();
@@ -69,5 +73,5 @@ export function useInviteCodesRequired() {
     };
   }, []);
 
-  return { required, loading };
+  return { required, updatedAt, loading };
 }

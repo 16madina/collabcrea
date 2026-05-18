@@ -9,6 +9,7 @@ import { useInviteCodesRequired } from "@/hooks/useInviteCodesRequired";
 import logoCollabCrea from "@/assets/logo-collabcrea.png";
 
 const STORAGE_KEY = "invite_gate_code";
+const STORAGE_VERSION_KEY = "invite_gate_version";
 const FORCE_PROMPT_KEY = "invite_gate_force_prompt";
 
 interface InviteGateProps {
@@ -17,7 +18,7 @@ interface InviteGateProps {
 
 const InviteGate = ({ children }: InviteGateProps) => {
   const { user, loading: authLoading } = useAuth();
-  const { required, loading: settingLoading } = useInviteCodesRequired();
+  const { required, updatedAt, loading: settingLoading } = useInviteCodesRequired();
   const [unlocked, setUnlocked] = useState(false);
   const [forcePrompt, setForcePrompt] = useState(false);
   const [checked, setChecked] = useState(false);
@@ -25,23 +26,41 @@ const InviteGate = ({ children }: InviteGateProps) => {
   const [validating, setValidating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Check localStorage on mount + listen to external changes (e.g. "J'ai un code" button)
+  // Évalue le déverrouillage local en fonction du réglage serveur courant.
+  // Si l'admin a re-toggle depuis le dernier unlock (version différente),
+  // on invalide le déverrouillage stocké : un nouveau code est exigé.
   useEffect(() => {
+    if (settingLoading) return;
     const sync = () => {
       const stored = localStorage.getItem(STORAGE_KEY);
+      const storedVersion = localStorage.getItem(STORAGE_VERSION_KEY);
       const forced = sessionStorage.getItem(FORCE_PROMPT_KEY) === "true";
+
+      // Le déverrouillage local n'est valide que si le réglage admin
+      // n'a pas changé depuis. Sinon on purge.
+      if (stored && updatedAt && storedVersion !== updatedAt) {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(STORAGE_VERSION_KEY);
+        setForcePrompt(forced);
+        setUnlocked(false);
+        setChecked(true);
+        return;
+      }
+
       setForcePrompt(forced);
       setUnlocked(!!stored && !forced);
       setChecked(true);
     };
     sync();
     window.addEventListener("invite-gate-reset", sync);
+    window.addEventListener("invite-gate-setting-changed", sync);
     window.addEventListener("storage", sync);
     return () => {
       window.removeEventListener("invite-gate-reset", sync);
+      window.removeEventListener("invite-gate-setting-changed", sync);
       window.removeEventListener("storage", sync);
     };
-  }, []);
+  }, [settingLoading, updatedAt]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,8 +84,9 @@ const InviteGate = ({ children }: InviteGateProps) => {
         setError("Code invalide ou déjà utilisé");
         return;
       }
-      // Store and unlock
+      // Store + version pour invalider en cas de futur toggle admin
       localStorage.setItem(STORAGE_KEY, normalized);
+      if (updatedAt) localStorage.setItem(STORAGE_VERSION_KEY, updatedAt);
       sessionStorage.removeItem(FORCE_PROMPT_KEY);
       setForcePrompt(false);
       setUnlocked(true);
