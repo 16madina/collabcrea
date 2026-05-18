@@ -649,6 +649,12 @@ const Auth = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (inviteRequired && !hasValidatedCode) {
+      openInviteGate("login");
+      toast.error("Veuillez valider votre code d'invitation avant de vous connecter.");
+      return;
+    }
+
     const newErrors: { email?: string; password?: string } = {};
 
     try {
@@ -796,7 +802,7 @@ const Auth = () => {
                 )}
                 {inviteRequired && !hasValidatedCode && (
                   <Button
-                    onClick={openInviteGate}
+                    onClick={() => openInviteGate("signup")}
                     className="w-full bg-gold/15 hover:bg-gold/25 border border-gold/40 text-gold font-semibold py-5 rounded-xl"
                   >
                     <Sparkles className="w-5 h-5 mr-2" />
@@ -819,7 +825,7 @@ const Auth = () => {
               onSubmit={handleLogin}
               onSwitchToSignup={() => {
                 if (inviteRequired && !hasValidatedCode) {
-                  openInviteGate();
+                  openInviteGate("signup");
                 } else {
                   setMode("signup");
                 }
