@@ -11,6 +11,7 @@ import { Copy, Plus, Ticket, Power, Trash2, CheckCircle2, Clock } from "lucide-r
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useInviteCodesRequired } from "@/hooks/useInviteCodesRequired";
+import { useAuth } from "@/hooks/useAuth";
 
 interface InviteCode {
   id: string;
