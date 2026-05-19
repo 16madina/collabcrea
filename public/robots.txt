@@ -12,3 +12,10 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /creator/
+Disallow: /brand/
+Disallow: /reset-password
+Disallow: /forgot-password
+
+Sitemap: https://collabcrea.com/sitemap.xml
