@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import ReactMarkdown from "react-markdown";
 import { useLegalPages } from "@/hooks/useLegalPages";
+import SEO from "@/components/SEO";
 
 const TermsOfService = () => {
   const { getPage } = useLegalPages();
@@ -27,6 +28,7 @@ const TermsOfService = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO title="Conditions Générales d'Utilisation | CollabCréa" description="Conditions générales d'utilisation de la plateforme CollabCréa." path="/terms" />
       <div className="max-w-3xl mx-auto px-6 pt-[max(env(safe-area-inset-top),3rem)] pb-12">
         <Link to="/">
           <Button variant="ghost" size="sm" className="mb-8">

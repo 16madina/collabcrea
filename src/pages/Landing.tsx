@@ -15,6 +15,7 @@ import { useAuth } from "@/hooks/useAuth";
 import heroImage from "@/assets/hero-creator.jpg";
 import logoCollabCrea from "@/assets/logo-collabcrea.png";
 import logoCollabCreaFull from "@/assets/logo-collabcrea-full-new.png";
+import SEO from "@/components/SEO";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 30 },
@@ -125,14 +126,22 @@ const Landing = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background overflow-hidden">
+    <main className="min-h-screen bg-background overflow-hidden">
+      <SEO
+        title="CollabCréa — Marketplace Africain de Créateurs & Marques"
+        description="Découvrez et collaborez avec des créateurs africains vérifiés. Briefs, paiements sécurisés et collaborations rémunérées."
+        path="/"
+      />
       {/* Hero Section */}
       <section className="relative flex flex-col">
         {/* Background Image with Overlay */}
         <div className="absolute inset-0 h-[60vh]">
           <img
             src={heroImage}
-            alt="African content creator"
+            alt="Créatrice africaine de contenu"
+            width={1600}
+            height={1000}
+            fetchPriority="high"
             className="w-full h-full object-cover object-top"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
@@ -624,7 +633,7 @@ const Landing = () => {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </main>
   );
 };
 

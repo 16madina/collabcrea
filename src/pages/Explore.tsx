@@ -12,6 +12,7 @@ import CreatorCard from "@/components/CreatorCard";
 import CreatorDetailSheet from "@/components/CreatorDetailSheet";
 import type { Creator } from "@/components/CreatorDetailSheet";
 import { useCreators } from "@/hooks/useCreators";
+import SEO from "@/components/SEO";
 
 const categories = [
   "Tous",
@@ -67,6 +68,11 @@ const Explore = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24">
+      <SEO
+        title="Explorer les créateurs africains | CollabCréa"
+        description="Parcourez des créateurs africains vérifiés par catégorie, pays et plateforme. Trouvez le bon profil pour votre prochaine collaboration."
+        path="/explore"
+      />
       {/* Header */}
       <div className="safe-top px-6 py-4">
         <motion.div

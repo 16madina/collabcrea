@@ -1,0 +1,15 @@
+# CollabCréa
+
+> Marketplace premium qui connecte créateurs africains et marques mondiales pour des collaborations authentiques, sécurisées et rémunérées.
+
+CollabCréa permet aux marques de découvrir et contacter des créateurs vérifiés dans 54 pays africains, de proposer des collaborations rémunérées, et de gérer le paiement via Stripe avec mise sous séquestre. Les créateurs reçoivent leurs paiements via Wave, Orange Money ou PayPal.
+
+## Pages
+
+- [Accueil](/): Présentation de la plateforme et CTA d'inscription.
+- [Explorer](/explore): Annuaire public de créateurs africains par catégorie et pays.
+- [Contact](/contact): Formulaire de contact et informations de support.
+- [Conditions d'utilisation](/terms): Conditions générales de la plateforme.
+- [Politique de confidentialité](/privacy): Traitement des données personnelles.
+- [Sécurité des enfants](/child-safety): Normes CSAE et politique 18+.
+- [Ouvrir l'application](/ouvrir): Page de redirection vers l'app iOS / Android.

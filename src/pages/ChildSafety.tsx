@@ -1,11 +1,13 @@
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import SEO from "@/components/SEO";
 
 const ChildSafety = () => {
   const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO title="Sécurité des enfants (CSAE) | CollabCréa" description="Engagement et politique de tolérance zéro de CollabCréa contre l'exploitation et les abus sexuels sur enfants." path="/child-safety" />
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border px-4 py-3 flex items-center gap-3">
         <button onClick={() => navigate(-1)} className="text-foreground">
           <ArrowLeft className="w-5 h-5" />
