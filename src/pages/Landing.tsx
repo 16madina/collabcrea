@@ -633,7 +633,7 @@ const Landing = () => {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </main>
   );
 };
 

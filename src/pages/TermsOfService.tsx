@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import ReactMarkdown from "react-markdown";
 import { useLegalPages } from "@/hooks/useLegalPages";
+import SEO from "@/components/SEO";
 
 const TermsOfService = () => {
   const { getPage } = useLegalPages();

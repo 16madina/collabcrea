@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
 import { toast } from "sonner";
+import SEO from "@/components/SEO";
 
 const contactInfo = [
   {
@@ -51,6 +52,11 @@ const Contact = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24">
+      <SEO
+        title="Contact — CollabCréa"
+        description="Une question, un partenariat ou un besoin de support ? Contactez l'équipe CollabCréa."
+        path="/contact"
+      />
       {/* Header */}
       <div className="safe-top px-6 py-4">
         <motion.div
