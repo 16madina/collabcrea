@@ -28,6 +28,7 @@ const PrivacyPolicy = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO title="Politique de Confidentialité | CollabCréa" description="Comment CollabCréa collecte, utilise et protège vos données personnelles." path="/privacy" />
       <div className="max-w-3xl mx-auto px-6 pt-[max(env(safe-area-inset-top),3rem)] pb-12">
         <Link to="/">
           <Button variant="ghost" size="sm" className="mb-8">

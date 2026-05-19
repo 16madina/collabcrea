@@ -30,6 +30,7 @@ import ContactCreatorSheet from "@/components/brand/ContactCreatorSheet";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Send } from "lucide-react";
+import SEO from "@/components/SEO";
 
 interface ProfileData {
   full_name: string;
@@ -169,6 +170,24 @@ const ProfileView = () => {
 
   return (
     <>
+    <SEO
+      title={`${displayName} | CollabCréa`}
+      description={(profile?.bio || profile?.company_description || `Profil de ${displayName} sur CollabCréa, marketplace africain de créateurs.`).slice(0, 155)}
+      path={`/profile/${userId}`}
+      type="profile"
+      image={heroImage || undefined}
+      jsonLd={{
+        "@context": "https://schema.org",
+        "@type": "ProfilePage",
+        mainEntity: {
+          "@type": "Person",
+          name: displayName,
+          description: profile?.bio || profile?.company_description || undefined,
+          image: heroImage || undefined,
+          address: profile?.country ? { "@type": "PostalAddress", addressCountry: profile.country } : undefined,
+        },
+      }}
+    />
     <div className="min-h-screen bg-background">
       {/* Hero photo - like CreatorDetailSheet */}
       <div className="relative">
