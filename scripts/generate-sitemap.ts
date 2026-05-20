@@ -97,6 +97,29 @@ async function fetchCreatorEntries(): Promise<SitemapEntry[]> {
   }
 }
 
+async function fetchOfferEntries(): Promise<SitemapEntry[]> {
+  const url = process.env.VITE_SUPABASE_URL;
+  const key = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !key) return [];
+  try {
+    const res = await fetch(
+      `${url}/rest/v1/offers?select=id,updated_at&status=eq.active`,
+      { headers: { apikey: key, Authorization: `Bearer ${key}` } }
+    );
+    if (!res.ok) throw new Error(`offers ${res.status}`);
+    const offers: { id: string; updated_at: string }[] = await res.json();
+    return offers.map((o) => ({
+      path: `/offer/${o.id}`,
+      lastmod: o.updated_at?.split("T")[0],
+      changefreq: "weekly" as const,
+      priority: "0.6",
+    }));
+  } catch (err) {
+    console.warn("[sitemap] Failed to fetch offers:", (err as Error).message);
+    return [];
+  }
+}
+
 (async () => {
   const today = new Date().toISOString().split("T")[0];
   mkdirSync(resolve("public/sitemaps"), { recursive: true });
@@ -108,14 +131,19 @@ async function fetchCreatorEntries(): Promise<SitemapEntry[]> {
   const creators = await fetchCreatorEntries();
   writeFileSync(resolve("public/sitemaps/creators.xml"), renderUrlset(creators));
 
+  // Offers (dynamic)
+  const offers = await fetchOfferEntries();
+  writeFileSync(resolve("public/sitemaps/offers.xml"), renderUrlset(offers));
+
   // Index
   const index = renderIndex([
     { loc: "sitemaps/static.xml", lastmod: today },
     { loc: "sitemaps/creators.xml", lastmod: today },
+    { loc: "sitemaps/offers.xml", lastmod: today },
   ]);
   writeFileSync(resolve("public/sitemap.xml"), index);
 
   console.log(
-    `sitemap.xml index written (static: ${staticEntries.length}, creators: ${creators.length})`
+    `sitemap.xml index written (static: ${staticEntries.length}, creators: ${creators.length}, offers: ${offers.length})`
   );
 })();
