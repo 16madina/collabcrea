@@ -31,6 +31,7 @@ import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import ChildSafety from "./pages/ChildSafety";
 import OpenApp from "./pages/OpenApp";
+import OfferDetail from "./pages/OfferDetail";
 
 const queryClient = new QueryClient();
 
@@ -81,6 +82,7 @@ const AppContent = () => {
           <Route path="/ouvrir" element={<OpenApp />} />
           <Route path="/open" element={<OpenApp />} />
           <Route path="/profile/:userId" element={<ProfileView />} />
+          <Route path="/offer/:offerId" element={<OfferDetail />} />
           <Route path="/user-details/:userId" element={<ProfileView />} />
           {/* Creator Routes */}
           <Route path="/creator/dashboard" element={<Navigate to="/creator/profile" replace />} />
