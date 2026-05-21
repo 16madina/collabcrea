@@ -293,6 +293,18 @@ const AdminUserCard = ({ user, onUserUpdated }: AdminUserCardProps) => {
                   Envoyer une notification
                 </Button>
                 <Button
+                  variant="outline"
+                  className="justify-start"
+                  onClick={() => {
+                    setShowActions(false);
+                    setShowEmailDialog(true);
+                  }}
+                >
+                  <Mail className="w-4 h-4 mr-2 text-gold" />
+                  Modifier l'email
+                </Button>
+                <Button
+
                   variant={user.is_banned ? "outline" : "destructive"}
                   className="justify-start"
                   onClick={() => {
