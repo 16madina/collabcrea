@@ -53,6 +53,67 @@ const SettingsSheet = ({ isOpen, onClose, onLogout }: SettingsSheetProps) => {
   const [showNotificationsSheet, setShowNotificationsSheet] = useState(false);
   const [showPrivacySheet, setShowPrivacySheet] = useState(false);
   const [showHelpSheet, setShowHelpSheet] = useState(false);
+  const [showEmailSheet, setShowEmailSheet] = useState(false);
+  const [currentEmail, setCurrentEmail] = useState<string>("");
+  const [emailConfirmed, setEmailConfirmed] = useState<boolean>(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        setCurrentEmail(data.user.email ?? "");
+        setEmailConfirmed(!!data.user.email_confirmed_at);
+      }
+    });
+  }, [isOpen]);
+
+  const handleResendVerification = async () => {
+    if (!currentEmail) return;
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: currentEmail,
+      options: { emailRedirectTo: `${window.location.origin}/` },
+    });
+    if (error) {
+      toast.error("Erreur d'envoi", { description: error.message });
+    } else {
+      toast.success("Email de vérification renvoyé", {
+        description: `Vérifiez votre boîte ${currentEmail}`,
+      });
+    }
+  };
+
+  const handleUpdateEmail = async () => {
+    const trimmed = newEmail.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      toast.error("Email invalide");
+      return;
+    }
+    if (trimmed === currentEmail.toLowerCase()) {
+      toast.error("C'est déjà votre email actuel");
+      return;
+    }
+    setIsUpdatingEmail(true);
+    try {
+      const { error } = await supabase.auth.updateUser(
+        { email: trimmed },
+        { emailRedirectTo: `${window.location.origin}/` }
+      );
+      if (error) throw error;
+      toast.success("Vérifiez vos emails", {
+        description: `Un lien de confirmation a été envoyé à ${trimmed}. Cliquez dessus pour valider le changement.`,
+      });
+      setShowEmailSheet(false);
+      setNewEmail("");
+    } catch (error: any) {
+      toast.error("Erreur", { description: error.message });
+    } finally {
+      setIsUpdatingEmail(false);
+    }
+  };
+
 
   // Settings state
   const [language, setLanguage] = useState<Language>(() => {
