@@ -389,7 +389,56 @@ const AdminUserCard = ({ user, onUserUpdated }: AdminUserCardProps) => {
         userId={user.user_id}
         userName={user.full_name}
       />
+
+      {/* Email Update Dialog */}
+      <AlertDialog open={showEmailDialog} onOpenChange={setShowEmailDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Mail className="w-5 h-5 text-gold" />
+              Modifier l'email de {user.full_name}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Saisissez le nouvel email. Si "Marquer comme vérifié" est activé, l'utilisateur n'aura pas besoin de revérifier.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-3 my-2">
+            <div>
+              <Label htmlFor="new-email" className="text-xs">Nouvel email</Label>
+              <Input
+                id="new-email"
+                type="email"
+                placeholder="exemple@gmail.com"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                autoCapitalize="none"
+                autoCorrect="off"
+              />
+            </div>
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={autoConfirm}
+                onChange={(e) => setAutoConfirm(e.target.checked)}
+                className="rounded"
+              />
+              Marquer comme vérifié (recommandé pour corriger une faute de frappe)
+            </label>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setNewEmail("")}>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleUpdateEmail} disabled={isUpdatingEmail || !newEmail.trim()}>
+              {isUpdatingEmail ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Modification...</>
+              ) : (
+                "Mettre à jour"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
+
   );
 };
 
