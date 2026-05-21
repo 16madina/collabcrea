@@ -796,7 +796,83 @@ const SettingsSheet = ({ isOpen, onClose, onLogout }: SettingsSheetProps) => {
         )}
       </AnimatePresence>
 
+      {/* Email Change Sheet */}
+      <AnimatePresence>
+        {showEmailSheet && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowEmailSheet(false)}
+              className="fixed inset-0 z-[60] bg-background/80 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="fixed bottom-0 left-0 right-0 z-[60] bg-background border-t border-border rounded-t-3xl p-6"
+            >
+              <div className="w-12 h-1 bg-muted rounded-full mx-auto mb-6" />
+              <h3 className="text-lg font-bold mb-2">Modifier mon email</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Email actuel : <span className="font-medium text-foreground">{currentEmail}</span>
+              </p>
+
+              {!emailConfirmed && (
+                <div className="mb-4 p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/30">
+                  <p className="text-xs text-yellow-600 dark:text-yellow-400 mb-2">
+                    Votre email n'est pas encore vérifié.
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleResendVerification}
+                    className="w-full"
+                  >
+                    Renvoyer l'email de vérification
+                  </Button>
+                </div>
+              )}
+
+              <label className="text-xs text-muted-foreground mb-2 block">
+                Nouvel email
+              </label>
+              <Input
+                type="email"
+                placeholder="nouveau@exemple.com"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                autoCapitalize="none"
+                autoCorrect="off"
+                className="mb-4"
+              />
+              <p className="text-xs text-muted-foreground mb-4">
+                Un email de confirmation sera envoyé à la nouvelle adresse. Le changement ne sera effectif qu'après avoir cliqué sur le lien reçu.
+              </p>
+              <Button
+                onClick={handleUpdateEmail}
+                disabled={isUpdatingEmail || !newEmail.trim()}
+                variant="gold"
+                className="w-full"
+              >
+                {isUpdatingEmail ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Envoi...
+                  </>
+                ) : (
+                  "Envoyer le lien de confirmation"
+                )}
+              </Button>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
       {/* Delete Account Confirmation Dialog */}
+
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent className="bg-background border-border">
           <AlertDialogHeader>
