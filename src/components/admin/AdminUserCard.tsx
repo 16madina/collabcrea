@@ -31,7 +31,12 @@ import {
   User,
   MapPin,
   Tag,
+  Mail,
+  Loader2,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import AdminSendNotificationSheet from "./AdminSendNotificationSheet";
@@ -61,8 +66,47 @@ const AdminUserCard = ({ user, onUserUpdated }: AdminUserCardProps) => {
   const [banReason, setBanReason] = useState("");
   const [warningMessage, setWarningMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [autoConfirm, setAutoConfirm] = useState(true);
+  const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
   const { toast } = useToast();
   const { user: currentUser } = useAuth();
+
+  const handleUpdateEmail = async () => {
+    const trimmed = newEmail.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      toast({ title: "Email invalide", variant: "destructive" });
+      return;
+    }
+    setIsUpdatingEmail(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-update-user-email", {
+        body: {
+          target_user_id: user.user_id,
+          new_email: trimmed,
+          auto_confirm: autoConfirm,
+        },
+      });
+      if (error || (data as any)?.error) {
+        throw new Error((data as any)?.error || error?.message || "Échec");
+      }
+      toast({
+        title: "Email mis à jour",
+        description: autoConfirm
+          ? `Nouvel email : ${trimmed} (marqué comme vérifié)`
+          : `Nouvel email : ${trimmed} (l'utilisateur doit confirmer)`,
+      });
+      setShowEmailDialog(false);
+      setNewEmail("");
+      onUserUpdated();
+    } catch (err: any) {
+      toast({ title: "Erreur", description: err.message, variant: "destructive" });
+    } finally {
+      setIsUpdatingEmail(false);
+    }
+  };
+
 
   const handleBan = async () => {
     if (!currentUser) return;
@@ -249,6 +293,18 @@ const AdminUserCard = ({ user, onUserUpdated }: AdminUserCardProps) => {
                   Envoyer une notification
                 </Button>
                 <Button
+                  variant="outline"
+                  className="justify-start"
+                  onClick={() => {
+                    setShowActions(false);
+                    setShowEmailDialog(true);
+                  }}
+                >
+                  <Mail className="w-4 h-4 mr-2 text-gold" />
+                  Modifier l'email
+                </Button>
+                <Button
+
                   variant={user.is_banned ? "outline" : "destructive"}
                   className="justify-start"
                   onClick={() => {
@@ -333,7 +389,56 @@ const AdminUserCard = ({ user, onUserUpdated }: AdminUserCardProps) => {
         userId={user.user_id}
         userName={user.full_name}
       />
+
+      {/* Email Update Dialog */}
+      <AlertDialog open={showEmailDialog} onOpenChange={setShowEmailDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Mail className="w-5 h-5 text-gold" />
+              Modifier l'email de {user.full_name}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Saisissez le nouvel email. Si "Marquer comme vérifié" est activé, l'utilisateur n'aura pas besoin de revérifier.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-3 my-2">
+            <div>
+              <Label htmlFor="new-email" className="text-xs">Nouvel email</Label>
+              <Input
+                id="new-email"
+                type="email"
+                placeholder="exemple@gmail.com"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                autoCapitalize="none"
+                autoCorrect="off"
+              />
+            </div>
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={autoConfirm}
+                onChange={(e) => setAutoConfirm(e.target.checked)}
+                className="rounded"
+              />
+              Marquer comme vérifié (recommandé pour corriger une faute de frappe)
+            </label>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setNewEmail("")}>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleUpdateEmail} disabled={isUpdatingEmail || !newEmail.trim()}>
+              {isUpdatingEmail ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Modification...</>
+              ) : (
+                "Mettre à jour"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
+
   );
 };
 

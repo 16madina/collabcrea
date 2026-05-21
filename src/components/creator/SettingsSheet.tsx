@@ -53,6 +53,67 @@ const SettingsSheet = ({ isOpen, onClose, onLogout }: SettingsSheetProps) => {
   const [showNotificationsSheet, setShowNotificationsSheet] = useState(false);
   const [showPrivacySheet, setShowPrivacySheet] = useState(false);
   const [showHelpSheet, setShowHelpSheet] = useState(false);
+  const [showEmailSheet, setShowEmailSheet] = useState(false);
+  const [currentEmail, setCurrentEmail] = useState<string>("");
+  const [emailConfirmed, setEmailConfirmed] = useState<boolean>(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        setCurrentEmail(data.user.email ?? "");
+        setEmailConfirmed(!!data.user.email_confirmed_at);
+      }
+    });
+  }, [isOpen]);
+
+  const handleResendVerification = async () => {
+    if (!currentEmail) return;
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: currentEmail,
+      options: { emailRedirectTo: `${window.location.origin}/` },
+    });
+    if (error) {
+      toast.error("Erreur d'envoi", { description: error.message });
+    } else {
+      toast.success("Email de vérification renvoyé", {
+        description: `Vérifiez votre boîte ${currentEmail}`,
+      });
+    }
+  };
+
+  const handleUpdateEmail = async () => {
+    const trimmed = newEmail.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      toast.error("Email invalide");
+      return;
+    }
+    if (trimmed === currentEmail.toLowerCase()) {
+      toast.error("C'est déjà votre email actuel");
+      return;
+    }
+    setIsUpdatingEmail(true);
+    try {
+      const { error } = await supabase.auth.updateUser(
+        { email: trimmed },
+        { emailRedirectTo: `${window.location.origin}/` }
+      );
+      if (error) throw error;
+      toast.success("Vérifiez vos emails", {
+        description: `Un lien de confirmation a été envoyé à ${trimmed}. Cliquez dessus pour valider le changement.`,
+      });
+      setShowEmailSheet(false);
+      setNewEmail("");
+    } catch (error: any) {
+      toast.error("Erreur", { description: error.message });
+    } finally {
+      setIsUpdatingEmail(false);
+    }
+  };
+
 
   // Settings state
   const [language, setLanguage] = useState<Language>(() => {
@@ -297,7 +358,35 @@ const SettingsSheet = ({ isOpen, onClose, onLogout }: SettingsSheetProps) => {
                   </motion.button>
                 </div>
 
+                {/* Email */}
+                <div>
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                    Email
+                  </h3>
+                  <motion.button
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.04 }}
+                    onClick={() => setShowEmailSheet(true)}
+                    className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shrink-0">
+                        <Mail className="w-5 h-5 text-foreground" />
+                      </div>
+                      <div className="text-left min-w-0">
+                        <p className="font-medium truncate">{currentEmail || "Email"}</p>
+                        <p className={`text-xs ${emailConfirmed ? "text-green-500" : "text-yellow-500"}`}>
+                          {emailConfirmed ? "✓ Vérifié" : "Non vérifié — appuyez pour corriger"}
+                        </p>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0" />
+                  </motion.button>
+                </div>
+
                 {/* Notifications */}
+
                 <div>
                   <motion.button
                     initial={{ opacity: 0, x: 20 }}
@@ -707,7 +796,83 @@ const SettingsSheet = ({ isOpen, onClose, onLogout }: SettingsSheetProps) => {
         )}
       </AnimatePresence>
 
+      {/* Email Change Sheet */}
+      <AnimatePresence>
+        {showEmailSheet && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowEmailSheet(false)}
+              className="fixed inset-0 z-[60] bg-background/80 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="fixed bottom-0 left-0 right-0 z-[60] bg-background border-t border-border rounded-t-3xl p-6"
+            >
+              <div className="w-12 h-1 bg-muted rounded-full mx-auto mb-6" />
+              <h3 className="text-lg font-bold mb-2">Modifier mon email</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Email actuel : <span className="font-medium text-foreground">{currentEmail}</span>
+              </p>
+
+              {!emailConfirmed && (
+                <div className="mb-4 p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/30">
+                  <p className="text-xs text-yellow-600 dark:text-yellow-400 mb-2">
+                    Votre email n'est pas encore vérifié.
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleResendVerification}
+                    className="w-full"
+                  >
+                    Renvoyer l'email de vérification
+                  </Button>
+                </div>
+              )}
+
+              <label className="text-xs text-muted-foreground mb-2 block">
+                Nouvel email
+              </label>
+              <Input
+                type="email"
+                placeholder="nouveau@exemple.com"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                autoCapitalize="none"
+                autoCorrect="off"
+                className="mb-4"
+              />
+              <p className="text-xs text-muted-foreground mb-4">
+                Un email de confirmation sera envoyé à la nouvelle adresse. Le changement ne sera effectif qu'après avoir cliqué sur le lien reçu.
+              </p>
+              <Button
+                onClick={handleUpdateEmail}
+                disabled={isUpdatingEmail || !newEmail.trim()}
+                variant="gold"
+                className="w-full"
+              >
+                {isUpdatingEmail ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Envoi...
+                  </>
+                ) : (
+                  "Envoyer le lien de confirmation"
+                )}
+              </Button>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
       {/* Delete Account Confirmation Dialog */}
+
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent className="bg-background border-border">
           <AlertDialogHeader>
