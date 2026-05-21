@@ -66,8 +66,47 @@ const AdminUserCard = ({ user, onUserUpdated }: AdminUserCardProps) => {
   const [banReason, setBanReason] = useState("");
   const [warningMessage, setWarningMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [autoConfirm, setAutoConfirm] = useState(true);
+  const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
   const { toast } = useToast();
   const { user: currentUser } = useAuth();
+
+  const handleUpdateEmail = async () => {
+    const trimmed = newEmail.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      toast({ title: "Email invalide", variant: "destructive" });
+      return;
+    }
+    setIsUpdatingEmail(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-update-user-email", {
+        body: {
+          target_user_id: user.user_id,
+          new_email: trimmed,
+          auto_confirm: autoConfirm,
+        },
+      });
+      if (error || (data as any)?.error) {
+        throw new Error((data as any)?.error || error?.message || "Échec");
+      }
+      toast({
+        title: "Email mis à jour",
+        description: autoConfirm
+          ? `Nouvel email : ${trimmed} (marqué comme vérifié)`
+          : `Nouvel email : ${trimmed} (l'utilisateur doit confirmer)`,
+      });
+      setShowEmailDialog(false);
+      setNewEmail("");
+      onUserUpdated();
+    } catch (err: any) {
+      toast({ title: "Erreur", description: err.message, variant: "destructive" });
+    } finally {
+      setIsUpdatingEmail(false);
+    }
+  };
+
 
   const handleBan = async () => {
     if (!currentUser) return;
