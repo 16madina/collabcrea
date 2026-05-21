@@ -358,7 +358,35 @@ const SettingsSheet = ({ isOpen, onClose, onLogout }: SettingsSheetProps) => {
                   </motion.button>
                 </div>
 
+                {/* Email */}
+                <div>
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                    Email
+                  </h3>
+                  <motion.button
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.04 }}
+                    onClick={() => setShowEmailSheet(true)}
+                    className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shrink-0">
+                        <Mail className="w-5 h-5 text-foreground" />
+                      </div>
+                      <div className="text-left min-w-0">
+                        <p className="font-medium truncate">{currentEmail || "Email"}</p>
+                        <p className={`text-xs ${emailConfirmed ? "text-green-500" : "text-yellow-500"}`}>
+                          {emailConfirmed ? "✓ Vérifié" : "Non vérifié — appuyez pour corriger"}
+                        </p>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0" />
+                  </motion.button>
+                </div>
+
                 {/* Notifications */}
+
                 <div>
                   <motion.button
                     initial={{ opacity: 0, x: 20 }}
