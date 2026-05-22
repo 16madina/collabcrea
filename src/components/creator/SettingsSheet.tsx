@@ -108,7 +108,22 @@ const SettingsSheet = ({ isOpen, onClose, onLogout }: SettingsSheetProps) => {
       setShowEmailSheet(false);
       setNewEmail("");
     } catch (error: any) {
-      toast.error("Erreur", { description: error.message });
+      const msg = (error.message || "").toLowerCase();
+      const isEmailTaken =
+        msg.includes("already been registered") ||
+        msg.includes("already registered") ||
+        msg.includes("email address already") ||
+        msg.includes("user already registered") ||
+        msg.includes("email already in use") ||
+        msg.includes("duplicate key") ||
+        msg.includes("already exists");
+      if (isEmailTaken) {
+        toast.error("Email déjà utilisé", {
+          description: "Cet email est déjà associé à un autre compte. Veuillez en choisir un autre.",
+        });
+      } else {
+        toast.error("Erreur", { description: error.message });
+      }
     } finally {
       setIsUpdatingEmail(false);
     }

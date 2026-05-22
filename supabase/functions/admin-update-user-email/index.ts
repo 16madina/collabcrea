@@ -82,10 +82,27 @@ serve(async (req) => {
 
     if (error) {
       console.error("updateUserById failed:", error);
-      return new Response(JSON.stringify({ error: error.message }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      const msg = error.message?.toLowerCase?.() || "";
+      const isEmailTaken =
+        msg.includes("already been registered") ||
+        msg.includes("already registered") ||
+        msg.includes("email address already") ||
+        msg.includes("user already registered") ||
+        msg.includes("email already in use") ||
+        msg.includes("duplicate key") ||
+        msg.includes("already exists");
+      return new Response(
+        JSON.stringify({
+          error: isEmailTaken
+            ? "Cet email est déjà utilisé par un autre compte. Veuillez en choisir un autre."
+            : error.message,
+          code: isEmailTaken ? "email_taken" : "unknown",
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
 
     // Sync email_verified on profile if auto-confirmed

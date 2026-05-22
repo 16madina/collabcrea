@@ -88,8 +88,11 @@ const AdminUserCard = ({ user, onUserUpdated }: AdminUserCardProps) => {
           auto_confirm: autoConfirm,
         },
       });
-      if (error || (data as any)?.error) {
-        throw new Error((data as any)?.error || error?.message || "Échec");
+      if (error) {
+        throw new Error(error.message || "Échec");
+      }
+      if ((data as any)?.error) {
+        throw new Error((data as any).error);
       }
       toast({
         title: "Email mis à jour",
@@ -101,7 +104,14 @@ const AdminUserCard = ({ user, onUserUpdated }: AdminUserCardProps) => {
       setNewEmail("");
       onUserUpdated();
     } catch (err: any) {
-      toast({ title: "Erreur", description: err.message, variant: "destructive" });
+      const isEmailTaken =
+        err.message?.toLowerCase?.().includes("déjà utilisé") ||
+        (err.message?.toLowerCase?.().includes("email") && err.message?.toLowerCase?.().includes("already"));
+      toast({
+        title: isEmailTaken ? "Email déjà utilisé" : "Erreur",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setIsUpdatingEmail(false);
     }
