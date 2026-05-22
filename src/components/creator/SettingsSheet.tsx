@@ -59,14 +59,65 @@ const SettingsSheet = ({ isOpen, onClose, onLogout }: SettingsSheetProps) => {
   const [newEmail, setNewEmail] = useState("");
   const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
 
+  const refreshEmailStatus = async () => {
+    try {
+      // Force refresh the session so email_confirmed_at is up to date
+      await supabase.auth.refreshSession();
+    } catch {}
+    const { data } = await supabase.auth.getUser();
+    if (data.user) {
+      const confirmed = !!data.user.email_confirmed_at;
+      setCurrentEmail(data.user.email ?? "");
+      setEmailConfirmed((prev) => {
+        if (!prev && confirmed) {
+          toast.success("Email vérifié ✓", {
+            description: "Votre adresse email a été confirmée avec succès.",
+          });
+        }
+        return confirmed;
+      });
+    }
+  };
+
   useEffect(() => {
     if (!isOpen) return;
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) {
-        setCurrentEmail(data.user.email ?? "");
-        setEmailConfirmed(!!data.user.email_confirmed_at);
+    refreshEmailStatus();
+
+    // Re-check when the tab regains focus (user just clicked the link in another tab)
+    const onFocus = () => refreshEmailStatus();
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+
+    // Listen for Supabase auth events (USER_UPDATED fires after email confirmation)
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "USER_UPDATED" || event === "TOKEN_REFRESHED" || event === "SIGNED_IN") {
+        if (session?.user) {
+          const confirmed = !!session.user.email_confirmed_at;
+          setCurrentEmail(session.user.email ?? "");
+          setEmailConfirmed((prev) => {
+            if (!prev && confirmed) {
+              toast.success("Email vérifié ✓", {
+                description: "Votre adresse email a été confirmée avec succès.",
+              });
+            }
+            return confirmed;
+          });
+        }
       }
     });
+
+    // Poll every 10s while the sheet is open as a fallback
+    const interval = window.setInterval(() => {
+      if (!emailConfirmed) refreshEmailStatus();
+    }, 10000);
+
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+      sub.subscription.unsubscribe();
+      window.clearInterval(interval);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   const handleResendVerification = async () => {
@@ -82,8 +133,11 @@ const SettingsSheet = ({ isOpen, onClose, onLogout }: SettingsSheetProps) => {
       toast.success("Email de vérification renvoyé", {
         description: `Vérifiez votre boîte ${currentEmail}`,
       });
+      // Refresh status shortly after, in case the user confirms quickly
+      setTimeout(() => refreshEmailStatus(), 3000);
     }
   };
+
 
   const handleUpdateEmail = async () => {
     const trimmed = newEmail.trim().toLowerCase();
