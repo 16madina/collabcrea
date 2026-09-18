@@ -447,6 +447,25 @@ const AdminWithdrawalsTab = () => {
                           PayPal auto
                         </Button>
                       )}
+                      {req.method === "mobile_money" && (
+                        <Button
+                          size="sm"
+                          variant="gold"
+                          className="text-[10px] h-7 px-2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleFedapayPayout(req);
+                          }}
+                          disabled={processing || payoutProcessing === req.id}
+                        >
+                          {payoutProcessing === req.id ? (
+                            <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                          ) : (
+                            <Zap className="w-3 h-3 mr-1" />
+                          )}
+                          FedaPay auto
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         variant="default"
