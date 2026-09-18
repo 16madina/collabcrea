@@ -18,6 +18,17 @@ const fedapayBase = () =>
     : "https://api.fedapay.com/v1";
 
 // Opérateur + pays -> mode d'encaissement
+// Lecture JSON tolérante (FedaPay peut renvoyer un corps vide)
+const safeJson = async (res: Response): Promise<any> => {
+  const text = await res.text();
+  if (!text.trim()) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { _raw: text };
+  }
+};
+
 const PAYIN_MODES: Record<string, Record<string, string>> = {
   wave: { CI: "wave_ci", SN: "wave_sn", BF: "wave_bf", ML: "wave_ml" },
   orange: {
@@ -51,7 +62,7 @@ serve(async (req) => {
     if (userError || !userData.user) throw new Error("Not authenticated");
     const user = userData.user;
 
-    const { collaborationId, returnUrl, provider, phone, country } = await req.json();
+    const { collaborationId, returnUrl, provider, phone, country } = await safeJson(req as unknown as Response);
     if (!collaborationId) throw new Error("collaborationId required");
 
     const { data: collab, error: collabError } = await supabase
@@ -106,7 +117,7 @@ serve(async (req) => {
         },
       }),
     });
-    const txJson = await txRes.json();
+    const txJson = await safeJson(txRes);
     if (!txRes.ok) {
       log("Transaction creation failed", txJson);
       throw new Error(txJson?.message || "Erreur FedaPay lors de la création du paiement");
@@ -128,7 +139,7 @@ serve(async (req) => {
           phone_number: { number: digits, country: iso.toLowerCase() },
         }),
       });
-      const chargeJson = await chargeRes.json();
+      const chargeJson = await safeJson(chargeRes);
       if (!chargeRes.ok) {
         log("Direct charge failed", chargeJson);
         throw new Error(
@@ -154,7 +165,7 @@ serve(async (req) => {
       method: "POST",
       headers,
     });
-    const tokenJson = await tokenRes.json();
+    const tokenJson = await safeJson(tokenRes);
     if (!tokenRes.ok || !tokenJson?.url) {
       log("Token generation failed", tokenJson);
       throw new Error(tokenJson?.message || "Erreur lors de l'ouverture du paiement");
