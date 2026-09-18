@@ -252,15 +252,15 @@ const AdminWithdrawalsTab = () => {
       const result = await response.json();
 
       if (result.success) {
-        toast.success(`Virement FedaPay envoyé ! ${formatAmount(result.amount)}`);
+        toast.success(`Virement Mobile Money envoyé ! ${formatAmount(result.amount)}`);
         fetchRequests();
         setSelectedRequest(null);
       } else {
-        toast.error(result.error || "Échec du virement FedaPay");
+        toast.error(result.error || "Échec du virement Mobile Money");
       }
     } catch (error) {
       console.error("FedaPay payout error:", error);
-      toast.error("Erreur lors du virement FedaPay");
+      toast.error("Erreur lors du virement Mobile Money");
     } finally {
       setPayoutProcessing(null);
     }
@@ -463,7 +463,7 @@ const AdminWithdrawalsTab = () => {
                           ) : (
                             <Zap className="w-3 h-3 mr-1" />
                           )}
-                          FedaPay auto
+                          Envoi auto
                         </Button>
                       )}
                       <Button
