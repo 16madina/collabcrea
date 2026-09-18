@@ -130,8 +130,7 @@ serve(async (req) => {
     const mode = provider ? PAYIN_MODES[String(provider)]?.[iso] : null;
     const digits = String(phone || "").replace(/\D/g, "");
 
-    if (provider && digits) {
-      if (!mode) throw new Error("Cet opérateur n'est pas disponible dans ce pays");
+    if (provider && digits && mode) {
       const chargeRes = await fetch(`${fedapayBase()}/transactions/${transactionId}/${mode}`, {
         method: "POST",
         headers,
@@ -140,24 +139,26 @@ serve(async (req) => {
         }),
       });
       const chargeJson = await safeJson(chargeRes);
-      if (!chargeRes.ok) {
-        log("Direct charge failed", chargeJson);
-        throw new Error(
-          chargeJson?.message || "Le paiement n'a pas pu être envoyé à votre opérateur"
+      if (chargeRes.ok) {
+        const url = chargeJson?.url || chargeJson?.["v1/transaction"]?.url || null;
+        log("Charge sent", { transactionId, mode, hasUrl: !!url });
+        return new Response(
+          JSON.stringify({
+            transactionId,
+            paymentUrl: url,
+            pushSent: !url,
+            amountFCFA,
+            totalFCFA,
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
         );
       }
-      const url = chargeJson?.url || chargeJson?.["v1/transaction"]?.url || null;
-      log("Charge sent", { transactionId, mode, hasUrl: !!url });
-      return new Response(
-        JSON.stringify({
-          transactionId,
-          paymentUrl: url,
-          pushSent: !url,
-          amountFCFA,
-          totalFCFA,
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
-      );
+      // Échec de l'envoi direct: on retombe sur la page de paiement hébergée
+      log("Direct charge failed, falling back to hosted checkout", {
+        status: chargeRes.status,
+        mode,
+        body: chargeJson,
+      });
     }
 
     // Fallback: hosted checkout token
