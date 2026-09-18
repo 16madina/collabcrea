@@ -114,7 +114,42 @@ serve(async (req) => {
     const transactionId = txJson?.["v1/transaction"]?.id;
     if (!transactionId) throw new Error("FedaPay: identifiant de transaction manquant");
 
-    // 2) Generate the hosted-checkout token
+    // 2) Direct charge on the chosen operator when we have provider + phone
+    const iso = String(country || "").toUpperCase();
+    const mode = provider ? PAYIN_MODES[String(provider)]?.[iso] : null;
+    const digits = String(phone || "").replace(/\D/g, "");
+
+    if (provider && digits) {
+      if (!mode) throw new Error("Cet opérateur n'est pas disponible dans ce pays");
+      const chargeRes = await fetch(`${fedapayBase()}/transactions/${transactionId}/${mode}`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          phone_number: { number: digits, country: iso.toLowerCase() },
+        }),
+      });
+      const chargeJson = await chargeRes.json();
+      if (!chargeRes.ok) {
+        log("Direct charge failed", chargeJson);
+        throw new Error(
+          chargeJson?.message || "Le paiement n'a pas pu être envoyé à votre opérateur"
+        );
+      }
+      const url = chargeJson?.url || chargeJson?.["v1/transaction"]?.url || null;
+      log("Charge sent", { transactionId, mode, hasUrl: !!url });
+      return new Response(
+        JSON.stringify({
+          transactionId,
+          paymentUrl: url,
+          pushSent: !url,
+          amountFCFA,
+          totalFCFA,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      );
+    }
+
+    // Fallback: hosted checkout token
     const tokenRes = await fetch(`${fedapayBase()}/transactions/${transactionId}/token`, {
       method: "POST",
       headers,
@@ -122,7 +157,7 @@ serve(async (req) => {
     const tokenJson = await tokenRes.json();
     if (!tokenRes.ok || !tokenJson?.url) {
       log("Token generation failed", tokenJson);
-      throw new Error(tokenJson?.message || "Erreur FedaPay lors de l'ouverture du paiement");
+      throw new Error(tokenJson?.message || "Erreur lors de l'ouverture du paiement");
     }
 
     log("Checkout ready", { transactionId, totalFCFA });
