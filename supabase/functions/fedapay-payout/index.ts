@@ -144,7 +144,6 @@ Deno.serve(async (req) => {
             lastname: rest.join(" ") || "CollabCrea",
             phone_number: { number: rawNumber, country: iso },
           },
-downloads: undefined,
         }),
       });
       const createJson = await createRes.json();

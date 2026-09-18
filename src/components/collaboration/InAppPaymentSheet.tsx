@@ -141,6 +141,7 @@ const InAppPaymentSheet = ({
   collaboration,
   onSuccess,
 }: InAppPaymentSheetProps) => {
+  const [method, setMethod] = useState<"card" | "momo">("momo");
   const [currency, setCurrency] = useState<"eur" | "usd">("eur");
   const [cardBrand, setCardBrand] = useState<"wave" | "orange" | "djamo" | "other" | null>(null);
   const [cardConfirmed, setCardConfirmed] = useState(false);
@@ -149,6 +150,9 @@ const InAppPaymentSheet = ({
   const [stripeInstance, setStripeInstance] = useState<Promise<StripeJS | null> | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [momoLoading, setMomoLoading] = useState(false);
+  const [momoTxId, setMomoTxId] = useState<string | null>(null);
+  const [momoChecking, setMomoChecking] = useState(false);
 
   const cardOptions = [
     { id: "wave" as const, label: "Wave Visa", logo: waveLogo },
@@ -311,113 +315,31 @@ const InAppPaymentSheet = ({
             </div>
           </div>
 
-          {/* Currency */}
+          {/* Payment method */}
           <div className="space-y-2">
-            <p className="text-sm font-medium text-muted-foreground">Devise de paiement</p>
+            <p className="text-sm font-medium text-muted-foreground">Moyen de paiement</p>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => { setCurrency("eur"); setCardConfirmed(false); }}
-                className={`glass rounded-xl p-3 border-2 transition-all ${
-                  currency === "eur" ? "border-gold bg-gold/10" : "border-transparent"
+                onClick={() => setMethod("momo")}
+                className={`glass rounded-xl p-3 border-2 transition-all text-left ${
+                  method === "momo" ? "border-gold bg-gold/10" : "border-transparent"
                 }`}
               >
-                <p className="font-semibold">🇪🇺 EUR</p>
-                <p className="text-[10px] text-muted-foreground">Euro</p>
+                <p className="font-semibold text-sm">📱 Mobile Money</p>
+                <p className="text-[10px] text-muted-foreground">Wave, Orange, MTN, Moov • FCFA</p>
               </button>
               <button
                 type="button"
-                onClick={() => { setCurrency("usd"); setCardConfirmed(false); }}
-                className={`glass rounded-xl p-3 border-2 transition-all ${
-                  currency === "usd" ? "border-gold bg-gold/10" : "border-transparent"
+                onClick={() => setMethod("card")}
+                className={`glass rounded-xl p-3 border-2 transition-all text-left ${
+                  method === "card" ? "border-gold bg-gold/10" : "border-transparent"
                 }`}
               >
-                <p className="font-semibold">🇺🇸 USD</p>
-                <p className="text-[10px] text-muted-foreground">US Dollar</p>
+                <p className="font-semibold text-sm">💳 Carte bancaire</p>
+                <p className="text-[10px] text-muted-foreground">Visa, Mastercard • EUR / USD</p>
               </button>
             </div>
-          </div>
-
-          {/* Card brand selector */}
-          <div className={`glass rounded-xl p-4 space-y-3 border-2 transition-colors ${
-            cardError ? "border-destructive/60" : "border-transparent"
-          }`}>
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-foreground">
-                Choisissez votre carte <span className="text-destructive">*</span>
-              </p>
-              {cardConfirmed && cardBrand && (
-                <span className="flex items-center gap-1 text-[10px] text-green-500 font-medium">
-                  <Check className="h-3 w-3" /> Confirmée
-                </span>
-              )}
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {cardOptions.map((opt) => (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => {
-                    setCardBrand(opt.id);
-                    setCardError(null);
-                    setCardConfirmed(false);
-                  }}
-                  className={`flex flex-col items-center gap-2 rounded-xl p-3 border-2 transition-all ${
-                    cardBrand === opt.id
-                      ? "border-gold bg-gold/10 shadow-lg"
-                      : "border-border/40 bg-background/40 hover:bg-background/60"
-                  }`}
-                >
-                  {opt.logo ? (
-                    <div className="h-14 w-full rounded-lg bg-white flex items-center justify-center p-2 overflow-hidden">
-                      <img
-                        src={opt.logo}
-                        alt={opt.label}
-                        loading="lazy"
-                        className="max-h-full max-w-full object-contain"
-                      />
-                    </div>
-                  ) : (
-                    <div className="h-14 w-full rounded-lg bg-gold/10 flex items-center justify-center">
-                      <CreditCard className="h-6 w-6 text-gold" />
-                    </div>
-                  )}
-                  <p className="text-xs font-medium text-foreground text-center leading-tight">
-                    {opt.label}
-                  </p>
-                </button>
-              ))}
-            </div>
-
-            {cardError && (
-              <div className="flex items-start gap-2 rounded-lg bg-destructive/10 border border-destructive/30 p-2.5">
-                <AlertCircle className="h-4 w-4 text-destructive flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-destructive font-medium">{cardError}</p>
-              </div>
-            )}
-
-            <p className="text-[10px] text-muted-foreground text-center">
-              Visa • Mastercard • Amex • Apple Pay • Google Pay
-            </p>
-
-            {!cardConfirmed && (
-              <Button
-                type="button"
-                variant="gold"
-                className="w-full"
-                onClick={() => {
-                  if (!cardBrand) {
-                    setCardError("Veuillez sélectionner un type de carte avant de continuer.");
-                    return;
-                  }
-                  setCardError(null);
-                  setCardConfirmed(true);
-                }}
-              >
-                Continuer vers le paiement
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            )}
           </div>
 
           {/* Security badge */}
@@ -433,98 +355,278 @@ const InAppPaymentSheet = ({
             </div>
           </div>
 
-          {/* Conversion breakdown */}
-          {(() => {
-            const baseConverted =
-              currency === "eur" ? totalFCFA / 655.957 : totalFCFA / 600;
-            const fees = approxAmount - baseConverted;
-            const fmt = (v: number) =>
-              new Intl.NumberFormat("fr-FR", {
-                style: "currency",
-                currency: currency.toUpperCase(),
-                maximumFractionDigits: 2,
-              }).format(v);
-            return (
+          {method === "momo" ? (
+            <div className="space-y-4">
               <div className="glass rounded-xl p-4 space-y-2 border border-gold/20">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                   Détail du montant
                 </p>
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-muted-foreground">Prix créateur</span>
-                  <span className="font-semibold text-foreground">
-                    {formatFCFA(amountFCFA)}
-                  </span>
+                  <span className="font-semibold text-foreground">{formatFCFA(amountFCFA)}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-muted-foreground">Commission plateforme (10%)</span>
                   <span className="text-foreground">+ {formatFCFA(brandFeeFCFA)}</span>
                 </div>
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-muted-foreground">Sous-total</span>
-                  <span className="text-foreground">{formatFCFA(totalFCFA)}</span>
-                </div>
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-muted-foreground">
-                    Conversion → {currency.toUpperCase()}
-                  </span>
-                  <span className="text-foreground">{fmt(baseConverted)}</span>
-                </div>
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-muted-foreground">Frais bancaires (5%)</span>
-                  <span className="text-foreground">+ {fmt(fees)}</span>
-                </div>
                 <Separator />
                 <div className="flex justify-between items-center">
                   <span className="font-semibold text-foreground">Total à payer</span>
-                  <span className="text-lg font-bold text-gold">{formattedApprox}</span>
+                  <span className="text-lg font-bold text-gold">{formatFCFA(totalFCFA)}</span>
                 </div>
               </div>
-            );
-          })()}
 
-          {/* Card Element — gated by card brand confirmation */}
-          {!cardConfirmed ? (
-            <div className="glass rounded-xl p-6 border border-dashed border-border/40 text-center space-y-2">
-              <Lock className="w-6 h-6 text-muted-foreground mx-auto" />
-              <p className="text-sm font-medium text-foreground">
-                Sélectionnez et confirmez votre carte
-              </p>
-              <p className="text-xs text-muted-foreground">
-                L'écran de paiement sécurisé apparaîtra ici une fois votre choix confirmé.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <CreditCard className="w-4 h-4 text-gold" />
-                <p className="text-sm font-medium text-foreground">Vos informations de paiement</p>
-              </div>
+              <Button
+                variant="gold"
+                size="lg"
+                className="w-full"
+                disabled={momoLoading}
+                onClick={handleMomoPay}
+              >
+                {momoLoading ? (
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                ) : (
+                  <Lock className="w-5 h-5 mr-2" />
+                )}
+                Payer {formatFCFA(totalFCFA)}
+              </Button>
 
-              {loading && (
-                <div className="glass rounded-xl p-8 flex items-center justify-center">
-                  <Loader2 className="w-6 h-6 animate-spin text-gold" />
+              {momoTxId && (
+                <div className="glass rounded-xl p-4 space-y-3 text-center">
+                  <p className="text-sm text-foreground">
+                    Terminez le paiement dans la fenêtre FedaPay, puis revenez ici.
+                  </p>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    disabled={momoChecking}
+                    onClick={() => checkMomoStatus(momoTxId)}
+                  >
+                    {momoChecking ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Check className="w-4 h-4 mr-2" />
+                    )}
+                    J'ai payé, vérifier
+                  </Button>
                 </div>
               )}
 
-              {error && !loading && (
+              {error && (
                 <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-4 text-sm text-destructive">
                   {error}
                 </div>
               )}
 
-              {!loading && !error && clientSecret && stripeInstance && elementsOptions && (
-                <Elements stripe={stripeInstance} options={elementsOptions}>
-                  <PaymentForm
-                    collaborationId={collaboration.id}
-                    formattedApprox={formattedApprox}
-                    onSuccess={() => {
-                      onSuccess?.();
-                      onOpenChange(false);
-                    }}
-                  />
-                </Elements>
-              )}
+              <p className="text-xs text-muted-foreground text-center">
+                Paiement sécurisé via FedaPay • Mobile Money en FCFA
+              </p>
             </div>
+          ) : (
+            <>
+              {/* Currency */}
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-muted-foreground">Devise de paiement</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setCurrency("eur"); setCardConfirmed(false); }}
+                    className={`glass rounded-xl p-3 border-2 transition-all ${
+                      currency === "eur" ? "border-gold bg-gold/10" : "border-transparent"
+                    }`}
+                  >
+                    <p className="font-semibold">🇪🇺 EUR</p>
+                    <p className="text-[10px] text-muted-foreground">Euro</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setCurrency("usd"); setCardConfirmed(false); }}
+                    className={`glass rounded-xl p-3 border-2 transition-all ${
+                      currency === "usd" ? "border-gold bg-gold/10" : "border-transparent"
+                    }`}
+                  >
+                    <p className="font-semibold">🇺🇸 USD</p>
+                    <p className="text-[10px] text-muted-foreground">US Dollar</p>
+                  </button>
+                </div>
+              </div>
+
+              {/* Card brand selector */}
+              <div className={`glass rounded-xl p-4 space-y-3 border-2 transition-colors ${
+                cardError ? "border-destructive/60" : "border-transparent"
+              }`}>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium text-foreground">
+                    Choisissez votre carte <span className="text-destructive">*</span>
+                  </p>
+                  {cardConfirmed && cardBrand && (
+                    <span className="flex items-center gap-1 text-[10px] text-green-500 font-medium">
+                      <Check className="h-3 w-3" /> Confirmée
+                    </span>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {cardOptions.map((opt) => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => {
+                        setCardBrand(opt.id);
+                        setCardError(null);
+                        setCardConfirmed(false);
+                      }}
+                      className={`flex flex-col items-center gap-2 rounded-xl p-3 border-2 transition-all ${
+                        cardBrand === opt.id
+                          ? "border-gold bg-gold/10 shadow-lg"
+                          : "border-border/40 bg-background/40 hover:bg-background/60"
+                      }`}
+                    >
+                      {opt.logo ? (
+                        <div className="h-14 w-full rounded-lg bg-white flex items-center justify-center p-2 overflow-hidden">
+                          <img
+                            src={opt.logo}
+                            alt={opt.label}
+                            loading="lazy"
+                            className="max-h-full max-w-full object-contain"
+                          />
+                        </div>
+                      ) : (
+                        <div className="h-14 w-full rounded-lg bg-gold/10 flex items-center justify-center">
+                          <CreditCard className="h-6 w-6 text-gold" />
+                        </div>
+                      )}
+                      <p className="text-xs font-medium text-foreground text-center leading-tight">
+                        {opt.label}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+
+                {cardError && (
+                  <div className="flex items-start gap-2 rounded-lg bg-destructive/10 border border-destructive/30 p-2.5">
+                    <AlertCircle className="h-4 w-4 text-destructive flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-destructive font-medium">{cardError}</p>
+                  </div>
+                )}
+
+                <p className="text-[10px] text-muted-foreground text-center">
+                  Visa • Mastercard • Amex • Apple Pay • Google Pay
+                </p>
+
+                {!cardConfirmed && (
+                  <Button
+                    type="button"
+                    variant="gold"
+                    className="w-full"
+                    onClick={() => {
+                      if (!cardBrand) {
+                        setCardError("Veuillez sélectionner un type de carte avant de continuer.");
+                        return;
+                      }
+                      setCardError(null);
+                      setCardConfirmed(true);
+                    }}
+                  >
+                    Continuer vers le paiement
+                    <ChevronRight className="w-4 h-4 ml-1" />
+                  </Button>
+                )}
+              </div>
+
+              {/* Conversion breakdown */}
+              {(() => {
+                const baseConverted =
+                  currency === "eur" ? totalFCFA / 655.957 : totalFCFA / 600;
+                const fees = approxAmount - baseConverted;
+                const fmt = (v: number) =>
+                  new Intl.NumberFormat("fr-FR", {
+                    style: "currency",
+                    currency: currency.toUpperCase(),
+                    maximumFractionDigits: 2,
+                  }).format(v);
+                return (
+                  <div className="glass rounded-xl p-4 space-y-2 border border-gold/20">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      Détail du montant
+                    </p>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">Prix créateur</span>
+                      <span className="font-semibold text-foreground">
+                        {formatFCFA(amountFCFA)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">Commission plateforme (10%)</span>
+                      <span className="text-foreground">+ {formatFCFA(brandFeeFCFA)}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">Sous-total</span>
+                      <span className="text-foreground">{formatFCFA(totalFCFA)}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">
+                        Conversion → {currency.toUpperCase()}
+                      </span>
+                      <span className="text-foreground">{fmt(baseConverted)}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">Frais bancaires (5%)</span>
+                      <span className="text-foreground">+ {fmt(fees)}</span>
+                    </div>
+                    <Separator />
+                    <div className="flex justify-between items-center">
+                      <span className="font-semibold text-foreground">Total à payer</span>
+                      <span className="text-lg font-bold text-gold">{formattedApprox}</span>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Card Element — gated by card brand confirmation */}
+              {!cardConfirmed ? (
+                <div className="glass rounded-xl p-6 border border-dashed border-border/40 text-center space-y-2">
+                  <Lock className="w-6 h-6 text-muted-foreground mx-auto" />
+                  <p className="text-sm font-medium text-foreground">
+                    Sélectionnez et confirmez votre carte
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    L'écran de paiement sécurisé apparaîtra ici une fois votre choix confirmé.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="w-4 h-4 text-gold" />
+                    <p className="text-sm font-medium text-foreground">Vos informations de paiement</p>
+                  </div>
+
+                  {loading && (
+                    <div className="glass rounded-xl p-8 flex items-center justify-center">
+                      <Loader2 className="w-6 h-6 animate-spin text-gold" />
+                    </div>
+                  )}
+
+                  {error && !loading && (
+                    <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-4 text-sm text-destructive">
+                      {error}
+                    </div>
+                  )}
+
+                  {!loading && !error && clientSecret && stripeInstance && elementsOptions && (
+                    <Elements stripe={stripeInstance} options={elementsOptions}>
+                      <PaymentForm
+                        collaborationId={collaboration.id}
+                        formattedApprox={formattedApprox}
+                        onSuccess={() => {
+                          onSuccess?.();
+                          onOpenChange(false);
+                        }}
+                      />
+                    </Elements>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </div>
       </SheetContent>
