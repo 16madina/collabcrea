@@ -18,6 +18,17 @@ const fedapayBase = () =>
     : "https://api.fedapay.com/v1";
 
 // Opérateur + pays -> mode d'encaissement
+// Lecture JSON tolérante (FedaPay peut renvoyer un corps vide)
+const safeJson = async (res: Response): Promise<any> => {
+  const text = await res.text();
+  if (!text.trim()) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { _raw: text };
+  }
+};
+
 const PAYIN_MODES: Record<string, Record<string, string>> = {
   wave: { CI: "wave_ci", SN: "wave_sn", BF: "wave_bf", ML: "wave_ml" },
   orange: {
