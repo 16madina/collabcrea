@@ -184,7 +184,7 @@ const InAppPaymentSheet = ({
       setCardError(null);
       return;
     }
-    if (!cardConfirmed) {
+    if (method !== "card" || !cardConfirmed) {
       setClientSecret(null);
       return;
     }
@@ -218,7 +218,75 @@ const InAppPaymentSheet = ({
     return () => {
       cancelled = true;
     };
-  }, [open, currency, collaboration.id, cardConfirmed]);
+  }, [open, currency, collaboration.id, cardConfirmed, method]);
+
+  // Reset Mobile Money state when the sheet closes
+  useEffect(() => {
+    if (!open) {
+      setMomoTxId(null);
+      setMomoLoading(false);
+      setMomoChecking(false);
+      setError(null);
+    }
+  }, [open]);
+
+  const checkMomoStatus = async (transactionId: string, silent = false) => {
+    if (!silent) setMomoChecking(true);
+    try {
+      const { data, error: fnErr } = await supabase.functions.invoke("fedapay-collab-verify", {
+        body: { transactionId, collaborationId: collaboration.id },
+      });
+      if (fnErr) throw fnErr;
+      if (data?.error) throw new Error(data.error);
+      if (data?.verified) {
+        toast.success(
+          data.nextStatus === "in_progress"
+            ? "Paiement confirmé ! La collaboration est lancée."
+            : "Paiement confirmé ! Le contenu est en revue."
+        );
+        onSuccess?.();
+        onOpenChange(false);
+        return true;
+      }
+      if (!silent) toast.info("Paiement pas encore confirmé. Réessayez dans un instant.");
+      return false;
+    } catch (err: any) {
+      console.error("FedaPay verify error:", err);
+      if (!silent) toast.error(err?.message || "Vérification impossible");
+      return false;
+    } finally {
+      if (!silent) setMomoChecking(false);
+    }
+  };
+
+  const handleMomoPay = async () => {
+    setMomoLoading(true);
+    setError(null);
+    try {
+      const { data, error: fnErr } = await supabase.functions.invoke(
+        "fedapay-collab-payment",
+        {
+          body: {
+            collaborationId: collaboration.id,
+            returnUrl: `${window.location.origin}/collabs`,
+          },
+        }
+      );
+      if (fnErr) throw fnErr;
+      if (data?.error) throw new Error(data.error);
+      if (!data?.paymentUrl) throw new Error("Lien de paiement indisponible");
+
+      setMomoTxId(String(data.transactionId));
+      window.open(data.paymentUrl, "_blank", "noopener,noreferrer");
+      toast.info("Terminez le paiement Mobile Money, puis revenez vérifier.");
+    } catch (err: any) {
+      console.error("FedaPay payin error:", err);
+      setError(err?.message || "Erreur lors de l'initialisation du paiement Mobile Money");
+    } finally {
+      setMomoLoading(false);
+    }
+  };
+
 
   const elementsOptions = useMemo(
     () =>
