@@ -334,6 +334,10 @@ const InAppPaymentSheet = ({
   };
 
   const handleMomoPay = async () => {
+    if (!momoFormValid || !selectedOperator || !selectedMomoCountry) {
+      setError("Choisissez un opérateur et saisissez votre numéro");
+      return;
+    }
     setMomoLoading(true);
     setError(null);
     try {
@@ -343,19 +347,28 @@ const InAppPaymentSheet = ({
           body: {
             collaborationId: collaboration.id,
             returnUrl: `${window.location.origin}/collabs`,
+            provider: selectedOperator.id,
+            phone: momoPhoneDigits,
+            country: selectedMomoCountry.iso,
           },
         }
       );
       if (fnErr) throw fnErr;
       if (data?.error) throw new Error(data.error);
-      if (!data?.paymentUrl) throw new Error("Lien de paiement indisponible");
+      if (!data?.transactionId) throw new Error("Paiement indisponible pour le moment");
 
       setMomoTxId(String(data.transactionId));
-      window.open(data.paymentUrl, "_blank", "noopener,noreferrer");
-      toast.info("Terminez le paiement Mobile Money, puis revenez vérifier.");
+      if (data.paymentUrl) {
+        setMomoPushSent(false);
+        window.open(data.paymentUrl, "_blank", "noopener,noreferrer");
+        toast.info(`Validez le paiement ${selectedOperator.label}, puis revenez ici.`);
+      } else {
+        setMomoPushSent(true);
+        toast.info(`Confirmez la demande reçue sur votre téléphone ${selectedOperator.label}.`);
+      }
     } catch (err: any) {
-      console.error("FedaPay payin error:", err);
-      setError(err?.message || "Erreur lors de l'initialisation du paiement Mobile Money");
+      console.error("Mobile money payin error:", err);
+      setError(err?.message || "Erreur lors de l'initialisation du paiement");
     } finally {
       setMomoLoading(false);
     }
