@@ -405,7 +405,7 @@ const InAppPaymentSheet = ({
             Paiement de la collaboration
           </SheetTitle>
           <SheetDescription>
-            Saisissez votre carte bancaire pour payer en toute sécurité
+            Payez par Wave, Orange Money, MTN, Moov ou carte bancaire
           </SheetDescription>
         </SheetHeader>
 
