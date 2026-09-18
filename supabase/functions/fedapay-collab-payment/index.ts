@@ -37,7 +37,7 @@ serve(async (req) => {
     if (userError || !userData.user) throw new Error("Not authenticated");
     const user = userData.user;
 
-    const { collaborationId, returnUrl } = await req.json();
+    const { collaborationId, returnUrl, provider, phone, country } = await req.json();
     if (!collaborationId) throw new Error("collaborationId required");
 
     const { data: collab, error: collabError } = await supabase
