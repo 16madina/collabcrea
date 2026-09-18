@@ -288,6 +288,9 @@ const InAppPaymentSheet = ({
       setMomoTxId(null);
       setMomoLoading(false);
       setMomoChecking(false);
+      setMomoPushSent(false);
+      setOperator(null);
+      setMomoPhone("");
       setError(null);
     }
   }, [open]);
