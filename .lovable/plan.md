@@ -1,28 +1,34 @@
-## Plan de correction
+# Fiabiliser les paiements Mobile Money
 
-1. Corriger la source de vérité de l’accès privé
-   - Garder `app_settings.invite_codes_required` comme source principale.
-   - Supprimer l’effet de cache persistant qui peut masquer un changement admin après déconnexion/reconnexion.
-   - Forcer chaque écran sensible à relire l’état serveur au montage, puis écouter les changements en temps réel.
+## Diagnostic confirmé
 
-2. Synchroniser `InviteGate` et la page d’authentification
-   - Quand l’accès privé est réactivé, invalider localement l’ancien déverrouillage `invite_gate_code` pour les visiteurs non connectés.
-   - Éviter qu’un ancien code stocké dans `localStorage` donne encore accès après que l’admin a changé le mode.
-   - Faire en sorte que `/auth` respecte immédiatement l’état activé/désactivé pour afficher ou cacher “Créer un compte”.
+- Le parcours Wave Côte d’Ivoire doit utiliser uniquement la page de paiement hébergée : création d’une transaction, génération d’un lien unique, puis ouverture de ce lien. L’appel direct n’est officiellement disponible que pour MTN Bénin/Côte d’Ivoire et Moov Bénin/Togo.
+- La transaction du dernier essai est toujours `pending` côté API, même si la page affiche un échec. Le paiement n’a donc pas été validé par Wave.
+- L’application vérifie actuellement le statut toutes les 6 secondes, mais aucun webhook FedaPay n’est installé. Un webhook ne corrigera pas un refus Wave, mais il est indispensable pour confirmer automatiquement un paiement lorsque l’utilisateur ferme la page ou l’application.
 
-3. Rendre le toggle admin plus robuste
-   - Après activation/désactivation, écrire la valeur en base puis émettre un événement local pour rafraîchir l’interface courante.
-   - Recharger la valeur réelle après sauvegarde pour éviter que le switch affiche un état optimiste incorrect.
+## Modifications
 
-4. Tests à effectuer
-   - Vérifier en base que `invite_codes_required = true` est bien actif.
-   - Tester le scénario: activer dans admin, se déconnecter, revenir sur `/auth`, vérifier que la création de compte demande un code.
-   - Tester l’inverse: désactiver dans admin, se déconnecter, revenir sur `/auth`, vérifier que le code n’est plus demandé.
-   - Tester le changement dans le même navigateur avec ancien `localStorage` pour confirmer qu’il ne bloque plus l’état réel.
+1. Ajouter un endpoint webhook public dédié aux événements FedaPay.
+   - Accepter uniquement les événements de transaction utiles.
+   - Ne jamais faire confiance au contenu reçu : récupérer la transaction directement auprès de FedaPay avec son identifiant.
+   - Vérifier le montant, la devise, la marque, la collaboration et les métadonnées avant toute modification.
+   - Traiter plusieurs fois le même événement sans créditer ni avancer deux fois la collaboration.
 
-## Détail technique
+2. Centraliser la finalisation du paiement.
+   - Utiliser la même logique sûre depuis le webhook et depuis le bouton « J’ai payé, vérifier ».
+   - Enregistrer la transaction de séquestre une seule fois.
+   - Faire avancer la collaboration et envoyer la notification seulement après un statut officiel `approved` ou `transferred`.
 
-Le bug vient probablement du fait que `invite_gate_code` reste en `localStorage` après une ancienne validation. Quand le système est réactivé, la page `/auth` considère encore ce stockage local comme “code déjà validé”, donc elle ne redemande pas le code. La correction va séparer clairement:
+3. Renforcer le démarrage du paiement Wave.
+   - Conserver exclusivement le checkout hébergé pour Wave et Orange.
+   - Valider strictement le numéro ivoirien à 10 chiffres et éviter tout indicatif dupliqué.
+   - Créer un lien neuf à chaque tentative et conserver l’identifiant de la tentative côté application.
+   - Afficher clairement les statuts `pending`, `declined`, `canceled` et `expired` au lieu d’un message générique.
 
-- le réglage global: lu depuis `app_settings.invite_codes_required`;
-- le code local temporaire: valable seulement pour continuer une inscription, pas comme permission permanente après réactivation admin.
+4. Tester et déployer.
+   - Tester les requêtes non autorisées, événements invalides, doublons et paiements approuvés.
+   - Déployer les fonctions concernées et vérifier les journaux.
+
+## Configuration finale dans FedaPay
+
+Après déploiement, l’URL du webhook sera fournie pour l’ajouter dans le compte FedaPay avec les événements `transaction.approved`, `transaction.transferred`, `transaction.declined` et `transaction.canceled`.
