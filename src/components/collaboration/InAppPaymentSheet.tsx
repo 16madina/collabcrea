@@ -153,6 +153,68 @@ const InAppPaymentSheet = ({
   const [momoLoading, setMomoLoading] = useState(false);
   const [momoTxId, setMomoTxId] = useState<string | null>(null);
   const [momoChecking, setMomoChecking] = useState(false);
+  const [momoPushSent, setMomoPushSent] = useState(false);
+  const [operator, setOperator] = useState<"wave" | "orange" | "mtn" | "moov" | null>(null);
+  const [momoCountry, setMomoCountry] = useState<string>("CI");
+  const [momoPhone, setMomoPhone] = useState("");
+
+  const momoOperators = [
+    {
+      id: "wave" as const,
+      label: "Wave",
+      logo: waveLogo,
+      color: "#1DC8FF",
+      countries: [
+        { iso: "CI", name: "Côte d'Ivoire", dial: "+225" },
+        { iso: "SN", name: "Sénégal", dial: "+221" },
+        { iso: "BF", name: "Burkina Faso", dial: "+226" },
+        { iso: "ML", name: "Mali", dial: "+223" },
+      ],
+    },
+    {
+      id: "orange" as const,
+      label: "Orange Money",
+      logo: orangeLogo,
+      color: "#FF7900",
+      countries: [
+        { iso: "CI", name: "Côte d'Ivoire", dial: "+225" },
+        { iso: "SN", name: "Sénégal", dial: "+221" },
+        { iso: "BF", name: "Burkina Faso", dial: "+226" },
+        { iso: "ML", name: "Mali", dial: "+223" },
+        { iso: "GW", name: "Guinée-Bissau", dial: "+245" },
+      ],
+    },
+    {
+      id: "mtn" as const,
+      label: "MTN MoMo",
+      logo: null,
+      color: "#FFCC00",
+      countries: [
+        { iso: "CI", name: "Côte d'Ivoire", dial: "+225" },
+        { iso: "BJ", name: "Bénin", dial: "+229" },
+      ],
+    },
+    {
+      id: "moov" as const,
+      label: "Moov Money",
+      logo: null,
+      color: "#0066B3",
+      countries: [
+        { iso: "BJ", name: "Bénin", dial: "+229" },
+        { iso: "TG", name: "Togo", dial: "+228" },
+        { iso: "BF", name: "Burkina Faso", dial: "+226" },
+        { iso: "ML", name: "Mali", dial: "+223" },
+      ],
+    },
+  ];
+
+  const selectedOperator = momoOperators.find((o) => o.id === operator) || null;
+  const selectedMomoCountry =
+    selectedOperator?.countries.find((c) => c.iso === momoCountry) ||
+    selectedOperator?.countries[0] ||
+    null;
+  const momoPhoneDigits = momoPhone.replace(/\D/g, "");
+  const momoFormValid = !!selectedOperator && !!selectedMomoCountry && momoPhoneDigits.length >= 8;
 
   const cardOptions = [
     { id: "wave" as const, label: "Wave Visa", logo: waveLogo },
