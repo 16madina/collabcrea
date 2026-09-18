@@ -816,6 +816,7 @@ export type Database = {
           created_at: string
           description: string | null
           fee: number
+          gateway_amount: number | null
           id: string
           net_amount: number
           reference: string | null
@@ -833,6 +834,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           fee?: number
+          gateway_amount?: number | null
           id?: string
           net_amount?: number
           reference?: string | null
@@ -850,6 +852,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           fee?: number
+          gateway_amount?: number | null
           id?: string
           net_amount?: number
           reference?: string | null

@@ -1,11 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import { createClient } from "npm:@supabase/supabase-js@2";
+import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 
 const log = (step: string, details?: unknown) =>
   console.log(`[FEDAPAY-PAYIN] ${step}${details ? " - " + JSON.stringify(details) : ""}`);
@@ -56,6 +51,16 @@ const COUNTRY_DIAL_CODES: Record<string, string> = {
   TG: "228",
 };
 
+const LOCAL_PHONE_LENGTHS: Record<string, number> = {
+  BJ: 8,
+  BF: 8,
+  CI: 10,
+  GW: 9,
+  ML: 8,
+  SN: 9,
+  TG: 8,
+};
+
 const normalizePhone = (rawPhone: unknown, country: string): string => {
   const dialCode = COUNTRY_DIAL_CODES[country];
   let digits = String(rawPhone || "").replace(/\D/g, "");
@@ -63,8 +68,21 @@ const normalizePhone = (rawPhone: unknown, country: string): string => {
   return dialCode ? `+${dialCode}${digits}` : `+${digits}`;
 };
 
+const localPhoneDigits = (rawPhone: unknown, country: string): string => {
+  const dialCode = COUNTRY_DIAL_CODES[country];
+  let digits = String(rawPhone || "").replace(/\D/g, "");
+  if (dialCode && digits.startsWith(dialCode)) digits = digits.slice(dialCode.length);
+  return digits;
+};
+
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 
   try {
     const secretKey = Deno.env.get("FEDAPAY_SECRET_KEY");
@@ -84,7 +102,7 @@ serve(async (req) => {
     const user = userData.user;
 
     const { collaborationId, returnUrl, provider, phone, country } = await safeJson(req as unknown as Response);
-    if (!collaborationId) throw new Error("collaborationId required");
+    if (!/^[0-9a-f-]{36}$/i.test(String(collaborationId || ""))) throw new Error("collaborationId invalid");
 
     const { data: collab, error: collabError } = await supabase
       .from("collaborations")
@@ -113,6 +131,11 @@ serve(async (req) => {
 
     const iso = String(country || "").toUpperCase();
     const mode = provider ? PAYIN_MODES[String(provider)]?.[iso] : null;
+    if (!mode) throw new Error("Cet opérateur n'est pas disponible dans ce pays");
+    const localDigits = localPhoneDigits(phone, iso);
+    if (localDigits.length !== LOCAL_PHONE_LENGTHS[iso]) {
+      throw new Error(`Le numéro doit contenir ${LOCAL_PHONE_LENGTHS[iso]} chiffres pour ce pays`);
+    }
     const normalizedPhone = normalizePhone(phone, iso);
 
     const headers = {
@@ -129,7 +152,7 @@ serve(async (req) => {
           description: `Collaboration ${collaborationId}`,
           amount: totalFCFA,
           currency: { iso: "XOF" },
-          callback_url: returnUrl || null,
+          callback_url: typeof returnUrl === "string" && /^https:\/\//.test(returnUrl) ? returnUrl : "https://collabcrea.com/brand/collabs?tab=collabs",
           customer: {
             firstname: firstname || "Marque",
             lastname: rest.join(" ") || "CollabCrea",

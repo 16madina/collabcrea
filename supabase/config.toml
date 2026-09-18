@@ -44,3 +44,6 @@ verify_jwt = false
 
 [functions.fedapay-payout]
 verify_jwt = false
+
+[functions.fedapay-webhook]
+verify_jwt = false
