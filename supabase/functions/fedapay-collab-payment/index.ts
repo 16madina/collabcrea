@@ -135,7 +135,7 @@ serve(async (req) => {
             lastname: rest.join(" ") || "CollabCrea",
             email: user.email,
             ...(phone && iso
-              ? { phone_number: { number: normalizedPhone, country: iso } }
+              ? { phone_number: { number: normalizedPhone, country: iso.toLowerCase() } }
               : {}),
           },
           custom_metadata: {
@@ -159,12 +159,26 @@ serve(async (req) => {
     // 1) Direct charge on the chosen operator when we have provider + phone
     if (provider && phone && mode && NO_REDIRECT_MODES.has(mode)) {
       const transactionId = await createTransaction();
+      const directTokenRes = await fetch(`${fedapayBase()}/transactions/${transactionId}/token`, {
+        method: "POST",
+        headers,
+      });
+      const directTokenJson = await safeJson(directTokenRes);
+      const directToken = directTokenJson?.token;
+
+      if (!directTokenRes.ok || !directToken) {
+        log("Direct token generation failed", {
+          transactionId,
+          status: directTokenRes.status,
+          body: directTokenJson,
+        });
+      } else {
       const chargeRes = await fetch(`${fedapayBase()}/transactions/${mode}`, {
         method: "POST",
         headers,
         body: JSON.stringify({
-          token: transactionId,
-          phone_number: { number: normalizedPhone, country: iso },
+          token: directToken,
+          phone_number: { number: normalizedPhone, country: iso.toLowerCase() },
         }),
       });
       const chargeJson = await safeJson(chargeRes);
@@ -188,6 +202,7 @@ serve(async (req) => {
         mode,
         body: chargeJson,
       });
+      }
     }
 
     // Fallback: hosted checkout token sur une transaction NEUVE
