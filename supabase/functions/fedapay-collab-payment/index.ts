@@ -95,42 +95,46 @@ serve(async (req) => {
       "Content-Type": "application/json",
     };
 
-    // 1) Create the transaction
-    const txRes = await fetch(`${fedapayBase()}/transactions`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        description: `Collaboration ${collaborationId}`,
-        amount: totalFCFA,
-        currency: { iso: "XOF" },
-        callback_url: returnUrl || null,
-        customer: {
-          firstname: firstname || "Marque",
-          lastname: rest.join(" ") || "CollabCrea",
-          email: user.email,
-        },
-        custom_metadata: {
-          collaboration_id: collaborationId,
-          brand_id: collab.brand_id,
-          creator_id: collab.creator_id,
-          agreed_amount: amountFCFA,
-        },
-      }),
-    });
-    const txJson = await safeJson(txRes);
-    if (!txRes.ok) {
-      log("Transaction creation failed", txJson);
-      throw new Error(txJson?.message || "Erreur FedaPay lors de la création du paiement");
-    }
-    const transactionId = txJson?.["v1/transaction"]?.id;
-    if (!transactionId) throw new Error("FedaPay: identifiant de transaction manquant");
+    // Helper: crée une nouvelle transaction FedaPay
+    const createTransaction = async (): Promise<number> => {
+      const txRes = await fetch(`${fedapayBase()}/transactions`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          description: `Collaboration ${collaborationId}`,
+          amount: totalFCFA,
+          currency: { iso: "XOF" },
+          callback_url: returnUrl || null,
+          customer: {
+            firstname: firstname || "Marque",
+            lastname: rest.join(" ") || "CollabCrea",
+            email: user.email,
+          },
+          custom_metadata: {
+            collaboration_id: collaborationId,
+            brand_id: collab.brand_id,
+            creator_id: collab.creator_id,
+            agreed_amount: amountFCFA,
+          },
+        }),
+      });
+      const txJson = await safeJson(txRes);
+      if (!txRes.ok) {
+        log("Transaction creation failed", txJson);
+        throw new Error(txJson?.message || "Erreur FedaPay lors de la création du paiement");
+      }
+      const id = txJson?.["v1/transaction"]?.id;
+      if (!id) throw new Error("FedaPay: identifiant de transaction manquant");
+      return id;
+    };
 
-    // 2) Direct charge on the chosen operator when we have provider + phone
+    // 1) Direct charge on the chosen operator when we have provider + phone
     const iso = String(country || "").toUpperCase();
     const mode = provider ? PAYIN_MODES[String(provider)]?.[iso] : null;
     const digits = String(phone || "").replace(/\D/g, "");
 
     if (provider && digits && mode) {
+      const transactionId = await createTransaction();
       const chargeRes = await fetch(`${fedapayBase()}/transactions/${transactionId}/${mode}`, {
         method: "POST",
         headers,
@@ -161,8 +165,10 @@ serve(async (req) => {
       });
     }
 
-    // Fallback: hosted checkout token
-    const tokenRes = await fetch(`${fedapayBase()}/transactions/${transactionId}/token`, {
+    // Fallback: hosted checkout token sur une transaction NEUVE
+    // (réutiliser une transaction déjà refusée fait afficher "transaction échouée")
+    const hostedTransactionId = await createTransaction();
+    const tokenRes = await fetch(`${fedapayBase()}/transactions/${hostedTransactionId}/token`, {
       method: "POST",
       headers,
     });
@@ -171,6 +177,7 @@ serve(async (req) => {
       log("Token generation failed", tokenJson);
       throw new Error(tokenJson?.message || "Erreur lors de l'ouverture du paiement");
     }
+    const transactionId = hostedTransactionId;
 
     log("Checkout ready", { transactionId, totalFCFA });
 
