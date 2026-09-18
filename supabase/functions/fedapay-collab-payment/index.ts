@@ -42,6 +42,27 @@ const PAYIN_MODES: Record<string, Record<string, string>> = {
   moov: { BJ: "moov", TG: "moov_tg", BF: "moov_bf", ML: "moov_ml" },
 };
 
+// FedaPay only supports redirect-free collections for a limited set of methods.
+// Wave CI must use the hosted checkout; sending it to the direct endpoint fails.
+const NO_REDIRECT_MODES = new Set(["mtn_ci", "mtn", "moov", "moov_tg"]);
+
+const COUNTRY_DIAL_CODES: Record<string, string> = {
+  BJ: "229",
+  BF: "226",
+  CI: "225",
+  GW: "245",
+  ML: "223",
+  SN: "221",
+  TG: "228",
+};
+
+const normalizePhone = (rawPhone: unknown, country: string): string => {
+  const dialCode = COUNTRY_DIAL_CODES[country];
+  let digits = String(rawPhone || "").replace(/\D/g, "");
+  if (dialCode && digits.startsWith(dialCode)) digits = digits.slice(dialCode.length);
+  return dialCode ? `+${dialCode}${digits}` : `+${digits}`;
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -90,6 +111,10 @@ serve(async (req) => {
     const displayName = profile?.company_name || profile?.full_name || "Marque CollabCrea";
     const [firstname, ...rest] = displayName.split(" ");
 
+    const iso = String(country || "").toUpperCase();
+    const mode = provider ? PAYIN_MODES[String(provider)]?.[iso] : null;
+    const normalizedPhone = normalizePhone(phone, iso);
+
     const headers = {
       Authorization: `Bearer ${secretKey}`,
       "Content-Type": "application/json",
@@ -109,6 +134,9 @@ serve(async (req) => {
             firstname: firstname || "Marque",
             lastname: rest.join(" ") || "CollabCrea",
             email: user.email,
+            ...(phone && iso
+              ? { phone_number: { number: normalizedPhone, country: iso.toLowerCase() } }
+              : {}),
           },
           custom_metadata: {
             collaboration_id: collaborationId,
@@ -129,17 +157,28 @@ serve(async (req) => {
     };
 
     // 1) Direct charge on the chosen operator when we have provider + phone
-    const iso = String(country || "").toUpperCase();
-    const mode = provider ? PAYIN_MODES[String(provider)]?.[iso] : null;
-    const digits = String(phone || "").replace(/\D/g, "");
-
-    if (provider && digits && mode) {
+    if (provider && phone && mode && NO_REDIRECT_MODES.has(mode)) {
       const transactionId = await createTransaction();
-      const chargeRes = await fetch(`${fedapayBase()}/transactions/${transactionId}/${mode}`, {
+      const directTokenRes = await fetch(`${fedapayBase()}/transactions/${transactionId}/token`, {
+        method: "POST",
+        headers,
+      });
+      const directTokenJson = await safeJson(directTokenRes);
+      const directToken = directTokenJson?.token;
+
+      if (!directTokenRes.ok || !directToken) {
+        log("Direct token generation failed", {
+          transactionId,
+          status: directTokenRes.status,
+          body: directTokenJson,
+        });
+      } else {
+      const chargeRes = await fetch(`${fedapayBase()}/transactions/${mode}`, {
         method: "POST",
         headers,
         body: JSON.stringify({
-          phone_number: { number: digits, country: iso.toLowerCase() },
+          token: directToken,
+          phone_number: { number: normalizedPhone, country: iso.toLowerCase() },
         }),
       });
       const chargeJson = await safeJson(chargeRes);
@@ -163,6 +202,7 @@ serve(async (req) => {
         mode,
         body: chargeJson,
       });
+      }
     }
 
     // Fallback: hosted checkout token sur une transaction NEUVE
