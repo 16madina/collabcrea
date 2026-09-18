@@ -214,7 +214,22 @@ const InAppPaymentSheet = ({
     selectedOperator?.countries[0] ||
     null;
   const momoPhoneDigits = momoPhone.replace(/\D/g, "");
-  const momoFormValid = !!selectedOperator && !!selectedMomoCountry && momoPhoneDigits.length >= 8;
+  const localPhoneLengths: Record<string, number> = {
+    BJ: 8,
+    BF: 8,
+    CI: 10,
+    GW: 9,
+    ML: 8,
+    SN: 9,
+    TG: 8,
+  };
+  const expectedPhoneLength = selectedMomoCountry
+    ? localPhoneLengths[selectedMomoCountry.iso]
+    : 0;
+  const normalizedLocalPhone = selectedMomoCountry && momoPhoneDigits.startsWith(selectedMomoCountry.dial.slice(1))
+    ? momoPhoneDigits.slice(selectedMomoCountry.dial.length - 1)
+    : momoPhoneDigits;
+  const momoFormValid = !!selectedOperator && !!selectedMomoCountry && normalizedLocalPhone.length === expectedPhoneLength;
 
   const cardOptions = [
     { id: "wave" as const, label: "Wave Visa", logo: waveLogo },
@@ -322,7 +337,13 @@ const InAppPaymentSheet = ({
         onOpenChange(false);
         return true;
       }
-      if (!silent) toast.info("Paiement pas encore confirmé. Réessayez dans un instant.");
+      const statusMessages: Record<string, string> = {
+        pending: "Le paiement attend encore votre confirmation.",
+        declined: "Le paiement a été refusé. Créez une nouvelle tentative.",
+        canceled: "Le paiement a été annulé. Créez une nouvelle tentative.",
+        expired: "Le lien de paiement a expiré. Créez une nouvelle tentative.",
+      };
+      if (!silent) toast.info(statusMessages[data?.paymentStatus] || "Paiement pas encore confirmé.");
       return false;
     } catch (err: any) {
       console.error("FedaPay verify error:", err);
@@ -346,9 +367,9 @@ const InAppPaymentSheet = ({
         {
           body: {
             collaborationId: collaboration.id,
-            returnUrl: `${window.location.origin}/collabs`,
+            returnUrl: `${window.location.origin}/brand/collabs?tab=collabs`,
             provider: selectedOperator.id,
-            phone: momoPhoneDigits,
+            phone: normalizedLocalPhone,
             country: selectedMomoCountry.iso,
           },
         }
@@ -608,8 +629,13 @@ const InAppPaymentSheet = ({
                       />
                     </div>
                     <p className="text-[10px] text-muted-foreground">
-                      Le numéro lié à votre compte {selectedOperator.label}.
+                      Le numéro lié à votre compte {selectedOperator.label}, sans l’indicatif {selectedMomoCountry?.dial}.
                     </p>
+                    {momoPhoneDigits.length > 0 && !momoFormValid && (
+                      <p className="text-[10px] text-destructive">
+                        Saisissez exactement {expectedPhoneLength} chiffres.
+                      </p>
+                    )}
                   </div>
                 </div>
               )}

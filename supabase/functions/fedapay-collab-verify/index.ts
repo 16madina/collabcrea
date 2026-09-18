@@ -1,134 +1,61 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { createClient } from "npm:@supabase/supabase-js@2";
+import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { finalizeFedaPayment, unwrapFedaTransaction } from "../_shared/fedapay-finalize.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
-
-const log = (step: string, details?: unknown) =>
-  console.log(`[FEDAPAY-VERIFY] ${step}${details ? " - " + JSON.stringify(details) : ""}`);
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
 
 const fedapayBase = () =>
   (Deno.env.get("FEDAPAY_MODE") || "live") === "sandbox"
     ? "https://sandbox-api.fedapay.com/v1"
     : "https://api.fedapay.com/v1";
 
-serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   try {
     const secretKey = Deno.env.get("FEDAPAY_SECRET_KEY");
-    if (!secretKey) throw new Error("FEDAPAY_SECRET_KEY not configured");
+    const url = Deno.env.get("SUPABASE_URL");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!secretKey || !url || !serviceKey) throw new Error("Payment service unavailable");
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-
+    const admin = createClient(url, serviceKey);
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header");
-    const { data: userData, error: userError } = await supabase.auth.getUser(
-      authHeader.replace("Bearer ", "")
-    );
-    if (userError || !userData.user) throw new Error("Not authenticated");
-    const user = userData.user;
+    if (!authHeader?.startsWith("Bearer ")) return json({ error: "Non autorisé" }, 401);
+    const { data: userData, error: userError } = await admin.auth.getUser(authHeader.slice(7));
+    if (userError || !userData.user) return json({ error: "Non autorisé" }, 401);
 
-    const { transactionId, collaborationId } = await req.json();
-    if (!transactionId || !collaborationId) {
-      throw new Error("transactionId and collaborationId required");
+    const body = await req.json().catch(() => null);
+    const transactionId = String(body?.transactionId ?? "");
+    const collaborationId = String(body?.collaborationId ?? "");
+    if (!/^\d+$/.test(transactionId) || !/^[0-9a-f-]{36}$/i.test(collaborationId)) {
+      return json({ error: "Paramètres de paiement invalides" }, 400);
     }
 
-    const res = await fetch(`${fedapayBase()}/transactions/${transactionId}`, {
-      headers: { Authorization: `Bearer ${secretKey}` },
-    });
-    const json = await res.json();
-    if (!res.ok) {
-      log("Fetch transaction failed", json);
-      throw new Error(json?.message || "Transaction FedaPay introuvable");
-    }
-
-    const fedaTx = json?.["v1/transaction"];
-    const paymentStatus: string = fedaTx?.status || "unknown";
-    const isPaid = ["approved", "transferred"].includes(paymentStatus);
-
-    if (!isPaid) {
-      return new Response(JSON.stringify({ verified: false, paymentStatus }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
-    }
-
-    const { data: collab, error: collabError } = await supabase
+    const { data: collab } = await admin
       .from("collaborations")
-      .select("*")
+      .select("brand_id")
       .eq("id", collaborationId)
-      .single();
-    if (collabError || !collab) throw new Error("Collaboration not found");
-    if (collab.brand_id !== user.id) throw new Error("Forbidden");
-
-    const reference = `fedapay-${transactionId}`;
-
-    const { data: existingTx } = await supabase
-      .from("transactions")
-      .select("id")
-      .eq("reference", reference)
       .maybeSingle();
+    if (!collab || collab.brand_id !== userData.user.id) return json({ error: "Accès refusé" }, 403);
 
-    if (!existingTx) {
-      await supabase.from("transactions").insert({
-        collaboration_id: collaborationId,
-        user_id: collab.brand_id,
-        type: "escrow",
-        status: "pending",
-        amount: collab.agreed_amount,
-        fee: collab.platform_fee,
-        net_amount: collab.creator_amount,
-        description: `Paiement FedaPay - ${reference}`,
-        reference,
-      });
-    }
-
-    let nextStatus = collab.status;
-    if (collab.status === "pending_payment") nextStatus = "in_progress";
-    else if (collab.status === "content_submitted") nextStatus = "in_review";
-
-    if (nextStatus !== collab.status) {
-      await supabase
-        .from("collaborations")
-        .update({ status: nextStatus, updated_at: new Date().toISOString() })
-        .eq("id", collaborationId);
-    }
-
-    if (nextStatus === "in_progress") {
-      await supabase.from("notifications").insert({
-        user_id: collab.creator_id,
-        type: "payment",
-        title: "💰 Paiement reçu",
-        message: "La marque a payé. Vous pouvez commencer la collaboration.",
-      });
-    } else if (nextStatus === "in_review") {
-      await supabase.from("notifications").insert({
-        user_id: collab.creator_id,
-        type: "payment",
-        title: "🔓 Contenu débloqué",
-        message: "La marque a payé et votre contenu est maintenant en revue.",
-      });
-    }
-
-    log("Verified", { transactionId, nextStatus });
-
-    return new Response(JSON.stringify({ verified: true, nextStatus, reference }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
+    const response = await fetch(`${fedapayBase()}/transactions/${transactionId}`, {
+      headers: { Authorization: `Bearer ${secretKey}`, Accept: "application/json" },
     });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok) return json({ error: "Transaction introuvable" }, 404);
+    const transaction = unwrapFedaTransaction(payload);
+    if (!transaction) throw new Error("Invalid payment response");
+
+    const result = await finalizeFedaPayment(admin, transaction, collaborationId);
+    return json(result);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    log("ERROR", { message: msg });
-    return new Response(JSON.stringify({ error: msg }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[FEDAPAY-VERIFY]", message);
+    return json({ error: "La vérification du paiement a échoué" }, 500);
   }
 });
