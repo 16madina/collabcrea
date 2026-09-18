@@ -230,6 +230,15 @@ const InAppPaymentSheet = ({
     }
   }, [open]);
 
+  // Auto-poll the FedaPay transaction while waiting for confirmation
+  useEffect(() => {
+    if (!open || !momoTxId) return;
+    const interval = setInterval(() => {
+      checkMomoStatus(momoTxId, true);
+    }, 6000);
+    return () => clearInterval(interval);
+  }, [open, momoTxId]);
+
   const checkMomoStatus = async (transactionId: string, silent = false) => {
     if (!silent) setMomoChecking(true);
     try {

@@ -223,7 +223,48 @@ const AdminWithdrawalsTab = () => {
     }
   };
 
-  // PayDunya auto payout removed — all Mobile Money payouts are now manual.
+  const handleFedapayPayout = async (request: WithdrawalWithProfile) => {
+    if (!user) return;
+    if (request.method !== "mobile_money") {
+      toast.error("Cette demande n'est pas un retrait Mobile Money");
+      return;
+    }
+    setPayoutProcessing(request.id);
+    try {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (!session) {
+        toast.error("Session expirée");
+        return;
+      }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/fedapay-payout`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ withdrawal_id: request.id }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success(`Virement FedaPay envoyé ! ${formatAmount(result.amount)}`);
+        fetchRequests();
+        setSelectedRequest(null);
+      } else {
+        toast.error(result.error || "Échec du virement FedaPay");
+      }
+    } catch (error) {
+      console.error("FedaPay payout error:", error);
+      toast.error("Erreur lors du virement FedaPay");
+    } finally {
+      setPayoutProcessing(null);
+    }
+  };
 
   const handlePayPalPayout = async (request: WithdrawalWithProfile) => {
     if (!user) return;
