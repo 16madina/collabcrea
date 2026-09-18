@@ -17,6 +17,20 @@ const fedapayBase = () =>
     ? "https://sandbox-api.fedapay.com/v1"
     : "https://api.fedapay.com/v1";
 
+// Opérateur + pays -> mode d'encaissement
+const PAYIN_MODES: Record<string, Record<string, string>> = {
+  wave: { CI: "wave_ci", SN: "wave_sn", BF: "wave_bf", ML: "wave_ml" },
+  orange: {
+    CI: "orange_money_ci",
+    SN: "orange_money_sn",
+    BF: "orange_money_bf",
+    ML: "orange_money_ml",
+    GW: "orange_money_gw",
+  },
+  mtn: { BJ: "mtn", CI: "mtn_ci" },
+  moov: { BJ: "moov", TG: "moov_tg", BF: "moov_bf", ML: "moov_ml" },
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
