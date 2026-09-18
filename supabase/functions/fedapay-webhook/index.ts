@@ -21,6 +21,42 @@ const fedapayBase = () =>
     ? "https://sandbox-api.fedapay.com/v1"
     : "https://api.fedapay.com/v1";
 
+const hex = (bytes: ArrayBuffer) =>
+  Array.from(new Uint8Array(bytes)).map((byte) => byte.toString(16).padStart(2, "0")).join("");
+
+const secureEqual = (left: string, right: string) => {
+  if (left.length !== right.length) return false;
+  let mismatch = 0;
+  for (let index = 0; index < left.length; index += 1) {
+    mismatch |= left.charCodeAt(index) ^ right.charCodeAt(index);
+  }
+  return mismatch === 0;
+};
+
+const verifySignature = async (payload: string, header: string | null, secret: string) => {
+  if (!header) return false;
+  const parts = header.split(",").map((part) => part.trim().split("="));
+  const timestamp = Number(parts.find(([key]) => key === "t")?.[1]);
+  const signatures = parts.filter(([key]) => key === "s").map(([, value]) => value);
+  if (!Number.isFinite(timestamp) || signatures.length === 0) return false;
+  if (Math.abs(Math.floor(Date.now() / 1000) - timestamp) > 300) return false;
+
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const digest = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    new TextEncoder().encode(`${timestamp}.${payload}`),
+  );
+  const expected = hex(digest);
+  return signatures.some((signature) => secureEqual(signature, expected));
+};
+
 const findTransactionId = (body: Record<string, unknown>) => {
   const candidates = [body.object, body.entity, body.data];
   for (const candidate of candidates) {
@@ -39,7 +75,17 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   try {
-    const body = await req.json().catch(() => null);
+    const webhookSecret = Deno.env.get("FEDAPAY_WEBHOOK_SECRET");
+    if (!webhookSecret) throw new Error("FEDAPAY_WEBHOOK_SECRET is not configured");
+    const rawBody = await req.text();
+    const signatureValid = await verifySignature(
+      rawBody,
+      req.headers.get("X-FEDAPAY-SIGNATURE"),
+      webhookSecret,
+    );
+    if (!signatureValid) return json({ error: "Invalid signature" }, 401);
+
+    const body = JSON.parse(rawBody);
     if (!body || typeof body !== "object") return json({ error: "Invalid payload" }, 400);
     const event = body as Record<string, unknown>;
     const eventName = String(event.name ?? event.type ?? "");
