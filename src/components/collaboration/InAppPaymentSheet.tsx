@@ -331,7 +331,7 @@ const InAppPaymentSheet = ({
             Paiement de la collaboration
           </SheetTitle>
           <SheetDescription>
-            Payez par Wave, Orange Money, MTN, Moov ou carte bancaire
+            Payez par Mobile Money (MTN, Moov, Celtiis, Wave, Orange Money) ou carte bancaire
           </SheetDescription>
         </SheetHeader>
 
@@ -408,7 +408,7 @@ const InAppPaymentSheet = ({
                 }`}
               >
                 <p className="font-semibold text-sm">📱 Mobile Money</p>
-                <p className="text-[10px] text-muted-foreground">Wave, Orange, MTN, Moov • FCFA</p>
+                <p className="text-[10px] text-muted-foreground">MTN, Moov, Celtiis, Wave, Orange • FCFA</p>
               </button>
               <button
                 type="button"
