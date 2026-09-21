@@ -658,8 +658,8 @@ const InAppPaymentSheet = ({
                   id={FEEXPAY_SHOP_ID}
                   token={FEEXPAY_TOKEN}
                   amount={totalFCFA}
-                  description={`Collaboration ${collaboration.id}`}
-                  reference={collaboration.id}
+                  description={`Paiement ColabCrea ${collaboration.id.replace(/-/g, '')}`}
+                  customId={collaboration.id}
                   callback_url={`${window.location.origin}/brand/collabs?tab=collabs`}
                   callback_info={{
                     fullname: displayName,
@@ -679,7 +679,7 @@ const InAppPaymentSheet = ({
                       momoCountry === "COTE_D_IVOIRE" ? "CI" :
                       momoCountry === "SENEGAL" ? "SN" :
                       momoCountry === "TOGO" ? "TG" : "BJ",
-                    network: momoNetwork,
+
                   }}
                   buttonText={`Payer ${formatFCFA(totalFCFA)}`}
                   buttonClass="w-full inline-flex items-center justify-center rounded-xl bg-gold px-6 py-3 text-base font-semibold text-primary-foreground shadow-lg transition-opacity hover:opacity-90"
