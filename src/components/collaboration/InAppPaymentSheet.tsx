@@ -316,16 +316,6 @@ const InAppPaymentSheet = ({
     };
   }, [open]);
 
-  // FeexPay lit ces valeurs lors du premier rendu de son bouton.
-  if (typeof window !== "undefined") {
-    (window as any).__CC_FEEXPAY_PREFILL = {
-      name: displayName,
-      email: userEmail,
-      country: momoCountry || "",
-      network: momoNetwork,
-      phone: momoPhone,
-    };
-  }
 
   // Init Stripe + create PaymentIntent only after card brand confirmed
   useEffect(() => {
