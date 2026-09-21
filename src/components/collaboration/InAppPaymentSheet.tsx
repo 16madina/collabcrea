@@ -579,9 +579,10 @@ const InAppPaymentSheet = ({
                         <label className="text-xs text-muted-foreground">Pays</label>
                         <Select
                           value={momoCountry}
-                          onValueChange={(value: FeexPayCountry) => {
-                            setMomoCountry(value);
-                            setMomoNetwork(defaultNetworkFor(value));
+                          onValueChange={(value) => {
+                            const country = value as FeexPayCountry;
+                            setMomoCountry(country);
+                            setMomoNetwork(defaultNetworkFor(country));
                           }}
                         >
                           <SelectTrigger className="bg-background"><SelectValue /></SelectTrigger>
@@ -594,7 +595,7 @@ const InAppPaymentSheet = ({
                       </div>
                       <div className="space-y-1.5">
                         <label className="text-xs text-muted-foreground">Opérateur</label>
-                        <Select value={momoNetwork} onValueChange={(value: "MTN" | "MOOV") => setMomoNetwork(value)}>
+                        <Select value={momoNetwork} onValueChange={(value) => setMomoNetwork(value as "MTN" | "MOOV")}>
                           <SelectTrigger className="bg-background"><SelectValue /></SelectTrigger>
                           <SelectContent className="z-[90]">
                             <SelectItem value="MTN">MTN</SelectItem>
