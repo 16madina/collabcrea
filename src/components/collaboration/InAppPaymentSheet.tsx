@@ -194,6 +194,8 @@ const InAppPaymentSheet = ({
   const [momoChecking, setMomoChecking] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [userEmail, setUserEmail] = useState("");
+  const [momoCountry, setMomoCountry] = useState<FeexPayCountry>("BENIN");
+  const [momoPhone, setMomoPhone] = useState("");
 
   const cardOptions = [
     { id: "wave" as const, label: "Wave Visa", logo: waveLogo },
