@@ -720,6 +720,7 @@ const InAppPaymentSheet = ({
                   first_name={displayName}
                   email={userEmail}
                   mode="LIVE"
+                  case={momoNetwork === "WAVE" ? "WALLET" : undefined}
                   currency="XOF"
                   defaultValueField={{
                     country_iban:
