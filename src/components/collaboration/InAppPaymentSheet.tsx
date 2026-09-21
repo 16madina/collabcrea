@@ -246,6 +246,17 @@ const InAppPaymentSheet = ({
     };
   }, [open]);
 
+  // Préremplissage du formulaire FeexPay (nom, email, pays, opérateur, numéro)
+  useEffect(() => {
+    (window as any).__CC_FEEXPAY_PREFILL = {
+      name: displayName,
+      email: userEmail,
+      country: momoCountry,
+      network: defaultNetworkFor(momoCountry),
+      phone: momoPhone,
+    };
+  }, [displayName, userEmail, momoCountry, momoPhone]);
+
   // Init Stripe + create PaymentIntent only after card brand confirmed
   useEffect(() => {
     if (!open) {
