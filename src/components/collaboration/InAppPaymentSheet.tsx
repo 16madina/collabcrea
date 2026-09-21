@@ -535,6 +535,7 @@ const InAppPaymentSheet = ({
                   callback={handleFeexPayCallback}
                 />
               </FeexPayProvider>
+              </div>
 
               {momoChecking && (
                 <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
