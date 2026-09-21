@@ -295,3 +295,54 @@
     animation-play-state: paused;
   }
 }
+
+/* FeexPay payment modal: force readable light-theme colors inside the provider's own UI */
+.feexpay-scope,
+.feexpay-scope * {
+  color: #1f2937;
+  font-family: 'Inter', sans-serif !important;
+}
+
+.feexpay-scope input,
+.feexpay-scope select,
+.feexpay-scope textarea {
+  color: #111827 !important;
+  background-color: #ffffff !important;
+  -webkit-text-fill-color: #111827;
+}
+
+.feexpay-scope input::placeholder,
+.feexpay-scope textarea::placeholder {
+  color: #9ca3af !important;
+  -webkit-text-fill-color: #9ca3af;
+}
+
+.feexpay-scope select option {
+  color: #111827 !important;
+  background-color: #ffffff !important;
+}
+
+.feexpay-scope .text-gray-500,
+.feexpay-scope .text-gray-600 {
+  color: #6b7280 !important;
+}
+
+.feexpay-scope .text-white,
+.feexpay-scope .bg-primary-orange,
+.feexpay-scope .bg-primary-blue,
+.feexpay-scope .bg-green-500,
+.feexpay-scope .bg-red-500,
+.feexpay-scope .bg-gray-800 {
+  color: #ffffff !important;
+}
+
+.feexpay-scope .bg-primary-orange *,
+.feexpay-scope .bg-primary-blue *,
+.feexpay-scope .bg-gray-800 * {
+  color: #ffffff !important;
+}
+
+/* Broken provider logo (403) */
+.feexpay-scope img[alt="Logo"] {
+  display: none !important;
+}

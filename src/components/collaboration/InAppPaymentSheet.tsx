@@ -511,6 +511,7 @@ const InAppPaymentSheet = ({
                 </div>
               </div>
 
+              <div className="feexpay-scope">
               <FeexPayProvider>
                 <FeexPayButton
                   key={`${displayName}|${userEmail}|${momoCountry}|${momoPhone}`}
@@ -534,6 +535,7 @@ const InAppPaymentSheet = ({
                   callback={handleFeexPayCallback}
                 />
               </FeexPayProvider>
+              </div>
 
               {momoChecking && (
                 <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
