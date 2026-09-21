@@ -907,7 +907,9 @@ const InAppPaymentSheet = ({
               )}
 
               <p className="text-xs text-muted-foreground text-center">
-                Paiement sécurisé via FeexPay • Wave, MTN, Moov, Orange en FCFA
+                {momoNetwork === "WAVE"
+                  ? "Paiement sécurisé via FedaPay • Wave en FCFA"
+                  : "Paiement sécurisé via FeexPay • MTN, Moov, Orange en FCFA"}
               </p>
             </div>
 
