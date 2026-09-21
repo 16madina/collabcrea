@@ -868,38 +868,74 @@ const InAppPaymentSheet = ({
 
               <div className="feexpay-scope">
               {momoDetailsLoaded && momoCountry ? (
-                <FeexPay
-                  key={`${displayName}|${userEmail}|${momoCountry}|${momoNetwork}|${momoPhone}`}
-                  id={FEEXPAY_SHOP_ID}
-                  token={FEEXPAY_TOKEN}
-                  amount={totalFCFA}
-                  description={`ColabCrea ${collaboration.id.slice(0, 8)}`}
-                  customId={collaboration.id}
-                  callback_url={`${window.location.origin}/brand/collabs?tab=collabs`}
-                  callback_info={{
-                    fullname: displayName,
-                    email: userEmail,
-                    phone: momoPhone,
-                  }}
-                  first_name={displayName}
-                  email={userEmail}
-                  mode="LIVE"
-                  case={momoNetwork === "WAVE" ? "WALLET" : undefined}
-                  currency="XOF"
-                  defaultValueField={{
-                    country_iban:
-                      momoCountry === "BENIN" ? "BJ" :
-                      momoCountry === "BURKINA_FASO" ? "BF" :
-                      momoCountry === "CONGO_BRAZZAVILLE" ? "CG" :
-                      momoCountry === "COTE_D_IVOIRE" ? "CI" :
-                      momoCountry === "SENEGAL" ? "SN" :
-                      momoCountry === "TOGO" ? "TG" : "BJ",
-
-                  }}
-                  buttonText={`Payer ${formatFCFA(totalFCFA)}`}
-                  buttonClass="w-full inline-flex items-center justify-center rounded-xl bg-gold px-6 py-3 text-base font-semibold text-primary-foreground shadow-lg transition-opacity hover:opacity-90"
-                  callback={handleFeexPayCallback}
-                />
+                momoNetwork === "WAVE" ? (
+                  // Wave: bypass SDK, direct API call to avoid race condition bug
+                  <div className="space-y-3">
+                    {wavePaymentUrl ? (
+                      <div className="space-y-3">
+                        <iframe
+                          src={wavePaymentUrl}
+                          className="w-full rounded-xl border border-border/50"
+                          style={{ height: "500px" }}
+                          title="Paiement Wave"
+                        />
+                        {wavePolling && (
+                          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Vérification du paiement Wave en cours...
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="gold"
+                        size="lg"
+                        className="w-full"
+                        disabled={momoChecking || !momoPhone}
+                        onClick={handleWaveDirectPayment}
+                      >
+                        {momoChecking ? (
+                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                        ) : (
+                          <Smartphone className="w-5 h-5 mr-2" />
+                        )}
+                        Payer {formatFCFA(totalFCFA)} avec Wave
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <FeexPay
+                    key={`${displayName}|${userEmail}|${momoCountry}|${momoNetwork}|${momoPhone}`}
+                    id={FEEXPAY_SHOP_ID}
+                    token={FEEXPAY_TOKEN}
+                    amount={totalFCFA}
+                    description={`ColabCrea ${collaboration.id.slice(0, 8)}`}
+                    customId={collaboration.id}
+                    callback_url={`${window.location.origin}/brand/collabs?tab=collabs`}
+                    callback_info={{
+                      fullname: displayName,
+                      email: userEmail,
+                      phone: momoPhone,
+                    }}
+                    first_name={displayName}
+                    email={userEmail}
+                    mode="LIVE"
+                    currency="XOF"
+                    defaultValueField={{
+                      country_iban:
+                        momoCountry === "BENIN" ? "BJ" :
+                        momoCountry === "BURKINA_FASO" ? "BF" :
+                        momoCountry === "CONGO_BRAZZAVILLE" ? "CG" :
+                        momoCountry === "COTE_D_IVOIRE" ? "CI" :
+                        momoCountry === "SENEGAL" ? "SN" :
+                        momoCountry === "TOGO" ? "TG" : "BJ",
+                    }}
+                    buttonText={`Payer ${formatFCFA(totalFCFA)}`}
+                    buttonClass="w-full inline-flex items-center justify-center rounded-xl bg-gold px-6 py-3 text-base font-semibold text-primary-foreground shadow-lg transition-opacity hover:opacity-90"
+                    callback={handleFeexPayCallback}
+                  />
+                )
               ) : momoDetailsLoaded ? (
                 <Button
                   type="button"
