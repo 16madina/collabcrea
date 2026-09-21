@@ -836,36 +836,46 @@ const InAppPaymentSheet = ({
                     )}
                   </div>
                 ) : (
-                  <FeexPay
-                    key={`${displayName}|${userEmail}|${momoCountry}|${momoNetwork}|${momoPhone}`}
-                    id={FEEXPAY_SHOP_ID}
-                    token={FEEXPAY_TOKEN}
-                    amount={totalFCFA}
-                    description={`ColabCrea ${collaboration.id.slice(0, 8)}`}
-                    customId={collaboration.id}
-                    callback_url={`${window.location.origin}/brand/collabs?tab=collabs`}
-                    callback_info={{
-                      fullname: displayName,
-                      email: userEmail,
-                      phone: momoPhone,
-                    }}
-                    first_name={displayName}
-                    email={userEmail}
-                    mode="LIVE"
-                    currency="XOF"
-                    defaultValueField={{
-                      country_iban:
-                        momoCountry === "BENIN" ? "BJ" :
-                        momoCountry === "BURKINA_FASO" ? "BF" :
-                        momoCountry === "CONGO_BRAZZAVILLE" ? "CG" :
-                        momoCountry === "COTE_D_IVOIRE" ? "CI" :
-                        momoCountry === "SENEGAL" ? "SN" :
-                        momoCountry === "TOGO" ? "TG" : "BJ",
-                    }}
-                    buttonText={`Payer ${formatFCFA(totalFCFA)}`}
-                    buttonClass="w-full inline-flex items-center justify-center rounded-xl bg-gold px-6 py-3 text-base font-semibold text-primary-foreground shadow-lg transition-opacity hover:opacity-90"
-                    callback={handleFeexPayCallback}
-                  />
+                  <div className="space-y-3">
+                    {(momoCountry === "COTE_D_IVOIRE" || momoCountry === "SENEGAL") && (
+                      <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-start gap-2.5">
+                        <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                        <p className="text-xs text-amber-300">
+                          ⚠️ Pour payer avec Wave, sélectionnez « Wave » comme opérateur dans le menu ci-dessus avant de continuer.
+                        </p>
+                      </div>
+                    )}
+                    <FeexPay
+                      key={`${displayName}|${userEmail}|${momoCountry}|${momoNetwork}|${momoPhone}`}
+                      id={FEEXPAY_SHOP_ID}
+                      token={FEEXPAY_TOKEN}
+                      amount={totalFCFA}
+                      description={`ColabCrea ${collaboration.id.slice(0, 8)}`}
+                      customId={collaboration.id}
+                      callback_url={`${window.location.origin}/brand/collabs?tab=collabs`}
+                      callback_info={{
+                        fullname: displayName,
+                        email: userEmail,
+                        phone: momoPhone,
+                      }}
+                      first_name={displayName}
+                      email={userEmail}
+                      mode="LIVE"
+                      currency="XOF"
+                      defaultValueField={{
+                        country_iban:
+                          momoCountry === "BENIN" ? "BJ" :
+                          momoCountry === "BURKINA_FASO" ? "BF" :
+                          momoCountry === "CONGO_BRAZZAVILLE" ? "CG" :
+                          momoCountry === "COTE_D_IVOIRE" ? "CI" :
+                          momoCountry === "SENEGAL" ? "SN" :
+                          momoCountry === "TOGO" ? "TG" : "BJ",
+                      }}
+                      buttonText={`Payer ${formatFCFA(totalFCFA)}`}
+                      buttonClass="w-full inline-flex items-center justify-center rounded-xl bg-gold px-6 py-3 text-base font-semibold text-primary-foreground shadow-lg transition-opacity hover:opacity-90"
+                      callback={handleFeexPayCallback}
+                    />
+                  </div>
                 )
               ) : momoDetailsLoaded ? (
                 <Button
