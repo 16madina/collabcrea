@@ -29,6 +29,41 @@ import djamoLogo from "@/assets/payment-djamo.png";
 const FEEXPAY_SHOP_ID = "7CyXfoxfoauYi4X";
 const FEEXPAY_TOKEN = "fp_jt63XV7c59WinJb3gRSIygVsEB1rMbFw7Cfbme6u0eTIrdIWKwRSa2BswHo3GHs4";
 
+// Pays couverts par FeexPay (Mobile Money)
+type FeexPayCountry =
+  | "BENIN"
+  | "BURKINA_FASO"
+  | "CONGO_BRAZZAVILLE"
+  | "COTE_D_IVOIRE"
+  | "SENEGAL"
+  | "TOGO";
+
+const FEEXPAY_COUNTRY_MAP: Record<string, FeexPayCountry> = {
+  BJ: "BENIN",
+  BENIN: "BENIN",
+  BF: "BURKINA_FASO",
+  "BURKINA FASO": "BURKINA_FASO",
+  CG: "CONGO_BRAZZAVILLE",
+  CONGO: "CONGO_BRAZZAVILLE",
+  "CONGO-BRAZZAVILLE": "CONGO_BRAZZAVILLE",
+  CI: "COTE_D_IVOIRE",
+  "COTE D'IVOIRE": "COTE_D_IVOIRE",
+  "CÔTE D'IVOIRE": "COTE_D_IVOIRE",
+  SN: "SENEGAL",
+  SENEGAL: "SENEGAL",
+  SÉNÉGAL: "SENEGAL",
+  TG: "TOGO",
+  TOGO: "TOGO",
+};
+
+const resolveFeexPayCountry = (value?: string | null): FeexPayCountry =>
+  FEEXPAY_COUNTRY_MAP[(value || "").trim().toUpperCase()] || "BENIN";
+
+// FeexPay ne propose que MTN et Moov comme réseaux communs
+const defaultNetworkFor = (country: FeexPayCountry): "MTN" | "MOOV" =>
+  country === "BURKINA_FASO" || country === "TOGO" ? "MOOV" : "MTN";
+
+
 
 interface InAppPaymentSheetProps {
   open: boolean;
@@ -159,6 +194,8 @@ const InAppPaymentSheet = ({
   const [momoChecking, setMomoChecking] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [userEmail, setUserEmail] = useState("");
+  const [momoCountry, setMomoCountry] = useState<FeexPayCountry>("BENIN");
+  const [momoPhone, setMomoPhone] = useState("");
 
   const cardOptions = [
     { id: "wave" as const, label: "Wave Visa", logo: waveLogo },
@@ -192,16 +229,33 @@ const InAppPaymentSheet = ({
       setUserEmail(user.email || "");
       const { data: profile } = await supabase
         .from("profiles")
-        .select("full_name, company_name")
+        .select("full_name, company_name, country, residence_country, pricing")
         .eq("user_id", user.id)
         .maybeSingle();
       if (cancelled) return;
       setDisplayName(profile?.company_name || profile?.full_name || "Marque CollabCrea");
+      setMomoCountry(
+        resolveFeexPayCountry(profile?.residence_country || profile?.country)
+      );
+      const pricing = (profile?.pricing || {}) as Record<string, unknown>;
+      const phone = typeof pricing.phone === "string" ? pricing.phone : "";
+      setMomoPhone(phone.replace(/\D/g, "").slice(-10));
     })();
     return () => {
       cancelled = true;
     };
   }, [open]);
+
+  // Préremplissage du formulaire FeexPay (nom, email, pays, opérateur, numéro)
+  useEffect(() => {
+    (window as any).__CC_FEEXPAY_PREFILL = {
+      name: displayName,
+      email: userEmail,
+      country: momoCountry,
+      network: defaultNetworkFor(momoCountry),
+      phone: momoPhone,
+    };
+  }, [displayName, userEmail, momoCountry, momoPhone]);
 
   // Init Stripe + create PaymentIntent only after card brand confirmed
   useEffect(() => {
@@ -331,7 +385,7 @@ const InAppPaymentSheet = ({
             Paiement de la collaboration
           </SheetTitle>
           <SheetDescription>
-            Payez par Mobile Money (MTN, Moov, Celtiis, Wave, Orange Money) ou carte bancaire
+            Payez par Mobile Money (MTN, Moov, Celtiis, Wave) ou carte bancaire
           </SheetDescription>
         </SheetHeader>
 
@@ -459,13 +513,20 @@ const InAppPaymentSheet = ({
 
               <FeexPayProvider>
                 <FeexPayButton
+                  key={`${displayName}|${userEmail}|${momoCountry}|${momoPhone}`}
                   id={FEEXPAY_SHOP_ID}
                   token={FEEXPAY_TOKEN}
                   amount={totalFCFA}
                   description={`Collaboration ${collaboration.id}`}
                   customId={collaboration.id}
+                  case="MOBILE"
                   callback_url={`${window.location.origin}/brand/collabs?tab=collabs`}
-                  callback_info={{ name: displayName, email: userEmail, phone: "" }}
+                  callback_info={{
+                    name: displayName,
+                    email: userEmail,
+                    phone: momoPhone,
+                    country: momoCountry,
+                  }}
                   mode="LIVE"
                   currency="XOF"
                   buttonText={`Payer ${formatFCFA(totalFCFA)}`}
@@ -488,7 +549,7 @@ const InAppPaymentSheet = ({
               )}
 
               <p className="text-xs text-muted-foreground text-center">
-                Paiement sécurisé • MTN, Moov, Celtiis, Wave, Orange Money en FCFA
+                Paiement sécurisé • MTN, Moov, Celtiis, Wave en FCFA
               </p>
             </div>
 
