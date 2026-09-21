@@ -630,11 +630,52 @@ const InAppPaymentSheet = ({
                       </div>
                       <div className="space-y-1.5">
                         <label className="text-xs text-muted-foreground">Opérateur</label>
-                        <Select value={momoNetwork} onValueChange={(value) => setMomoNetwork(value as "MTN" | "MOOV")}>
+                        <Select value={momoNetwork} onValueChange={(value) => setMomoNetwork(value)}>
                           <SelectTrigger className="bg-background"><SelectValue /></SelectTrigger>
                           <SelectContent className="z-[90]">
-                            <SelectItem value="MTN">MTN</SelectItem>
-                            <SelectItem value="MOOV">Moov</SelectItem>
+                            {momoCountry === "COTE_D_IVOIRE" && (
+                              <>
+                                <SelectItem value="WAVE">Wave</SelectItem>
+                                <SelectItem value="MTN">MTN</SelectItem>
+                                <SelectItem value="MOOV">Moov</SelectItem>
+                                <SelectItem value="ORANGE">Orange</SelectItem>
+                              </>
+                            )}
+                            {momoCountry === "SENEGAL" && (
+                              <>
+                                <SelectItem value="WAVE">Wave</SelectItem>
+                                <SelectItem value="ORANGE">Orange</SelectItem>
+                                <SelectItem value="FREE">Free</SelectItem>
+                              </>
+                            )}
+                            {momoCountry === "BENIN" && (
+                              <>
+                                <SelectItem value="MTN">MTN</SelectItem>
+                                <SelectItem value="MOOV">Moov</SelectItem>
+                                <SelectItem value="CELTIIS">Celtiis</SelectItem>
+                              </>
+                            )}
+                            {momoCountry === "BURKINA_FASO" && (
+                              <>
+                                <SelectItem value="MOOV">Moov</SelectItem>
+                                <SelectItem value="ORANGE">Orange</SelectItem>
+                              </>
+                            )}
+                            {momoCountry === "TOGO" && (
+                              <>
+                                <SelectItem value="TOGOCOM">Togocom</SelectItem>
+                                <SelectItem value="MOOV">Moov</SelectItem>
+                              </>
+                            )}
+                            {momoCountry === "CONGO_BRAZZAVILLE" && (
+                              <SelectItem value="MTN">MTN</SelectItem>
+                            )}
+                            {!momoCountry && (
+                              <>
+                                <SelectItem value="MTN">MTN</SelectItem>
+                                <SelectItem value="MOOV">Moov</SelectItem>
+                              </>
+                            )}
                           </SelectContent>
                         </Select>
                       </div>
