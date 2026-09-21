@@ -26,18 +26,14 @@ function normalizeBeninPhone(raw: string): string | null {
   return `229${digits}`;
 }
 
-// network detection from the local part (01XXXXXXXX)
+// network detection from the local part (01XXXXXXXX): 016/017/019 = MTN, 014/015/018 = MOOV
 function detectNetwork(normalized: string): "MTN" | "MOOV" {
-  const local = normalized.slice(3); // 01XXXXXXXX
-  const prefix = local.slice(2, 4); // operator digits
-  if (["40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "80", "81", "82", "83", "84", "85", "86", "87", "88", "89"].includes(prefix)) {
-    return "MOOV";
-  }
-  return "MTN";
+  const d = normalized.slice(3)[2]; // third digit of the local number
+  return ["4", "5", "8"].includes(d) ? "MOOV" : "MTN";
 }
 
-async function safeJson(res: Response): Promise<any> {
-  const text = await res.text();
+async function safeJson(src: { text: () => Promise<string> }): Promise<any> {
+  const text = await src.text();
   if (!text) return {};
   try {
     return JSON.parse(text);
@@ -74,7 +70,7 @@ Deno.serve(async (req) => {
     if (userError || !userData.user) return json({ error: "Non autorisé" }, 401);
     const callerId = userData.user.id;
 
-    const body = await safeJson(req as unknown as Response).catch(() => ({}));
+    const body = await safeJson(req).catch(() => ({}));
     const collaborationId = body?.collaborationId;
     if (!collaborationId || !UUID_RE.test(String(collaborationId))) {
       return json({ error: "collaborationId invalide" }, 400);
