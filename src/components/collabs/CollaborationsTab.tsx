@@ -698,6 +698,30 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
             </Button>
           )}
 
+          {/* Brand: validate and pay the creator directly */}
+          {isBrand && ["content_submitted", "in_review"].includes(collab.status) && (
+            <div className="space-y-2">
+              {renderPayoutStatus(collab.id)}
+              {payoutStatuses[collab.id] !== "completed" && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full border-green-500/40 text-green-500 hover:bg-green-500/10"
+                  disabled={payingIds.has(collab.id)}
+                  onClick={() => setPayoutConfirmCollab(collab)}
+                >
+                  {payingIds.has(collab.id) ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Wallet className="w-4 h-4 mr-2" />
+                  )}
+                  Valider et payer ({formatCurrency(collab.creator_amount)})
+                </Button>
+              )}
+            </div>
+          )}
+
+
           {collab.status === "in_review" && isCreator && (
             <div className="flex items-center gap-2 text-cyan-500 text-sm">
               <Eye className="w-4 h-4" />
