@@ -31,7 +31,6 @@ import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import ChildSafety from "./pages/ChildSafety";
 import OpenApp from "./pages/OpenApp";
-import FeexTest from "./pages/FeexTest";
 import OfferDetail from "./pages/OfferDetail";
 
 const queryClient = new QueryClient();
@@ -80,7 +79,6 @@ const AppContent = () => {
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/child-safety" element={<ChildSafety />} />
-          <Route path="/feex-test" element={<FeexTest />} />
           <Route path="/ouvrir" element={<OpenApp />} />
           <Route path="/open" element={<OpenApp />} />
           <Route path="/profile/:userId" element={<ProfileView />} />
