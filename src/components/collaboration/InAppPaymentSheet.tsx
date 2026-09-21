@@ -22,8 +22,7 @@ import {
   useStripe,
   useElements,
 } from "@stripe/react-stripe-js";
-import { FeexPayProvider, FeexPayButton } from "@feexpay/react-sdk";
-import "@feexpay/react-sdk/style.css";
+import FeexPay from "react-sdk-feexpay";
 import waveLogo from "@/assets/payment-wave.png";
 import orangeLogo from "@/assets/payment-orange.png";
 import djamoLogo from "@/assets/payment-djamo.png";
