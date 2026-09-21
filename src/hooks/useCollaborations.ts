@@ -547,6 +547,8 @@ export const useCollaborations = () => {
     submitPublicationLink,
     approvePublication,
     verifyPublicationLink,
+    payoutCreator,
+
     refreshCollaborations: fetchCollaborations,
   };
 };
