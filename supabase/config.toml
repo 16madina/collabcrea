@@ -39,6 +39,9 @@ verify_jwt = false
 [functions.fedapay-collab-payment]
 verify_jwt = false
 
+[functions.fedapay-create-payment]
+verify_jwt = false
+
 [functions.fedapay-collab-verify]
 verify_jwt = false
 
