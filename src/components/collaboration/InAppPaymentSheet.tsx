@@ -511,6 +511,7 @@ const InAppPaymentSheet = ({
                 </div>
               </div>
 
+              <div className="feexpay-scope">
               <FeexPayProvider>
                 <FeexPayButton
                   key={`${displayName}|${userEmail}|${momoCountry}|${momoPhone}`}
