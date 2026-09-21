@@ -54,4 +54,5 @@ verify_jwt = false
 [functions.check-ip]
 verify_jwt = false
 
-
+[functions.feexpay-payout]
+verify_jwt = false
