@@ -385,7 +385,7 @@ const InAppPaymentSheet = ({
             Paiement de la collaboration
           </SheetTitle>
           <SheetDescription>
-            Payez par Mobile Money (MTN, Moov, Celtiis, Wave, Orange Money) ou carte bancaire
+            Payez par Mobile Money (MTN, Moov, Celtiis, Wave) ou carte bancaire
           </SheetDescription>
         </SheetHeader>
 
