@@ -1023,7 +1023,23 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
           }}
         />
       )}
+
+      <AlertDialog open={!!payoutConfirmCollab} onOpenChange={(o) => { if (!o) setPayoutConfirmCollab(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer le paiement</AlertDialogTitle>
+            <AlertDialogDescription>
+              Confirmer le paiement de {payoutConfirmCollab ? formatCurrency(payoutConfirmCollab.creator_amount) : ""} au créateur {payoutConfirmCollab?.creator?.full_name || ""} ?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmPayout}>Confirmer et payer</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
+
   );
 };
 
