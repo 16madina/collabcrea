@@ -27,7 +27,7 @@ import orangeLogo from "@/assets/payment-orange.png";
 import djamoLogo from "@/assets/payment-djamo.png";
 
 const FEEXPAY_SHOP_ID = "7CyXfoxfoauYi4X";
-const FEEXPAY_TOKEN = "test_Hg7Kjl3ZAM63UuIUpuudD9nKuu3ZAM67Kjl3Uuhn";
+const FEEXPAY_TOKEN = "fp_jt63XV7c59WinJb3gRSIygVsEB1rMbFw7Cfbme6u0eTIrdIWKwRSa2BswHo3GHs4";
 
 
 interface InAppPaymentSheetProps {
