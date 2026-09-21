@@ -338,8 +338,16 @@ export const useCollaborations = () => {
         toast.success("Aperçu approuvé ! Le créateur doit maintenant publier sur ses réseaux.");
       } else {
         toast.success("Contenu approuvé ! Le paiement a été libéré au créateur.");
+        // Automatically send the Mobile Money payout to the creator
+        const payout = await payoutCreator(collaborationId, { silent: true });
+        if (payout.success) {
+          toast.success("Virement Mobile Money envoyé au créateur 🎉");
+        } else {
+          toast.warning(`Virement à finaliser : ${payout.error}`);
+        }
       }
       fetchCollaborations();
+
     } catch (error) {
       console.error("Error approving content:", error);
       toast.error("Erreur lors de l'approbation");
