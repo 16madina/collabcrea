@@ -35,9 +35,21 @@ import BrandSubmitContentSheet from "@/components/collaboration/BrandSubmitConte
 import WatermarkOverlay from "@/components/collaboration/WatermarkOverlay";
 import ContentPreviewSheet from "@/components/collaboration/ContentPreviewSheet";
 import CreativeBriefDisplay from "@/components/collaboration/CreativeBriefDisplay";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO, differenceInDays, differenceInHours, differenceInMinutes, isPast } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
+
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("fr-FR").format(amount) + " FCFA";
