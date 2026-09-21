@@ -9,7 +9,9 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, Lock, Shield, CreditCard, AlertCircle, Check, ChevronRight } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2, Lock, Shield, CreditCard, AlertCircle, Check, ChevronRight, Pencil, User, Mail, MapPin, Smartphone } from "lucide-react";
 import { Collaboration } from "@/hooks/useCollaborations";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -62,6 +64,21 @@ const resolveFeexPayCountry = (value?: string | null): FeexPayCountry =>
 // FeexPay ne propose que MTN et Moov comme réseaux communs
 const defaultNetworkFor = (country: FeexPayCountry): "MTN" | "MOOV" =>
   country === "BURKINA_FASO" || country === "TOGO" ? "MOOV" : "MTN";
+
+const FEEXPAY_COUNTRIES: Array<{ value: FeexPayCountry; label: string }> = [
+  { value: "BENIN", label: "Bénin" },
+  { value: "BURKINA_FASO", label: "Burkina Faso" },
+  { value: "CONGO_BRAZZAVILLE", label: "Congo-Brazzaville" },
+  { value: "COTE_D_IVOIRE", label: "Côte d’Ivoire" },
+  { value: "SENEGAL", label: "Sénégal" },
+  { value: "TOGO", label: "Togo" },
+];
+
+const countryLabel = (country: FeexPayCountry) =>
+  FEEXPAY_COUNTRIES.find((item) => item.value === country)?.label || country;
+
+const resolveNetwork = (value?: string | null): "MTN" | "MOOV" =>
+  String(value || "").toUpperCase().includes("MOOV") ? "MOOV" : "MTN";
 
 
 
@@ -195,7 +212,10 @@ const InAppPaymentSheet = ({
   const [displayName, setDisplayName] = useState("");
   const [userEmail, setUserEmail] = useState("");
   const [momoCountry, setMomoCountry] = useState<FeexPayCountry>("BENIN");
+  const [momoNetwork, setMomoNetwork] = useState<"MTN" | "MOOV">("MTN");
   const [momoPhone, setMomoPhone] = useState("");
+  const [momoDetailsLoaded, setMomoDetailsLoaded] = useState(false);
+  const [editingMomoDetails, setEditingMomoDetails] = useState(false);
 
   const cardOptions = [
     { id: "wave" as const, label: "Wave Visa", logo: waveLogo },
@@ -233,29 +253,44 @@ const InAppPaymentSheet = ({
         .eq("user_id", user.id)
         .maybeSingle();
       if (cancelled) return;
-      setDisplayName(profile?.company_name || profile?.full_name || "Marque CollabCrea");
-      setMomoCountry(
-        resolveFeexPayCountry(profile?.residence_country || profile?.country)
-      );
+      const profileCountry = resolveFeexPayCountry(profile?.residence_country || profile?.country);
       const pricing = (profile?.pricing || {}) as Record<string, unknown>;
-      const phone = typeof pricing.phone === "string" ? pricing.phone : "";
-      setMomoPhone(phone.replace(/\D/g, "").slice(-10));
+      const { data: lastWithdrawal } = await supabase
+        .from("withdrawal_requests")
+        .select("mobile_number, mobile_provider")
+        .eq("user_id", user.id)
+        .not("mobile_number", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (cancelled) return;
+      const metadataPhone = typeof user.user_metadata?.phone === "string" ? user.user_metadata.phone : "";
+      const profilePhone = typeof pricing.phone === "string" ? pricing.phone : "";
+      const savedPhone = profilePhone || lastWithdrawal?.mobile_number || metadataPhone;
+      const savedNetwork = lastWithdrawal?.mobile_provider
+        ? resolveNetwork(lastWithdrawal.mobile_provider)
+        : defaultNetworkFor(profileCountry);
+      setDisplayName(profile?.company_name || profile?.full_name || user.user_metadata?.full_name || "Marque CollabCrea");
+      setMomoCountry(profileCountry);
+      setMomoNetwork(savedNetwork);
+      setMomoPhone(savedPhone.replace(/\D/g, "").slice(-10));
+      setMomoDetailsLoaded(true);
     })();
     return () => {
       cancelled = true;
     };
   }, [open]);
 
-  // Préremplissage du formulaire FeexPay (nom, email, pays, opérateur, numéro)
-  useEffect(() => {
+  // FeexPay lit ces valeurs lors du premier rendu de son bouton.
+  if (typeof window !== "undefined") {
     (window as any).__CC_FEEXPAY_PREFILL = {
       name: displayName,
       email: userEmail,
       country: momoCountry,
-      network: defaultNetworkFor(momoCountry),
+      network: momoNetwork,
       phone: momoPhone,
     };
-  }, [displayName, userEmail, momoCountry, momoPhone]);
+  }
 
   // Init Stripe + create PaymentIntent only after card brand confirmed
   useEffect(() => {
@@ -511,10 +546,89 @@ const InAppPaymentSheet = ({
                 </div>
               </div>
 
+              <div className="glass rounded-xl p-4 space-y-4 border border-border/50">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="font-medium text-foreground">Informations Mobile Money</p>
+                    <p className="text-xs text-muted-foreground">Préremplies avec les informations de votre compte</p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setEditingMomoDetails((value) => !value)}
+                    className="shrink-0 text-gold"
+                  >
+                    {editingMomoDetails ? <Check className="mr-1.5 h-4 w-4" /> : <Pencil className="mr-1.5 h-4 w-4" />}
+                    {editingMomoDetails ? "Terminer" : "Modifier"}
+                  </Button>
+                </div>
+
+                {editingMomoDetails ? (
+                  <div className="space-y-3">
+                    <div className="space-y-1.5">
+                      <label htmlFor="momo-name" className="text-xs text-muted-foreground">Nom et prénom</label>
+                      <Input id="momo-name" value={displayName} onChange={(event) => setDisplayName(event.target.value)} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label htmlFor="momo-email" className="text-xs text-muted-foreground">Email</label>
+                      <Input id="momo-email" type="email" value={userEmail} onChange={(event) => setUserEmail(event.target.value)} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <label className="text-xs text-muted-foreground">Pays</label>
+                        <Select
+                          value={momoCountry}
+                          onValueChange={(value: FeexPayCountry) => {
+                            setMomoCountry(value);
+                            setMomoNetwork(defaultNetworkFor(value));
+                          }}
+                        >
+                          <SelectTrigger className="bg-background"><SelectValue /></SelectTrigger>
+                          <SelectContent className="z-[90]">
+                            {FEEXPAY_COUNTRIES.map((country) => (
+                              <SelectItem key={country.value} value={country.value}>{country.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs text-muted-foreground">Opérateur</label>
+                        <Select value={momoNetwork} onValueChange={(value: "MTN" | "MOOV") => setMomoNetwork(value)}>
+                          <SelectTrigger className="bg-background"><SelectValue /></SelectTrigger>
+                          <SelectContent className="z-[90]">
+                            <SelectItem value="MTN">MTN</SelectItem>
+                            <SelectItem value="MOOV">Moov</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label htmlFor="momo-phone" className="text-xs text-muted-foreground">Numéro Mobile Money</label>
+                      <Input
+                        id="momo-phone"
+                        type="tel"
+                        inputMode="numeric"
+                        placeholder="Votre numéro Mobile Money"
+                        value={momoPhone}
+                        onChange={(event) => setMomoPhone(event.target.value.replace(/\D/g, "").slice(0, 15))}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5 text-sm">
+                    <div className="flex items-center gap-3"><User className="h-4 w-4 text-gold" /><span className="text-foreground">{displayName || "Chargement…"}</span></div>
+                    <div className="flex items-center gap-3"><Mail className="h-4 w-4 text-gold" /><span className="min-w-0 truncate text-foreground">{userEmail || "Chargement…"}</span></div>
+                    <div className="flex items-center gap-3"><MapPin className="h-4 w-4 text-gold" /><span className="text-foreground">{countryLabel(momoCountry)} · {momoNetwork}</span></div>
+                    <div className="flex items-center gap-3"><Smartphone className="h-4 w-4 text-gold" /><span className="text-foreground">{momoPhone || "Numéro à renseigner"}</span></div>
+                  </div>
+                )}
+              </div>
+
               <div className="feexpay-scope">
-              <FeexPayProvider>
+              {momoDetailsLoaded ? <FeexPayProvider>
                 <FeexPayButton
-                  key={`${displayName}|${userEmail}|${momoCountry}|${momoPhone}`}
+                  key={`${displayName}|${userEmail}|${momoCountry}|${momoNetwork}|${momoPhone}`}
                   id={FEEXPAY_SHOP_ID}
                   token={FEEXPAY_TOKEN}
                   amount={totalFCFA}
@@ -534,7 +648,11 @@ const InAppPaymentSheet = ({
                   buttonClass="w-full inline-flex items-center justify-center rounded-xl bg-gold px-6 py-3 text-base font-semibold text-primary-foreground shadow-lg transition-opacity hover:opacity-90"
                   callback={handleFeexPayCallback}
                 />
-              </FeexPayProvider>
+              </FeexPayProvider> : (
+                <Button type="button" variant="gold" className="w-full" disabled>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Chargement de vos informations…
+                </Button>
+              )}
               </div>
 
               {momoChecking && (
