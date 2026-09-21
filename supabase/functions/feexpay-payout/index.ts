@@ -14,22 +14,138 @@ const log = (step: string, details?: unknown) =>
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-// Normalize a Benin number to 229 + 10 local digits (local part starts with 01)
-function normalizeBeninPhone(raw: string): string | null {
-  let digits = (raw || "").replace(/\D/g, "");
-  if (!digits) return null;
-  if (digits.startsWith("00229")) digits = digits.slice(2);
-  if (digits.startsWith("229")) digits = digits.slice(3);
-  // Older 8-digit Benin numbers are prefixed with 01
-  if (digits.length === 8) digits = `01${digits}`;
-  if (digits.length !== 10 || !digits.startsWith("01")) return null;
-  return `229${digits}`;
+// ─── Multi-country phone normalization & network detection ───
+
+interface CountryConfig {
+  code: string;
+  localDigits: number;
+  oldDigits?: number;
+  detectNetwork: (local: string) => string;
+  defaultNetwork: string;
+  validNetworks: string[];
 }
 
-// network detection from the local part (01XXXXXXXX): 016/017/019 = MTN, 014/015/018 = MOOV
-function detectNetwork(normalized: string): "MTN" | "MOOV" {
-  const d = normalized.slice(3)[2]; // third digit of the local number
-  return ["4", "5", "8"].includes(d) ? "MOOV" : "MTN";
+const COUNTRY_CONFIGS: Record<string, CountryConfig> = {
+  BENIN: {
+    code: "229",
+    localDigits: 10,
+    oldDigits: 8,
+    detectNetwork: (local) => {
+      const d = local[2];
+      return ["4", "5", "8"].includes(d) ? "MOOV" : "MTN";
+    },
+    defaultNetwork: "MTN",
+    validNetworks: ["MTN", "MOOV", "CELTIIS BJ"],
+  },
+  COTE_D_IVOIRE: {
+    code: "225",
+    localDigits: 10,
+    oldDigits: 8,
+    detectNetwork: (local) => {
+      const prefix = local.slice(0, 2);
+      if (["01", "02", "03"].includes(prefix)) return "ORANGE CI";
+      if (["04", "05"].includes(prefix)) return "MTN CI";
+      if (["06", "07"].includes(prefix)) return "MOOV CI";
+      return "MTN CI";
+    },
+    defaultNetwork: "MTN CI",
+    validNetworks: ["MTN CI", "MOOV CI", "ORANGE CI", "WAVE CI"],
+  },
+  SENEGAL: {
+    code: "221",
+    localDigits: 9,
+    detectNetwork: (local) => {
+      const prefix = local.slice(0, 2);
+      if (["70", "76", "77", "78"].includes(prefix)) return "ORANGE SN";
+      if (["75", "76"].includes(prefix)) return "FREE SN";
+      return "ORANGE SN";
+    },
+    defaultNetwork: "ORANGE SN",
+    validNetworks: ["ORANGE SN", "FREE SN", "WAVE SN"],
+  },
+  BURKINA_FASO: {
+    code: "226",
+    localDigits: 8,
+    detectNetwork: (local) => {
+      const prefix = local.slice(0, 2);
+      const d1 = parseInt(prefix, 10);
+      if (d1 >= 60 && d1 <= 69) return "ORANGE BF";
+      if (d1 >= 70 && d1 <= 79) return "MOOV BF";
+      return "ORANGE BF";
+    },
+    defaultNetwork: "ORANGE BF",
+    validNetworks: ["MOOV BF", "ORANGE BF", "WAVE BF"],
+  },
+  TOGO: {
+    code: "228",
+    localDigits: 8,
+    detectNetwork: (local) => {
+      const prefix = local.slice(0, 2);
+      const d1 = parseInt(prefix, 10);
+      if (d1 >= 90 && d1 <= 93) return "TOGOCOM TG";
+      if (d1 >= 96 && d1 <= 99) return "MOOV TG";
+      return "TOGOCOM TG";
+    },
+    defaultNetwork: "TOGOCOM TG",
+    validNetworks: ["TOGOCOM TG", "MOOV TG"],
+  },
+  MALI: {
+    code: "223",
+    localDigits: 8,
+    detectNetwork: (local) => {
+      const prefix = local.slice(0, 2);
+      const d1 = parseInt(prefix, 10);
+      if (d1 >= 70 && d1 <= 79) return "ORANGE ML";
+      if (d1 >= 60 && d1 <= 69) return "MOBICASH ML";
+      return "ORANGE ML";
+    },
+    defaultNetwork: "ORANGE ML",
+    validNetworks: ["MOBICASH ML", "ORANGE ML"],
+  },
+};
+
+const ALL_VALID_NETWORKS = new Set(
+  Object.values(COUNTRY_CONFIGS).flatMap((c) => c.validNetworks)
+);
+
+function normalizePhone(raw: string): {
+  phoneNumber: string;
+  country: string;
+  network: string;
+  validNetworks: string[];
+} | null {
+  let digits = (raw || "").replace(/\D/g, "");
+  if (!digits) return null;
+
+  if (digits.startsWith("00")) digits = digits.slice(2);
+
+  for (const [countryName, config] of Object.entries(COUNTRY_CONFIGS)) {
+    const { code, localDigits, oldDigits } = config;
+    let local: string | null = null;
+
+    if (digits.startsWith(code)) {
+      local = digits.slice(code.length);
+    } else if (countryName === "BENIN" && (digits.length === 8 || (digits.length === 10 && digits.startsWith("01")))) {
+      local = digits;
+    }
+
+    if (local === null) continue;
+
+    if (oldDigits && local.length === oldDigits && localDigits > oldDigits) {
+      if (countryName === "BENIN") local = `01${local}`;
+    }
+
+    if (local.length !== localDigits) continue;
+
+    return {
+      phoneNumber: `${code}${local}`,
+      country: countryName,
+      network: config.detectNetwork(local),
+      validNetworks: config.validNetworks,
+    };
+  }
+
+  return null;
 }
 
 async function safeJson(src: { text: () => Promise<string> }): Promise<any> {
@@ -107,7 +223,6 @@ Deno.serve(async (req) => {
       .eq("user_id", collab.creator_id)
       .maybeSingle();
 
-    // Phone: explicit param > profile pricing.phone > latest mobile money withdrawal request
     let rawPhone: string = body?.phoneNumber || (creatorProfile?.pricing as any)?.phone || "";
     if (!rawPhone) {
       const { data: lastWr } = await admin
@@ -122,21 +237,36 @@ Deno.serve(async (req) => {
       rawPhone = lastWr?.mobile_number || "";
     }
 
-    const phoneNumber = normalizeBeninPhone(String(rawPhone));
-    if (!phoneNumber) {
+    const parsed = normalizePhone(String(rawPhone));
+    if (!parsed) {
       return json(
-        { error: "Numéro Mobile Money du créateur invalide ou introuvable (format attendu : 01XXXXXXXX)" },
+        {
+          error:
+            "Numéro Mobile Money du créateur invalide ou introuvable. " +
+            "Formats acceptés : Bénin (229), Côte d'Ivoire (225), Sénégal (221), " +
+            "Burkina Faso (226), Togo (228), Mali (223).",
+        },
         400
       );
     }
 
-    const network: "MTN" | "MOOV" =
-      body?.network === "MTN" || body?.network === "MOOV" ? body.network : detectNetwork(phoneNumber);
+    const { phoneNumber, country } = parsed;
+
+    let network = parsed.network;
+    if (body?.network && typeof body.network === "string") {
+      const override = body.network.trim().toUpperCase();
+      if (ALL_VALID_NETWORKS.has(override)) {
+        network = override;
+      } else if (parsed.validNetworks.map((n) => n.split(" ")[0]).includes(override)) {
+        const match = parsed.validNetworks.find((n) => n.startsWith(override));
+        if (match) network = match;
+      }
+    }
 
     const amount = Math.round((collab.agreed_amount || 0) * (1 - PLATFORM_KEPT));
     if (amount < 50) return json({ error: "Montant trop faible pour un virement (min 50 FCFA)" }, 400);
 
-    log("Sending payout", { collaborationId, amount, network });
+    log("Sending payout", { collaborationId, amount, network, country, phoneNumber });
 
     let res: Response;
     try {
@@ -190,7 +320,7 @@ Deno.serve(async (req) => {
       net_amount: amount,
       withdrawal_method: "mobile_money",
       reference: reference ? `feexpay-payout-${reference}` : null,
-      description: `Virement Mobile Money (${network}) vers ${phoneNumber}`,
+      description: `Virement Mobile Money (${network}) vers ${phoneNumber} [${country}]`,
     });
     if (txError) log("Transaction insert failed", txError);
 
@@ -200,8 +330,8 @@ Deno.serve(async (req) => {
       .eq("id", collaborationId)
       .eq("status", collab.status);
 
-    log("Payout accepted", { reference, payoutStatus, amount });
-    return json({ success: true, reference, status: payoutStatus, amount, network, phoneNumber });
+    log("Payout accepted", { reference, payoutStatus, amount, country, network });
+    return json({ success: true, reference, status: payoutStatus, amount, network, phoneNumber, country });
   } catch (error) {
     log("ERROR", { message: error instanceof Error ? error.message : String(error) });
     return json({ error: "Erreur interne" }, 500);
