@@ -1,0 +1,213 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+const PAYOUT_URL = "https://api-v2.feexpay.me/api/payouts/public/transfer/global";
+const PLATFORM_KEPT = 0.1; // 10% commission
+
+const log = (step: string, details?: unknown) =>
+  console.log(`[FEEXPAY-PAYOUT] ${step}${details ? " - " + JSON.stringify(details) : ""}`);
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Normalize a Benin number to 229 + 10 local digits (local part starts with 01)
+function normalizeBeninPhone(raw: string): string | null {
+  let digits = (raw || "").replace(/\D/g, "");
+  if (!digits) return null;
+  if (digits.startsWith("00229")) digits = digits.slice(2);
+  if (digits.startsWith("229")) digits = digits.slice(3);
+  // Older 8-digit Benin numbers are prefixed with 01
+  if (digits.length === 8) digits = `01${digits}`;
+  if (digits.length !== 10 || !digits.startsWith("01")) return null;
+  return `229${digits}`;
+}
+
+// network detection from the local part (01XXXXXXXX)
+function detectNetwork(normalized: string): "MTN" | "MOOV" {
+  const local = normalized.slice(3); // 01XXXXXXXX
+  const prefix = local.slice(2, 4); // operator digits
+  if (["40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "80", "81", "82", "83", "84", "85", "86", "87", "88", "89"].includes(prefix)) {
+    return "MOOV";
+  }
+  return "MTN";
+}
+
+async function safeJson(res: Response): Promise<any> {
+  const text = await res.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { raw: text };
+  }
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  const json = (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+
+  try {
+    const apiKey = Deno.env.get("FEEXPAY_API_KEY");
+    const shopId = Deno.env.get("FEEXPAY_SHOP_ID");
+    if (!apiKey || !shopId) return json({ error: "Clés FeexPay non configurées" }, 500);
+
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) return json({ error: "Non autorisé" }, 401);
+
+    const admin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    const { data: userData, error: userError } = await admin.auth.getUser(
+      authHeader.replace("Bearer ", "")
+    );
+    if (userError || !userData.user) return json({ error: "Non autorisé" }, 401);
+    const callerId = userData.user.id;
+
+    const body = await safeJson(req as unknown as Response).catch(() => ({}));
+    const collaborationId = body?.collaborationId;
+    if (!collaborationId || !UUID_RE.test(String(collaborationId))) {
+      return json({ error: "collaborationId invalide" }, 400);
+    }
+
+    const { data: collab, error: collabError } = await admin
+      .from("collaborations")
+      .select("*")
+      .eq("id", collaborationId)
+      .maybeSingle();
+    if (collabError || !collab) return json({ error: "Collaboration introuvable" }, 404);
+
+    const { data: adminRole } = await admin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", callerId)
+      .eq("role", "admin")
+      .maybeSingle();
+    const isAdmin = !!adminRole;
+    if (!isAdmin && collab.brand_id !== callerId) {
+      return json({ error: "Accès refusé" }, 403);
+    }
+
+    if (!["in_progress", "in_review"].includes(collab.status)) {
+      return json(
+        { error: "Le paiement de la marque n'a pas encore été reçu pour cette collaboration" },
+        400
+      );
+    }
+
+    const { data: creatorProfile } = await admin
+      .from("profiles")
+      .select("full_name, pricing")
+      .eq("user_id", collab.creator_id)
+      .maybeSingle();
+
+    // Phone: explicit param > profile pricing.phone > latest mobile money withdrawal request
+    let rawPhone: string = body?.phoneNumber || (creatorProfile?.pricing as any)?.phone || "";
+    if (!rawPhone) {
+      const { data: lastWr } = await admin
+        .from("withdrawal_requests")
+        .select("mobile_number")
+        .eq("user_id", collab.creator_id)
+        .eq("method", "mobile_money")
+        .not("mobile_number", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      rawPhone = lastWr?.mobile_number || "";
+    }
+
+    const phoneNumber = normalizeBeninPhone(String(rawPhone));
+    if (!phoneNumber) {
+      return json(
+        { error: "Numéro Mobile Money du créateur invalide ou introuvable (format attendu : 01XXXXXXXX)" },
+        400
+      );
+    }
+
+    const network: "MTN" | "MOOV" =
+      body?.network === "MTN" || body?.network === "MOOV" ? body.network : detectNetwork(phoneNumber);
+
+    const amount = Math.round((collab.agreed_amount || 0) * (1 - PLATFORM_KEPT));
+    if (amount < 50) return json({ error: "Montant trop faible pour un virement (min 50 FCFA)" }, 400);
+
+    log("Sending payout", { collaborationId, amount, network });
+
+    let res: Response;
+    try {
+      res = await fetch(PAYOUT_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          phoneNumber,
+          amount,
+          shop: shopId,
+          network,
+          motif: "ColabCrea paiement",
+          callback_info: String(collaborationId),
+        }),
+      });
+    } catch (err) {
+      log("Network error", { message: err instanceof Error ? err.message : String(err) });
+      return json({ error: "Erreur de communication avec FeexPay" }, 502);
+    }
+
+    const payload = await safeJson(res);
+    if (!res.ok) {
+      log("Payout failed", { status: res.status, payload });
+      const raw = JSON.stringify(payload).toLowerCase();
+      if (raw.includes("solde") || raw.includes("balance") || raw.includes("insufficient")) {
+        return json({ error: "Solde FeexPay insuffisant pour effectuer ce virement" }, 400);
+      }
+      if (raw.includes("phone") || raw.includes("numero") || raw.includes("numéro")) {
+        return json({ error: "Numéro Mobile Money refusé par FeexPay" }, 400);
+      }
+      return json(
+        { error: payload?.message || "Le virement a été refusé par FeexPay", details: payload },
+        res.status >= 400 && res.status < 500 ? 400 : 502
+      );
+    }
+
+    const reference: string =
+      payload?.reference || payload?.transaction_id || payload?.id || payload?.data?.reference || "";
+    const payoutStatus: string = payload?.status || payload?.data?.status || "PENDING";
+
+    const { error: txError } = await admin.from("transactions").insert({
+      collaboration_id: collaborationId,
+      user_id: collab.creator_id,
+      type: "release",
+      status: "pending",
+      amount,
+      fee: (collab.agreed_amount || 0) - amount,
+      net_amount: amount,
+      withdrawal_method: "mobile_money",
+      reference: reference ? `feexpay-payout-${reference}` : null,
+      description: `Virement Mobile Money (${network}) vers ${phoneNumber}`,
+    });
+    if (txError) log("Transaction insert failed", txError);
+
+    await admin
+      .from("collaborations")
+      .update({ status: "completed", updated_at: new Date().toISOString() })
+      .eq("id", collaborationId)
+      .eq("status", collab.status);
+
+    log("Payout accepted", { reference, payoutStatus, amount });
+    return json({ success: true, reference, status: payoutStatus, amount, network, phoneNumber });
+  } catch (error) {
+    log("ERROR", { message: error instanceof Error ? error.message : String(error) });
+    return json({ error: "Erreur interne" }, 500);
+  }
+});
