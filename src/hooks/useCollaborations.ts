@@ -271,7 +271,48 @@ export const useCollaborations = () => {
     }
   };
 
+  // Trigger the Mobile Money payout to the creator (brand or admin only, enforced server-side)
+  const payoutCreator = async (
+    collaborationId: string,
+    options?: { silent?: boolean }
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Non authentifié");
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/feexpay-payout`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ collaborationId }),
+        }
+      );
+
+      const result = await response.json().catch(() => ({}));
+
+      if (!response.ok || !result.success) {
+        const message = result?.error || "Le virement n'a pas pu être envoyé";
+        if (!options?.silent) toast.error(message);
+        return { success: false, error: message };
+      }
+
+      if (!options?.silent) toast.success("Virement envoyé au créateur 🎉");
+      fetchCollaborations();
+      return { success: true };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Erreur lors du virement";
+      console.error("Error sending payout:", error);
+      if (!options?.silent) toast.error(message);
+      return { success: false, error: message };
+    }
+  };
+
   const approveContent = async (collaborationId: string, feedback?: string) => {
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Non authentifié");
