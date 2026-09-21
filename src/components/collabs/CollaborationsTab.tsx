@@ -345,7 +345,11 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
             <CreativeBriefDisplay brief={collab.offer.creative_brief} compact />
           )}
 
+          {/* Payout status (outside the validate & pay block) */}
+          {!["content_submitted", "in_review"].includes(collab.status) && renderPayoutStatus(collab.id)}
+
           {/* ── PENDING PAYMENT: Brand must pay first ── */}
+
           {collab.status === "pending_payment" && isBrand && (
             <div className="space-y-3">
               <div className="rounded-xl p-3 bg-orange-500/10 border border-orange-500/20">
