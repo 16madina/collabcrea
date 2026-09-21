@@ -552,129 +552,27 @@ const InAppPaymentSheet = ({
                 </div>
               </div>
 
-              {/* Choix de l'opérateur */}
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-muted-foreground">Votre opérateur</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {momoOperators.map((op) => (
-                    <button
-                      key={op.id}
-                      type="button"
-                      onClick={() => {
-                        setOperator(op.id);
-                        setMomoCountry(op.countries[0].iso);
-                        setError(null);
-                      }}
-                      className={`glass rounded-xl p-3 border-2 transition-all flex items-center gap-2 ${
-                        operator === op.id ? "border-gold bg-gold/10" : "border-transparent"
-                      }`}
-                    >
-                      {op.logo ? (
-                        <div className="h-8 w-8 rounded-lg bg-white flex items-center justify-center p-1 flex-shrink-0">
-                          <img
-                            src={op.logo}
-                            alt={op.label}
-                            loading="lazy"
-                            className="max-h-full max-w-full object-contain"
-                          />
-                        </div>
-                      ) : (
-                        <div
-                          className="h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 text-[11px] font-bold text-black"
-                          style={{ backgroundColor: op.color }}
-                        >
-                          {op.label.slice(0, 2).toUpperCase()}
-                        </div>
-                      )}
-                      <span className="text-xs font-semibold text-foreground text-left leading-tight">
-                        {op.label}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <FeexPayProvider>
+                <FeexPayButton
+                  id={FEEXPAY_SHOP_ID}
+                  token={FEEXPAY_TOKEN}
+                  amount={totalFCFA}
+                  description={`Collaboration ${collaboration.id}`}
+                  customId={collaboration.id}
+                  callback_url={`${window.location.origin}/brand/collabs?tab=collabs`}
+                  callback_info={{ name: displayName, email: userEmail, phone: "" }}
+                  mode="SANDBOX"
+                  currency="XOF"
+                  buttonText={`Payer ${formatFCFA(totalFCFA)}`}
+                  buttonClass="w-full inline-flex items-center justify-center rounded-xl bg-gold px-6 py-3 text-base font-semibold text-primary-foreground shadow-lg transition-opacity hover:opacity-90"
+                  callback={handleFeexPayCallback}
+                />
+              </FeexPayProvider>
 
-              {/* Formulaire numéro */}
-              {selectedOperator && (
-                <div className="glass rounded-xl p-4 space-y-3">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-muted-foreground">Pays</label>
-                    <select
-                      value={selectedMomoCountry?.iso}
-                      onChange={(e) => setMomoCountry(e.target.value)}
-                      className="w-full bg-background/60 border border-border rounded-xl px-3 py-2 text-sm text-foreground"
-                    >
-                      {selectedOperator.countries.map((c) => (
-                        <option key={c.iso} value={c.iso}>
-                          {c.name} ({c.dial})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-muted-foreground">
-                      Numéro {selectedOperator.label}
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-gold">
-                        {selectedMomoCountry?.dial}
-                      </span>
-                      <input
-                        type="tel"
-                        inputMode="numeric"
-                        value={momoPhone}
-                        onChange={(e) => setMomoPhone(e.target.value)}
-                        placeholder="07 00 00 00 00"
-                        className="flex-1 bg-background/60 border border-border rounded-xl px-3 py-2 text-sm text-foreground"
-                      />
-                    </div>
-                    <p className="text-[10px] text-muted-foreground">
-                      Le numéro lié à votre compte {selectedOperator.label}, sans l’indicatif {selectedMomoCountry?.dial}.
-                    </p>
-                    {momoPhoneDigits.length > 0 && !momoFormValid && (
-                      <p className="text-[10px] text-destructive">
-                        Saisissez exactement {expectedPhoneLength} chiffres.
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              <Button
-                variant="gold"
-                size="lg"
-                className="w-full"
-                disabled={momoLoading || !momoFormValid}
-                onClick={handleMomoPay}
-              >
-                {momoLoading ? (
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                ) : (
-                  <Lock className="w-5 h-5 mr-2" />
-                )}
-                Payer {formatFCFA(totalFCFA)}
-              </Button>
-
-              {momoTxId && (
-                <div className="glass rounded-xl p-4 space-y-3 text-center">
-                  <p className="text-sm text-foreground">
-                    {momoPushSent
-                      ? `Une demande de paiement a été envoyée au ${selectedMomoCountry?.dial} ${momoPhone}. Confirmez-la sur votre téléphone (code secret ${selectedOperator?.label}).`
-                      : `Terminez le paiement dans la page ${selectedOperator?.label}, puis revenez ici.`}
-                  </p>
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    disabled={momoChecking}
-                    onClick={() => checkMomoStatus(momoTxId)}
-                  >
-                    {momoChecking ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <Check className="w-4 h-4 mr-2" />
-                    )}
-                    J'ai payé, vérifier
-                  </Button>
+              {momoChecking && (
+                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Vérification du paiement...
                 </div>
               )}
 
@@ -685,9 +583,10 @@ const InAppPaymentSheet = ({
               )}
 
               <p className="text-xs text-muted-foreground text-center">
-                Paiement sécurisé • Wave, Orange Money, MTN, Moov en FCFA
+                Paiement sécurisé • MTN, Moov, Celtiis, Wave, Orange Money en FCFA
               </p>
             </div>
+
           ) : (
             <>
               {/* Currency */}
