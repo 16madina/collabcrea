@@ -268,6 +268,36 @@ const InAppPaymentSheet = ({
     maximumFractionDigits: 2,
   }).format(approxAmount);
 
+  // TEMPORARY DEBUG: Intercept FeexPay API errors to see full validation details
+  useEffect(() => {
+    const originalFetch = window.fetch;
+    window.fetch = async (...args) => {
+      const response = await originalFetch(...args);
+      const url = typeof args[0] === 'string' ? args[0] : (args[0] as Request)?.url || '';
+      if (url.includes('feexpay.me') && !response.ok) {
+        try {
+          const cloned = response.clone();
+          const errorBody = await cloned.json();
+          console.error('[FeexPay API Error]', {
+            status: response.status,
+            url,
+            body: errorBody,
+            requestBody: typeof args[1]?.body === 'string' ? JSON.parse(args[1].body) : args[1]?.body,
+          });
+          // Show the full error to the user temporarily
+          const errorDetail = errorBody.errors
+            ? Object.entries(errorBody.errors).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`).join(' | ')
+            : errorBody.message || JSON.stringify(errorBody);
+          toast.error(`FeexPay Debug: ${errorDetail}`, { duration: 15000 });
+        } catch (e) {
+          console.error('[FeexPay API Error] Could not parse response', e);
+        }
+      }
+      return response;
+    };
+    return () => { window.fetch = originalFetch; };
+  }, []);
+
   // Infos payeur pour FeexPay
   useEffect(() => {
     if (!open) return;
