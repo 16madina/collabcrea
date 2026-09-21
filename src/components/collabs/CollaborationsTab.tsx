@@ -35,9 +35,21 @@ import BrandSubmitContentSheet from "@/components/collaboration/BrandSubmitConte
 import WatermarkOverlay from "@/components/collaboration/WatermarkOverlay";
 import ContentPreviewSheet from "@/components/collaboration/ContentPreviewSheet";
 import CreativeBriefDisplay from "@/components/collaboration/CreativeBriefDisplay";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO, differenceInDays, differenceInHours, differenceInMinutes, isPast } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
+
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("fr-FR").format(amount) + " FCFA";
@@ -136,7 +148,7 @@ interface CollaborationsTabProps {
 const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { collaborations, loading, refreshCollaborations, approvePublication, verifyPublicationLink, creatorApproveContent, requestRevision } = useCollaborations();
+  const { collaborations, loading, refreshCollaborations, approvePublication, verifyPublicationLink, creatorApproveContent, requestRevision, payoutCreator } = useCollaborations();
   const [selectedCollab, setSelectedCollab] = useState<Collaboration | null>(null);
   const [sheetType, setSheetType] = useState<"submit" | "payment" | "review" | "publication_link" | "brand_submit" | null>(null);
   const [activeSubTab, setActiveSubTab] = useState("active");
@@ -144,6 +156,68 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
   const [verifyingIds, setVerifyingIds] = useState<Set<string>>(new Set());
   const [previewCollab, setPreviewCollab] = useState<Collaboration | null>(null);
   const [creatorApprovingIds, setCreatorApprovingIds] = useState<Set<string>>(new Set());
+  const [payoutStatuses, setPayoutStatuses] = useState<Record<string, string>>({});
+  const [payingIds, setPayingIds] = useState<Set<string>>(new Set());
+  const [payoutConfirmCollab, setPayoutConfirmCollab] = useState<Collaboration | null>(null);
+
+  // Load payout (release) transaction statuses for the visible collaborations
+  const fetchPayoutStatuses = useCallback(async () => {
+    const ids = collaborations.map((c) => c.id);
+    if (ids.length === 0) {
+      setPayoutStatuses({});
+      return;
+    }
+    const { data, error } = await supabase
+      .from("transactions")
+      .select("collaboration_id, status, created_at")
+      .eq("type", "release")
+      .in("collaboration_id", ids)
+      .order("created_at", { ascending: false });
+    if (error || !data) return;
+    const map: Record<string, string> = {};
+    for (const tx of data) {
+      if (tx.collaboration_id && !map[tx.collaboration_id]) map[tx.collaboration_id] = tx.status;
+    }
+    setPayoutStatuses(map);
+  }, [collaborations]);
+
+  useEffect(() => {
+    fetchPayoutStatuses();
+  }, [fetchPayoutStatuses]);
+
+  const handleConfirmPayout = async () => {
+    const collab = payoutConfirmCollab;
+    setPayoutConfirmCollab(null);
+    if (!collab) return;
+    setPayingIds((prev) => new Set(prev).add(collab.id));
+    try {
+      await payoutCreator(collab.id);
+    } finally {
+      setPayingIds((prev) => { const s = new Set(prev); s.delete(collab.id); return s; });
+      refreshCollaborations();
+      fetchPayoutStatuses();
+    }
+  };
+
+  const renderPayoutStatus = (collabId: string) => {
+    const status = payoutStatuses[collabId];
+    if (!status) return null;
+    const label =
+      status === "completed" ? "Virement effectué" :
+      status === "failed" ? "Virement échoué" :
+      "Virement en cours";
+    const classes =
+      status === "completed" ? "bg-green-500/10 text-green-500" :
+      status === "failed" ? "bg-red-500/10 text-red-500" :
+      "bg-blue-500/10 text-blue-500";
+    return (
+      <div className={`flex items-center gap-2 rounded-lg p-2 text-xs ${classes}`}>
+        <Wallet className="w-3.5 h-3.5 flex-shrink-0" />
+        <span className="font-medium">{label}</span>
+      </div>
+    );
+  };
+
 
   // Helper: is this a "brand films" collaboration?
   const isBrandFilms = (collab: Collaboration) => collab.offer?.filming_by === "brand" && collab.offer?.presence_mode === "on_site";
@@ -271,7 +345,11 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
             <CreativeBriefDisplay brief={collab.offer.creative_brief} compact />
           )}
 
+          {/* Payout status (outside the validate & pay block) */}
+          {!["content_submitted", "in_review"].includes(collab.status) && renderPayoutStatus(collab.id)}
+
           {/* ── PENDING PAYMENT: Brand must pay first ── */}
+
           {collab.status === "pending_payment" && isBrand && (
             <div className="space-y-3">
               <div className="rounded-xl p-3 bg-orange-500/10 border border-orange-500/20">
@@ -624,6 +702,30 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
             </Button>
           )}
 
+          {/* Brand: validate and pay the creator directly */}
+          {isBrand && ["content_submitted", "in_review"].includes(collab.status) && (
+            <div className="space-y-2">
+              {renderPayoutStatus(collab.id)}
+              {payoutStatuses[collab.id] !== "completed" && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full border-green-500/40 text-green-500 hover:bg-green-500/10"
+                  disabled={payingIds.has(collab.id)}
+                  onClick={() => setPayoutConfirmCollab(collab)}
+                >
+                  {payingIds.has(collab.id) ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Wallet className="w-4 h-4 mr-2" />
+                  )}
+                  Valider et payer ({formatCurrency(collab.creator_amount)})
+                </Button>
+              )}
+            </div>
+          )}
+
+
           {collab.status === "in_review" && isCreator && (
             <div className="flex items-center gap-2 text-cyan-500 text-sm">
               <Eye className="w-4 h-4" />
@@ -921,7 +1023,23 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
           }}
         />
       )}
+
+      <AlertDialog open={!!payoutConfirmCollab} onOpenChange={(o) => { if (!o) setPayoutConfirmCollab(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer le paiement</AlertDialogTitle>
+            <AlertDialogDescription>
+              Confirmer le paiement de {payoutConfirmCollab ? formatCurrency(payoutConfirmCollab.creator_amount) : ""} au créateur {payoutConfirmCollab?.creator?.full_name || ""} ?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmPayout}>Confirmer et payer</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
+
   );
 };
 
