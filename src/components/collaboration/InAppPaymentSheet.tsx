@@ -268,33 +268,6 @@ const InAppPaymentSheet = ({
     maximumFractionDigits: 2,
   }).format(approxAmount);
 
-  // TEMPORARY DEBUG: Intercept FeexPay API errors to see full validation details
-  useEffect(() => {
-    const originalFetch = window.fetch;
-    window.fetch = async (...args) => {
-      const response = await originalFetch(...args);
-      const url = typeof args[0] === 'string' ? args[0] : (args[0] as Request)?.url || '';
-      if (url.includes('feexpay.me') && !response.ok) {
-        try {
-          const cloned = response.clone();
-          const errorBody = await cloned.json();
-          console.error('[FeexPay API Error]', {
-            status: response.status,
-            url,
-            body: errorBody,
-            requestBody: typeof args[1]?.body === 'string' ? JSON.parse(args[1].body) : args[1]?.body,
-          });
-          // Show the full error to the user temporarily
-          const errorDetail = JSON.stringify(errorBody);
-          toast.error(`FeexPay Debug: ${errorDetail}`, { duration: 30000 });
-        } catch (e) {
-          console.error('[FeexPay API Error] Could not parse response', e);
-        }
-      }
-      return response;
-    };
-    return () => { window.fetch = originalFetch; };
-  }, []);
 
   // Infos payeur pour FeexPay
   useEffect(() => {
@@ -686,7 +659,7 @@ const InAppPaymentSheet = ({
                   id={FEEXPAY_SHOP_ID}
                   token={FEEXPAY_TOKEN}
                   amount={totalFCFA}
-                  description={`Paiement ColabCrea ${collaboration.id.replace(/-/g, '')}`}
+                  description={`ColabCrea ${collaboration.id.slice(0, 8)}`}
                   customId={collaboration.id}
                   callback_url={`${window.location.origin}/brand/collabs?tab=collabs`}
                   callback_info={{
