@@ -513,13 +513,20 @@ const InAppPaymentSheet = ({
 
               <FeexPayProvider>
                 <FeexPayButton
+                  key={`${displayName}|${userEmail}|${momoCountry}|${momoPhone}`}
                   id={FEEXPAY_SHOP_ID}
                   token={FEEXPAY_TOKEN}
                   amount={totalFCFA}
                   description={`Collaboration ${collaboration.id}`}
                   customId={collaboration.id}
+                  case="MOBILE"
                   callback_url={`${window.location.origin}/brand/collabs?tab=collabs`}
-                  callback_info={{ name: displayName, email: userEmail, phone: "" }}
+                  callback_info={{
+                    name: displayName,
+                    email: userEmail,
+                    phone: momoPhone,
+                    country: momoCountry,
+                  }}
                   mode="LIVE"
                   currency="XOF"
                   buttonText={`Payer ${formatFCFA(totalFCFA)}`}
@@ -542,7 +549,7 @@ const InAppPaymentSheet = ({
               )}
 
               <p className="text-xs text-muted-foreground text-center">
-                Paiement sécurisé • MTN, Moov, Celtiis, Wave, Orange Money en FCFA
+                Paiement sécurisé • MTN, Moov, Celtiis, Wave en FCFA
               </p>
             </div>
 
