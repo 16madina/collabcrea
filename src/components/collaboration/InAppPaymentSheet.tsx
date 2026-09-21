@@ -229,11 +229,17 @@ const InAppPaymentSheet = ({
       setUserEmail(user.email || "");
       const { data: profile } = await supabase
         .from("profiles")
-        .select("full_name, company_name")
+        .select("full_name, company_name, country, residence_country, pricing")
         .eq("user_id", user.id)
         .maybeSingle();
       if (cancelled) return;
       setDisplayName(profile?.company_name || profile?.full_name || "Marque CollabCrea");
+      setMomoCountry(
+        resolveFeexPayCountry(profile?.residence_country || profile?.country)
+      );
+      const pricing = (profile?.pricing || {}) as Record<string, unknown>;
+      const phone = typeof pricing.phone === "string" ? pricing.phone : "";
+      setMomoPhone(phone.replace(/\D/g, "").slice(-10));
     })();
     return () => {
       cancelled = true;
