@@ -382,39 +382,39 @@ const InAppPaymentSheet = ({
     }
   }, [open]);
 
-  const WAVE_RESEAU_MAP: Record<string, string> = {
-    COTE_D_IVOIRE: "WAVE CI",
-    SENEGAL: "WAVE SN",
-    BURKINA_FASO: "WAVE BF",
-  };
-
-  const pollWaveStatus = async (reference: string) => {
+  // Wave passe par FedaPay (Wave non activé sur la boutique FeexPay)
+  const pollFedaPayStatus = async (transactionId: string) => {
     setWavePolling(true);
     let attempts = 0;
     const maxAttempts = 60;
 
     const check = async () => {
       try {
-        const res = await fetch(
-          `https://api-v2.feexpay.me/api/transactions/public/single/status/${reference}`,
-          { headers: { Authorization: `Bearer ${FEEXPAY_TOKEN}` } }
-        );
-        if (!res.ok) throw new Error("Status check failed");
-        const data = await res.json();
-        const status = String(data?.status || "").toUpperCase();
+        const { data } = await supabase.functions.invoke("fedapay-collab-verify", {
+          body: { collaborationId: collaboration.id, transactionId: String(transactionId) },
+        });
 
-        if (["SUCCESSFUL", "SUCCESS"].includes(status)) {
+        if (data?.verified) {
           setWavePolling(false);
           setWavePaymentUrl(null);
-          handleFeexPayCallback({ reference, status, amount: totalFCFA });
+          toast.success(
+            data.nextStatus === "in_progress"
+              ? "Paiement confirmé ! La collaboration est lancée."
+              : "Paiement confirmé ! Le contenu est en revue."
+          );
+          onSuccess?.();
+          onOpenChange(false);
           return;
         }
-        if (["FAILED", "CANCELLED", "EXPIRED"].includes(status)) {
+
+        const status = String(data?.paymentStatus || data?.status || "").toLowerCase();
+        if (["declined", "canceled", "cancelled", "refunded", "expired"].includes(status)) {
           setWavePolling(false);
           setWavePaymentUrl(null);
-          setError("Le paiement Wave a échoué ou a été annulé. Réessayez.");
+          setError("Le paiement a échoué ou a été annulé. Réessayez.");
           return;
         }
+
         attempts++;
         if (attempts < maxAttempts) {
           setTimeout(check, 5000);
@@ -445,99 +445,30 @@ const InAppPaymentSheet = ({
     setError(null);
 
     try {
-      // Get client IP (same as SDK does internally)
-      let merchantIp = "127.0.0.1";
-      try {
-        const ipRes = await fetch("https://api.ipify.org?format=json");
-        const ipData = await ipRes.json();
-        merchantIp = ipData.ip;
-      } catch { /* fallback to 127.0.0.1 */ }
-
-      const reseau = WAVE_RESEAU_MAP[momoCountry];
-      if (!reseau) {
-        throw new Error("Wave n'est pas disponible dans votre pays.");
-      }
-
-      // Clean phone number
-      const dialCodes: Record<string, string> = {
-        COTE_D_IVOIRE: "225",
-        SENEGAL: "221",
-        BURKINA_FASO: "226",
-      };
-      let cleanedPhone = momoPhone.replace(/\+/g, "");
-      const prefix = dialCodes[momoCountry] || "";
-      if (prefix && cleanedPhone.startsWith(prefix + prefix)) {
-        cleanedPhone = cleanedPhone.slice(prefix.length);
-      }
-
-      // For Senegal Wave, use dedicated endpoint
-      const isSN = momoCountry === "SENEGAL";
-      const apiUrl = isSN
-        ? "https://api-v2.feexpay.me/api/transactions/public/requesttopay/wave_sn"
-        : "https://api-v2.feexpay.me/api/transactions/requesttopay/integration";
-
-      const apiParams = isSN
-        ? {
-            phoneNumber: cleanedPhone,
-            amount: totalFCFA,
-            shop: FEEXPAY_SHOP_ID,
-            first_name: displayName,
-            email: userEmail,
-            callback_info: { fullname: displayName, email: userEmail, phone: momoPhone },
-            description: `ColabCrea ${collaboration.id.slice(0, 8)}`,
-          }
-        : {
-            phoneNumber: cleanedPhone,
-            country: momoCountry,
-            amount: String(totalFCFA),
-            reseau: reseau,
-            shop: FEEXPAY_SHOP_ID,
-            first_name: displayName,
-            email: userEmail,
-            custom_id: collaboration.id,
-            otp: "",
-            callback_info: { fullname: displayName, email: userEmail, phone: momoPhone },
-            description: `ColabCrea ${collaboration.id.slice(0, 8)}`,
-            currency: "XOF",
-            merchant_domain: window.location.origin,
-            merchant_ip: merchantIp,
-            payment_interface: "REACT",
-          };
-
-      const response = await fetch(apiUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${FEEXPAY_TOKEN}`,
+      const { data, error: fnErr } = await supabase.functions.invoke("fedapay-create-payment", {
+        body: {
+          collaborationId: collaboration.id,
+          amount: totalFCFA,
+          description: `ColabCrea ${collaboration.id.slice(0, 8)}`,
+          customerEmail: userEmail,
+          customerName: displayName,
+          customerPhone: momoPhone,
+          callbackUrl: `${window.location.origin}/brand/collabs?tab=collabs`,
         },
-        body: JSON.stringify(apiParams),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        const errorDetail = errorData?.errors
-          ? errorData.errors.map((e: any) => `${e.property}: ${e.constraints?.join(", ")}`).join("; ")
-          : errorData?.message || "Échec du paiement Wave";
-        throw new Error(errorDetail);
-      }
+      if (fnErr) throw fnErr;
+      if (data?.error) throw new Error(data.error);
+      if (!data?.paymentUrl) throw new Error("Aucun lien de paiement reçu.");
 
-      const data = await response.json();
+      setWavePaymentUrl(data.paymentUrl);
+      toast.info("Fenêtre de paiement Wave ouverte. Complétez le paiement.", { duration: 10000 });
 
-      if (data.payment_url) {
-        // Wave uses iframe/redirect — open payment page
-        setWavePaymentUrl(data.payment_url);
-        toast.info("Fenêtre de paiement Wave ouverte. Complétez le paiement.", { duration: 10000 });
-        if (data.reference) {
-          pollWaveStatus(data.reference);
-        }
-      } else if (data.reference) {
-        toast.info("Demande envoyée ! Confirmez le paiement sur votre téléphone.", { duration: 10000 });
-        pollWaveStatus(data.reference);
-      } else {
-        throw new Error("Aucune réponse de paiement reçue. Réessayez.");
+      if (data.transactionId) {
+        pollFedaPayStatus(String(data.transactionId));
       }
     } catch (err: any) {
-      console.error("Wave direct payment error:", err);
+      console.error("FedaPay Wave payment error:", err);
       setError(err?.message || "Erreur lors du paiement Wave. Réessayez.");
     } finally {
       setMomoChecking(false);
