@@ -91,9 +91,11 @@ const countryFromPhone = (value?: string | null): FeexPayCountry | null => {
   return match ? match.country : null;
 };
 
-// FeexPay ne propose que MTN et Moov comme réseaux communs
-const defaultNetworkFor = (country: FeexPayCountry | null): "MTN" | "MOOV" =>
-  country === "BURKINA_FASO" || country === "TOGO" ? "MOOV" : "MTN";
+const defaultNetworkFor = (country: FeexPayCountry | null): string =>
+  country === "COTE_D_IVOIRE" ? "WAVE" :
+  country === "SENEGAL" ? "WAVE" :
+  country === "BURKINA_FASO" ? "MOOV" :
+  country === "TOGO" ? "MOOV" : "MTN";
 
 const FEEXPAY_COUNTRIES: Array<{ value: FeexPayCountry; label: string }> = [
   { value: "BENIN", label: "Bénin" },
@@ -107,8 +109,15 @@ const FEEXPAY_COUNTRIES: Array<{ value: FeexPayCountry; label: string }> = [
 const countryLabel = (country: FeexPayCountry | null) =>
   (country && FEEXPAY_COUNTRIES.find((item) => item.value === country)?.label) || "Pays à sélectionner";
 
-const resolveNetwork = (value?: string | null): "MTN" | "MOOV" =>
-  String(value || "").toUpperCase().includes("MOOV") ? "MOOV" : "MTN";
+const resolveNetwork = (value?: string | null): string => {
+  const v = String(value || "").toUpperCase();
+  if (v.includes("WAVE")) return "WAVE";
+  if (v.includes("ORANGE")) return "ORANGE";
+  if (v.includes("FREE")) return "FREE";
+  if (v.includes("CELTIIS")) return "CELTIIS";
+  if (v.includes("MOOV")) return "MOOV";
+  return "MTN";
+};
 
 
 
@@ -242,7 +251,7 @@ const InAppPaymentSheet = ({
   const [displayName, setDisplayName] = useState("");
   const [userEmail, setUserEmail] = useState("");
   const [momoCountry, setMomoCountry] = useState<FeexPayCountry | null>(null);
-  const [momoNetwork, setMomoNetwork] = useState<"MTN" | "MOOV">("MTN");
+  const [momoNetwork, setMomoNetwork] = useState<string>("MTN");
   const [momoPhone, setMomoPhone] = useState("");
   const [momoDetailsLoaded, setMomoDetailsLoaded] = useState(false);
   const [editingMomoDetails, setEditingMomoDetails] = useState(false);
@@ -446,7 +455,7 @@ const InAppPaymentSheet = ({
             Paiement de la collaboration
           </SheetTitle>
           <SheetDescription>
-            Payez par Mobile Money (MTN, Moov, Celtiis, Wave) ou carte bancaire
+            Payez par Mobile Money ou Wallet (Wave, MTN, Moov, Orange) ou carte bancaire
           </SheetDescription>
         </SheetHeader>
 
@@ -670,7 +679,6 @@ const InAppPaymentSheet = ({
                   first_name={displayName}
                   email={userEmail}
                   mode="LIVE"
-                  case="MOBILE"
                   currency="XOF"
                   defaultValueField={{
                     country_iban:
@@ -716,7 +724,7 @@ const InAppPaymentSheet = ({
               )}
 
               <p className="text-xs text-muted-foreground text-center">
-                Paiement sécurisé • MTN, Moov, Celtiis, Wave en FCFA
+                Paiement sécurisé via FeexPay • Wave, MTN, Moov, Orange en FCFA
               </p>
             </div>
 
