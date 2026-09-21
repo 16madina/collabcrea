@@ -466,7 +466,7 @@ const InAppPaymentSheet = ({
                   customId={collaboration.id}
                   callback_url={`${window.location.origin}/brand/collabs?tab=collabs`}
                   callback_info={{ name: displayName, email: userEmail, phone: "" }}
-                  mode="SANDBOX"
+                  mode="LIVE"
                   currency="XOF"
                   buttonText={`Payer ${formatFCFA(totalFCFA)}`}
                   buttonClass="w-full inline-flex items-center justify-center rounded-xl bg-gold px-6 py-3 text-base font-semibold text-primary-foreground shadow-lg transition-opacity hover:opacity-90"
