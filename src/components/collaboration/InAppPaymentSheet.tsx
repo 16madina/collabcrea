@@ -285,10 +285,8 @@ const InAppPaymentSheet = ({
             requestBody: typeof args[1]?.body === 'string' ? JSON.parse(args[1].body) : args[1]?.body,
           });
           // Show the full error to the user temporarily
-          const errorDetail = errorBody.errors
-            ? Object.entries(errorBody.errors).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`).join(' | ')
-            : errorBody.message || JSON.stringify(errorBody);
-          toast.error(`FeexPay Debug: ${errorDetail}`, { duration: 15000 });
+          const errorDetail = JSON.stringify(errorBody);
+          toast.error(`FeexPay Debug: ${errorDetail}`, { duration: 30000 });
         } catch (e) {
           console.error('[FeexPay API Error] Could not parse response', e);
         }
