@@ -22,8 +22,7 @@ import {
   useStripe,
   useElements,
 } from "@stripe/react-stripe-js";
-import { FeexPayProvider, FeexPayButton } from "@feexpay/react-sdk";
-import "@feexpay/react-sdk/style.css";
+import FeexPay from "react-sdk-feexpay";
 import waveLogo from "@/assets/payment-wave.png";
 import orangeLogo from "@/assets/payment-orange.png";
 import djamoLogo from "@/assets/payment-djamo.png";
@@ -317,16 +316,6 @@ const InAppPaymentSheet = ({
     };
   }, [open]);
 
-  // FeexPay lit ces valeurs lors du premier rendu de son bouton.
-  if (typeof window !== "undefined") {
-    (window as any).__CC_FEEXPAY_PREFILL = {
-      name: displayName,
-      email: userEmail,
-      country: momoCountry || "",
-      network: momoNetwork,
-      phone: momoPhone,
-    };
-  }
 
   // Init Stripe + create PaymentIntent only after card brand confirmed
   useEffect(() => {
@@ -663,29 +652,40 @@ const InAppPaymentSheet = ({
               </div>
 
               <div className="feexpay-scope">
-              {momoDetailsLoaded && momoCountry ? <FeexPayProvider>
-                <FeexPayButton
+              {momoDetailsLoaded && momoCountry ? (
+                <FeexPay
                   key={`${displayName}|${userEmail}|${momoCountry}|${momoNetwork}|${momoPhone}`}
                   id={FEEXPAY_SHOP_ID}
                   token={FEEXPAY_TOKEN}
                   amount={totalFCFA}
                   description={`Collaboration ${collaboration.id}`}
-                  customId={collaboration.id}
-                  case="MOBILE"
+                  reference={collaboration.id}
                   callback_url={`${window.location.origin}/brand/collabs?tab=collabs`}
                   callback_info={{
-                    name: displayName,
+                    fullname: displayName,
                     email: userEmail,
                     phone: momoPhone,
-                    country: momoCountry,
                   }}
+                  first_name={displayName}
+                  email={userEmail}
                   mode="LIVE"
+                  case="MOBILE"
                   currency="XOF"
+                  defaultValueField={{
+                    country_iban:
+                      momoCountry === "BENIN" ? "BJ" :
+                      momoCountry === "BURKINA_FASO" ? "BF" :
+                      momoCountry === "CONGO_BRAZZAVILLE" ? "CG" :
+                      momoCountry === "COTE_D_IVOIRE" ? "CI" :
+                      momoCountry === "SENEGAL" ? "SN" :
+                      momoCountry === "TOGO" ? "TG" : "BJ",
+                    network: momoNetwork,
+                  }}
                   buttonText={`Payer ${formatFCFA(totalFCFA)}`}
                   buttonClass="w-full inline-flex items-center justify-center rounded-xl bg-gold px-6 py-3 text-base font-semibold text-primary-foreground shadow-lg transition-opacity hover:opacity-90"
                   callback={handleFeexPayCallback}
                 />
-              </FeexPayProvider> : momoDetailsLoaded ? (
+              ) : momoDetailsLoaded ? (
                 <Button
                   type="button"
                   variant="gold"
