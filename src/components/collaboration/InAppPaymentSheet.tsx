@@ -255,6 +255,8 @@ const InAppPaymentSheet = ({
   const [momoPhone, setMomoPhone] = useState("");
   const [momoDetailsLoaded, setMomoDetailsLoaded] = useState(false);
   const [editingMomoDetails, setEditingMomoDetails] = useState(false);
+  const [wavePaymentUrl, setWavePaymentUrl] = useState<string | null>(null);
+  const [wavePolling, setWavePolling] = useState(false);
 
   const cardOptions = [
     { id: "wave" as const, label: "Wave Visa", logo: waveLogo },
@@ -277,43 +279,6 @@ const InAppPaymentSheet = ({
     maximumFractionDigits: 2,
   }).format(approxAmount);
 
-
-  // TEMPORARY DEBUG: Intercept FeexPay API errors to see full validation details
-  useEffect(() => {
-    const originalFetch = window.fetch;
-    window.fetch = async (...args: Parameters<typeof fetch>) => {
-      const response = await originalFetch(...args);
-      const url = typeof args[0] === 'string' ? args[0] : (args[0] as Request)?.url || '';
-      if (url.includes('feexpay.me')) {
-        if (!response.ok) {
-          try {
-            const cloned = response.clone();
-            const errorBody = await cloned.json();
-            console.error('[FeexPay API Error]', {
-              status: response.status,
-              url,
-              body: errorBody,
-              requestBody: typeof args[1]?.body === 'string' ? JSON.parse(args[1].body) : args[1]?.body,
-            });
-            const errorDetail = errorBody.errors
-              ? JSON.stringify(errorBody.errors)
-              : errorBody.message || JSON.stringify(errorBody);
-            toast.error(`FeexPay Debug: ${response.status} - ${errorDetail}`, { duration: 30000 });
-          } catch (e) {
-            console.error('[FeexPay API Error] Could not parse response', e);
-          }
-        } else {
-          try {
-            const cloned = response.clone();
-            const body = await cloned.json();
-            console.log('[FeexPay API Success]', { url, body });
-          } catch (e) { /* ignore */ }
-        }
-      }
-      return response;
-    };
-    return () => { window.fetch = originalFetch; };
-  }, []);
 
   // Infos payeur pour FeexPay
   useEffect(() => {
@@ -416,6 +381,168 @@ const InAppPaymentSheet = ({
       setError(null);
     }
   }, [open]);
+
+  const WAVE_RESEAU_MAP: Record<string, string> = {
+    COTE_D_IVOIRE: "WAVE CI",
+    SENEGAL: "WAVE SN",
+    BURKINA_FASO: "WAVE BF",
+  };
+
+  const pollWaveStatus = async (reference: string) => {
+    setWavePolling(true);
+    let attempts = 0;
+    const maxAttempts = 60;
+
+    const check = async () => {
+      try {
+        const res = await fetch(
+          `https://api-v2.feexpay.me/api/transactions/public/single/status/${reference}`,
+          { headers: { Authorization: `Bearer ${FEEXPAY_TOKEN}` } }
+        );
+        if (!res.ok) throw new Error("Status check failed");
+        const data = await res.json();
+        const status = String(data?.status || "").toUpperCase();
+
+        if (["SUCCESSFUL", "SUCCESS"].includes(status)) {
+          setWavePolling(false);
+          setWavePaymentUrl(null);
+          handleFeexPayCallback({ reference, status, amount: totalFCFA });
+          return;
+        }
+        if (["FAILED", "CANCELLED", "EXPIRED"].includes(status)) {
+          setWavePolling(false);
+          setWavePaymentUrl(null);
+          setError("Le paiement Wave a échoué ou a été annulé. Réessayez.");
+          return;
+        }
+        attempts++;
+        if (attempts < maxAttempts) {
+          setTimeout(check, 5000);
+        } else {
+          setWavePolling(false);
+          setWavePaymentUrl(null);
+          setError("Délai d'attente dépassé. Vérifiez votre compte Wave.");
+        }
+      } catch {
+        attempts++;
+        if (attempts < maxAttempts) {
+          setTimeout(check, 5000);
+        } else {
+          setWavePolling(false);
+          setWavePaymentUrl(null);
+        }
+      }
+    };
+    setTimeout(check, 5000);
+  };
+
+  const handleWaveDirectPayment = async () => {
+    if (!momoCountry || !momoPhone) {
+      setError("Veuillez renseigner votre pays et numéro Wave.");
+      return;
+    }
+    setMomoChecking(true);
+    setError(null);
+
+    try {
+      // Get client IP (same as SDK does internally)
+      let merchantIp = "127.0.0.1";
+      try {
+        const ipRes = await fetch("https://api.ipify.org?format=json");
+        const ipData = await ipRes.json();
+        merchantIp = ipData.ip;
+      } catch { /* fallback to 127.0.0.1 */ }
+
+      const reseau = WAVE_RESEAU_MAP[momoCountry];
+      if (!reseau) {
+        throw new Error("Wave n'est pas disponible dans votre pays.");
+      }
+
+      // Clean phone number
+      const dialCodes: Record<string, string> = {
+        COTE_D_IVOIRE: "225",
+        SENEGAL: "221",
+        BURKINA_FASO: "226",
+      };
+      let cleanedPhone = momoPhone.replace(/\+/g, "");
+      const prefix = dialCodes[momoCountry] || "";
+      if (prefix && cleanedPhone.startsWith(prefix + prefix)) {
+        cleanedPhone = cleanedPhone.slice(prefix.length);
+      }
+
+      // For Senegal Wave, use dedicated endpoint
+      const isSN = momoCountry === "SENEGAL";
+      const apiUrl = isSN
+        ? "https://api-v2.feexpay.me/api/transactions/public/requesttopay/wave_sn"
+        : "https://api-v2.feexpay.me/api/transactions/requesttopay/integration";
+
+      const apiParams = isSN
+        ? {
+            phoneNumber: cleanedPhone,
+            amount: totalFCFA,
+            shop: FEEXPAY_SHOP_ID,
+            first_name: displayName,
+            email: userEmail,
+            callback_info: { fullname: displayName, email: userEmail, phone: momoPhone },
+            description: `ColabCrea ${collaboration.id.slice(0, 8)}`,
+          }
+        : {
+            phoneNumber: cleanedPhone,
+            country: momoCountry,
+            amount: String(totalFCFA),
+            reseau: reseau,
+            shop: FEEXPAY_SHOP_ID,
+            first_name: displayName,
+            email: userEmail,
+            custom_id: collaboration.id,
+            otp: "",
+            callback_info: { fullname: displayName, email: userEmail, phone: momoPhone },
+            description: `ColabCrea ${collaboration.id.slice(0, 8)}`,
+            currency: "XOF",
+            merchant_domain: window.location.origin,
+            merchant_ip: merchantIp,
+            payment_interface: "REACT",
+          };
+
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${FEEXPAY_TOKEN}`,
+        },
+        body: JSON.stringify(apiParams),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        const errorDetail = errorData?.errors
+          ? errorData.errors.map((e: any) => `${e.property}: ${e.constraints?.join(", ")}`).join("; ")
+          : errorData?.message || "Échec du paiement Wave";
+        throw new Error(errorDetail);
+      }
+
+      const data = await response.json();
+
+      if (data.payment_url) {
+        // Wave uses iframe/redirect — open payment page
+        setWavePaymentUrl(data.payment_url);
+        toast.info("Fenêtre de paiement Wave ouverte. Complétez le paiement.", { duration: 10000 });
+        if (data.reference) {
+          pollWaveStatus(data.reference);
+        }
+      } else if (data.reference) {
+        toast.info("Demande envoyée ! Confirmez le paiement sur votre téléphone.", { duration: 10000 });
+        pollWaveStatus(data.reference);
+      } else {
+        throw new Error("Aucune réponse de paiement reçue. Réessayez.");
+      }
+    } catch (err: any) {
+      console.error("Wave direct payment error:", err);
+      setError(err?.message || "Erreur lors du paiement Wave. Réessayez.");
+    } finally {
+      setMomoChecking(false);
+    }
+  };
 
   const handleFeexPayCallback = async (response: {
     reference: string;
@@ -741,38 +868,74 @@ const InAppPaymentSheet = ({
 
               <div className="feexpay-scope">
               {momoDetailsLoaded && momoCountry ? (
-                <FeexPay
-                  key={`${displayName}|${userEmail}|${momoCountry}|${momoNetwork}|${momoPhone}`}
-                  id={FEEXPAY_SHOP_ID}
-                  token={FEEXPAY_TOKEN}
-                  amount={totalFCFA}
-                  description={`ColabCrea ${collaboration.id.slice(0, 8)}`}
-                  customId={collaboration.id}
-                  callback_url={`${window.location.origin}/brand/collabs?tab=collabs`}
-                  callback_info={{
-                    fullname: displayName,
-                    email: userEmail,
-                    phone: momoPhone,
-                  }}
-                  first_name={displayName}
-                  email={userEmail}
-                  mode="LIVE"
-                  case={momoNetwork === "WAVE" ? "WALLET" : undefined}
-                  currency="XOF"
-                  defaultValueField={{
-                    country_iban:
-                      momoCountry === "BENIN" ? "BJ" :
-                      momoCountry === "BURKINA_FASO" ? "BF" :
-                      momoCountry === "CONGO_BRAZZAVILLE" ? "CG" :
-                      momoCountry === "COTE_D_IVOIRE" ? "CI" :
-                      momoCountry === "SENEGAL" ? "SN" :
-                      momoCountry === "TOGO" ? "TG" : "BJ",
-
-                  }}
-                  buttonText={`Payer ${formatFCFA(totalFCFA)}`}
-                  buttonClass="w-full inline-flex items-center justify-center rounded-xl bg-gold px-6 py-3 text-base font-semibold text-primary-foreground shadow-lg transition-opacity hover:opacity-90"
-                  callback={handleFeexPayCallback}
-                />
+                momoNetwork === "WAVE" ? (
+                  // Wave: bypass SDK, direct API call to avoid race condition bug
+                  <div className="space-y-3">
+                    {wavePaymentUrl ? (
+                      <div className="space-y-3">
+                        <iframe
+                          src={wavePaymentUrl}
+                          className="w-full rounded-xl border border-border/50"
+                          style={{ height: "500px" }}
+                          title="Paiement Wave"
+                        />
+                        {wavePolling && (
+                          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Vérification du paiement Wave en cours...
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="gold"
+                        size="lg"
+                        className="w-full"
+                        disabled={momoChecking || !momoPhone}
+                        onClick={handleWaveDirectPayment}
+                      >
+                        {momoChecking ? (
+                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                        ) : (
+                          <Smartphone className="w-5 h-5 mr-2" />
+                        )}
+                        Payer {formatFCFA(totalFCFA)} avec Wave
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <FeexPay
+                    key={`${displayName}|${userEmail}|${momoCountry}|${momoNetwork}|${momoPhone}`}
+                    id={FEEXPAY_SHOP_ID}
+                    token={FEEXPAY_TOKEN}
+                    amount={totalFCFA}
+                    description={`ColabCrea ${collaboration.id.slice(0, 8)}`}
+                    customId={collaboration.id}
+                    callback_url={`${window.location.origin}/brand/collabs?tab=collabs`}
+                    callback_info={{
+                      fullname: displayName,
+                      email: userEmail,
+                      phone: momoPhone,
+                    }}
+                    first_name={displayName}
+                    email={userEmail}
+                    mode="LIVE"
+                    currency="XOF"
+                    defaultValueField={{
+                      country_iban:
+                        momoCountry === "BENIN" ? "BJ" :
+                        momoCountry === "BURKINA_FASO" ? "BF" :
+                        momoCountry === "CONGO_BRAZZAVILLE" ? "CG" :
+                        momoCountry === "COTE_D_IVOIRE" ? "CI" :
+                        momoCountry === "SENEGAL" ? "SN" :
+                        momoCountry === "TOGO" ? "TG" : "BJ",
+                    }}
+                    buttonText={`Payer ${formatFCFA(totalFCFA)}`}
+                    buttonClass="w-full inline-flex items-center justify-center rounded-xl bg-gold px-6 py-3 text-base font-semibold text-primary-foreground shadow-lg transition-opacity hover:opacity-90"
+                    callback={handleFeexPayCallback}
+                  />
+                )
               ) : momoDetailsLoaded ? (
                 <Button
                   type="button"
