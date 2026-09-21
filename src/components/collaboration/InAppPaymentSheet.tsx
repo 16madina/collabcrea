@@ -42,27 +42,58 @@ type FeexPayCountry =
 
 const FEEXPAY_COUNTRY_MAP: Record<string, FeexPayCountry> = {
   BJ: "BENIN",
+  BEN: "BENIN",
   BENIN: "BENIN",
+  BÉNIN: "BENIN",
   BF: "BURKINA_FASO",
+  BFA: "BURKINA_FASO",
   "BURKINA FASO": "BURKINA_FASO",
+  BURKINA: "BURKINA_FASO",
   CG: "CONGO_BRAZZAVILLE",
+  COG: "CONGO_BRAZZAVILLE",
   CONGO: "CONGO_BRAZZAVILLE",
   "CONGO-BRAZZAVILLE": "CONGO_BRAZZAVILLE",
+  "REPUBLIQUE DU CONGO": "CONGO_BRAZZAVILLE",
   CI: "COTE_D_IVOIRE",
+  CIV: "COTE_D_IVOIRE",
   "COTE D'IVOIRE": "COTE_D_IVOIRE",
   "CÔTE D'IVOIRE": "COTE_D_IVOIRE",
+  "COTE D’IVOIRE": "COTE_D_IVOIRE",
+  "CÔTE D’IVOIRE": "COTE_D_IVOIRE",
+  "COTE DIVOIRE": "COTE_D_IVOIRE",
+  "IVORY COAST": "COTE_D_IVOIRE",
   SN: "SENEGAL",
+  SEN: "SENEGAL",
   SENEGAL: "SENEGAL",
   SÉNÉGAL: "SENEGAL",
   TG: "TOGO",
+  TGO: "TOGO",
   TOGO: "TOGO",
 };
 
-const resolveFeexPayCountry = (value?: string | null): FeexPayCountry =>
-  FEEXPAY_COUNTRY_MAP[(value || "").trim().toUpperCase()] || "BENIN";
+// Indicatifs téléphoniques des pays couverts par FeexPay
+const FEEXPAY_DIAL_CODES: Array<{ code: string; country: FeexPayCountry }> = [
+  { code: "229", country: "BENIN" },
+  { code: "226", country: "BURKINA_FASO" },
+  { code: "242", country: "CONGO_BRAZZAVILLE" },
+  { code: "225", country: "COTE_D_IVOIRE" },
+  { code: "221", country: "SENEGAL" },
+  { code: "228", country: "TOGO" },
+];
+
+// Retourne null si le pays n'est pas couvert par FeexPay (ex: Canada) :
+// on ne devine jamais un pays à la place de l'utilisateur.
+const resolveFeexPayCountry = (value?: string | null): FeexPayCountry | null =>
+  FEEXPAY_COUNTRY_MAP[(value || "").trim().toUpperCase()] || null;
+
+const countryFromPhone = (value?: string | null): FeexPayCountry | null => {
+  const digits = String(value || "").replace(/\D/g, "");
+  const match = FEEXPAY_DIAL_CODES.find((entry) => digits.startsWith(entry.code));
+  return match ? match.country : null;
+};
 
 // FeexPay ne propose que MTN et Moov comme réseaux communs
-const defaultNetworkFor = (country: FeexPayCountry): "MTN" | "MOOV" =>
+const defaultNetworkFor = (country: FeexPayCountry | null): "MTN" | "MOOV" =>
   country === "BURKINA_FASO" || country === "TOGO" ? "MOOV" : "MTN";
 
 const FEEXPAY_COUNTRIES: Array<{ value: FeexPayCountry; label: string }> = [
@@ -74,8 +105,8 @@ const FEEXPAY_COUNTRIES: Array<{ value: FeexPayCountry; label: string }> = [
   { value: "TOGO", label: "Togo" },
 ];
 
-const countryLabel = (country: FeexPayCountry) =>
-  FEEXPAY_COUNTRIES.find((item) => item.value === country)?.label || country;
+const countryLabel = (country: FeexPayCountry | null) =>
+  (country && FEEXPAY_COUNTRIES.find((item) => item.value === country)?.label) || "Pays à sélectionner";
 
 const resolveNetwork = (value?: string | null): "MTN" | "MOOV" =>
   String(value || "").toUpperCase().includes("MOOV") ? "MOOV" : "MTN";
@@ -211,7 +242,7 @@ const InAppPaymentSheet = ({
   const [momoChecking, setMomoChecking] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [userEmail, setUserEmail] = useState("");
-  const [momoCountry, setMomoCountry] = useState<FeexPayCountry>("BENIN");
+  const [momoCountry, setMomoCountry] = useState<FeexPayCountry | null>(null);
   const [momoNetwork, setMomoNetwork] = useState<"MTN" | "MOOV">("MTN");
   const [momoPhone, setMomoPhone] = useState("");
   const [momoDetailsLoaded, setMomoDetailsLoaded] = useState(false);
@@ -253,7 +284,6 @@ const InAppPaymentSheet = ({
         .eq("user_id", user.id)
         .maybeSingle();
       if (cancelled) return;
-      const profileCountry = resolveFeexPayCountry(profile?.residence_country || profile?.country);
       const pricing = (profile?.pricing || {}) as Record<string, unknown>;
       const { data: lastWithdrawal } = await supabase
         .from("withdrawal_requests")
@@ -267,6 +297,12 @@ const InAppPaymentSheet = ({
       const metadataPhone = typeof user.user_metadata?.phone === "string" ? user.user_metadata.phone : "";
       const profilePhone = typeof pricing.phone === "string" ? pricing.phone : "";
       const savedPhone = profilePhone || lastWithdrawal?.mobile_number || metadataPhone;
+      // Priorité : indicatif du numéro enregistré, puis pays du profil.
+      // Si le pays du profil n'est pas couvert par FeexPay, on laisse le choix vide.
+      const profileCountry =
+        countryFromPhone(savedPhone) ||
+        resolveFeexPayCountry(profile?.residence_country) ||
+        resolveFeexPayCountry(profile?.country);
       const savedNetwork = lastWithdrawal?.mobile_provider
         ? resolveNetwork(lastWithdrawal.mobile_provider)
         : defaultNetworkFor(profileCountry);
@@ -286,7 +322,7 @@ const InAppPaymentSheet = ({
     (window as any).__CC_FEEXPAY_PREFILL = {
       name: displayName,
       email: userEmail,
-      country: momoCountry,
+      country: momoCountry || "",
       network: momoNetwork,
       phone: momoPhone,
     };
@@ -578,14 +614,14 @@ const InAppPaymentSheet = ({
                       <div className="space-y-1.5">
                         <label className="text-xs text-muted-foreground">Pays</label>
                         <Select
-                          value={momoCountry}
+                          value={momoCountry ?? undefined}
                           onValueChange={(value) => {
                             const country = value as FeexPayCountry;
                             setMomoCountry(country);
                             setMomoNetwork(defaultNetworkFor(country));
                           }}
                         >
-                          <SelectTrigger className="bg-background"><SelectValue /></SelectTrigger>
+                          <SelectTrigger className="bg-background"><SelectValue placeholder="Sélectionnez" /></SelectTrigger>
                           <SelectContent className="z-[90]">
                             {FEEXPAY_COUNTRIES.map((country) => (
                               <SelectItem key={country.value} value={country.value}>{country.label}</SelectItem>
@@ -627,7 +663,7 @@ const InAppPaymentSheet = ({
               </div>
 
               <div className="feexpay-scope">
-              {momoDetailsLoaded ? <FeexPayProvider>
+              {momoDetailsLoaded && momoCountry ? <FeexPayProvider>
                 <FeexPayButton
                   key={`${displayName}|${userEmail}|${momoCountry}|${momoNetwork}|${momoPhone}`}
                   id={FEEXPAY_SHOP_ID}
@@ -649,7 +685,16 @@ const InAppPaymentSheet = ({
                   buttonClass="w-full inline-flex items-center justify-center rounded-xl bg-gold px-6 py-3 text-base font-semibold text-primary-foreground shadow-lg transition-opacity hover:opacity-90"
                   callback={handleFeexPayCallback}
                 />
-              </FeexPayProvider> : (
+              </FeexPayProvider> : momoDetailsLoaded ? (
+                <Button
+                  type="button"
+                  variant="gold"
+                  className="w-full"
+                  onClick={() => setEditingMomoDetails(true)}
+                >
+                  Sélectionnez votre pays Mobile Money
+                </Button>
+              ) : (
                 <Button type="button" variant="gold" className="w-full" disabled>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Chargement de vos informations…
                 </Button>
