@@ -23,5 +23,7 @@ export default defineConfig(({ mode }) => ({
   },
   optimizeDeps: {
     include: ["react", "react-dom"],
+    // Servir le SDK FeexPay depuis node_modules (version patchée : API v2 + préremplissage)
+    exclude: ["@feexpay/react-sdk"],
   },
 }));
