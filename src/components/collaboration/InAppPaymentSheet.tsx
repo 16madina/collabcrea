@@ -29,6 +29,41 @@ import djamoLogo from "@/assets/payment-djamo.png";
 const FEEXPAY_SHOP_ID = "7CyXfoxfoauYi4X";
 const FEEXPAY_TOKEN = "fp_jt63XV7c59WinJb3gRSIygVsEB1rMbFw7Cfbme6u0eTIrdIWKwRSa2BswHo3GHs4";
 
+// Pays couverts par FeexPay (Mobile Money)
+type FeexPayCountry =
+  | "BENIN"
+  | "BURKINA_FASO"
+  | "CONGO_BRAZZAVILLE"
+  | "COTE_D_IVOIRE"
+  | "SENEGAL"
+  | "TOGO";
+
+const FEEXPAY_COUNTRY_MAP: Record<string, FeexPayCountry> = {
+  BJ: "BENIN",
+  BENIN: "BENIN",
+  BF: "BURKINA_FASO",
+  "BURKINA FASO": "BURKINA_FASO",
+  CG: "CONGO_BRAZZAVILLE",
+  CONGO: "CONGO_BRAZZAVILLE",
+  "CONGO-BRAZZAVILLE": "CONGO_BRAZZAVILLE",
+  CI: "COTE_D_IVOIRE",
+  "COTE D'IVOIRE": "COTE_D_IVOIRE",
+  "CÔTE D'IVOIRE": "COTE_D_IVOIRE",
+  SN: "SENEGAL",
+  SENEGAL: "SENEGAL",
+  SÉNÉGAL: "SENEGAL",
+  TG: "TOGO",
+  TOGO: "TOGO",
+};
+
+const resolveFeexPayCountry = (value?: string | null): FeexPayCountry =>
+  FEEXPAY_COUNTRY_MAP[(value || "").trim().toUpperCase()] || "BENIN";
+
+// FeexPay ne propose que MTN et Moov comme réseaux communs
+const defaultNetworkFor = (country: FeexPayCountry): "MTN" | "MOOV" =>
+  country === "BURKINA_FASO" || country === "TOGO" ? "MOOV" : "MTN";
+
+
 
 interface InAppPaymentSheetProps {
   open: boolean;
