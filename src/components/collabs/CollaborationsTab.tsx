@@ -148,7 +148,7 @@ interface CollaborationsTabProps {
 const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { collaborations, loading, refreshCollaborations, approvePublication, verifyPublicationLink, creatorApproveContent, requestRevision } = useCollaborations();
+  const { collaborations, loading, refreshCollaborations, approvePublication, verifyPublicationLink, creatorApproveContent, requestRevision, payoutCreator } = useCollaborations();
   const [selectedCollab, setSelectedCollab] = useState<Collaboration | null>(null);
   const [sheetType, setSheetType] = useState<"submit" | "payment" | "review" | "publication_link" | "brand_submit" | null>(null);
   const [activeSubTab, setActiveSubTab] = useState("active");
@@ -156,6 +156,68 @@ const CollaborationsTab = ({ userRole }: CollaborationsTabProps) => {
   const [verifyingIds, setVerifyingIds] = useState<Set<string>>(new Set());
   const [previewCollab, setPreviewCollab] = useState<Collaboration | null>(null);
   const [creatorApprovingIds, setCreatorApprovingIds] = useState<Set<string>>(new Set());
+  const [payoutStatuses, setPayoutStatuses] = useState<Record<string, string>>({});
+  const [payingIds, setPayingIds] = useState<Set<string>>(new Set());
+  const [payoutConfirmCollab, setPayoutConfirmCollab] = useState<Collaboration | null>(null);
+
+  // Load payout (release) transaction statuses for the visible collaborations
+  const fetchPayoutStatuses = useCallback(async () => {
+    const ids = collaborations.map((c) => c.id);
+    if (ids.length === 0) {
+      setPayoutStatuses({});
+      return;
+    }
+    const { data, error } = await supabase
+      .from("transactions")
+      .select("collaboration_id, status, created_at")
+      .eq("type", "release")
+      .in("collaboration_id", ids)
+      .order("created_at", { ascending: false });
+    if (error || !data) return;
+    const map: Record<string, string> = {};
+    for (const tx of data) {
+      if (tx.collaboration_id && !map[tx.collaboration_id]) map[tx.collaboration_id] = tx.status;
+    }
+    setPayoutStatuses(map);
+  }, [collaborations]);
+
+  useEffect(() => {
+    fetchPayoutStatuses();
+  }, [fetchPayoutStatuses]);
+
+  const handleConfirmPayout = async () => {
+    const collab = payoutConfirmCollab;
+    setPayoutConfirmCollab(null);
+    if (!collab) return;
+    setPayingIds((prev) => new Set(prev).add(collab.id));
+    try {
+      await payoutCreator(collab.id);
+    } finally {
+      setPayingIds((prev) => { const s = new Set(prev); s.delete(collab.id); return s; });
+      refreshCollaborations();
+      fetchPayoutStatuses();
+    }
+  };
+
+  const renderPayoutStatus = (collabId: string) => {
+    const status = payoutStatuses[collabId];
+    if (!status) return null;
+    const label =
+      status === "completed" ? "Virement effectué" :
+      status === "failed" ? "Virement échoué" :
+      "Virement en cours";
+    const classes =
+      status === "completed" ? "bg-green-500/10 text-green-500" :
+      status === "failed" ? "bg-red-500/10 text-red-500" :
+      "bg-blue-500/10 text-blue-500";
+    return (
+      <div className={`flex items-center gap-2 rounded-lg p-2 text-xs ${classes}`}>
+        <Wallet className="w-3.5 h-3.5 flex-shrink-0" />
+        <span className="font-medium">{label}</span>
+      </div>
+    );
+  };
+
 
   // Helper: is this a "brand films" collaboration?
   const isBrandFilms = (collab: Collaboration) => collab.offer?.filming_by === "brand" && collab.offer?.presence_mode === "on_site";
