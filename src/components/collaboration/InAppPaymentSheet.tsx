@@ -20,9 +20,15 @@ import {
   useStripe,
   useElements,
 } from "@stripe/react-stripe-js";
+import { FeexPayProvider, FeexPayButton } from "@feexpay/react-sdk";
+import "@feexpay/react-sdk/style.css";
 import waveLogo from "@/assets/payment-wave.png";
 import orangeLogo from "@/assets/payment-orange.png";
 import djamoLogo from "@/assets/payment-djamo.png";
+
+const FEEXPAY_SHOP_ID = "7CyXfoxfoauYi4X";
+const FEEXPAY_TOKEN = "test_Hg7Kjl3ZAM63UuIUpuudD9nKuu3ZAM67Kjl3Uuhn";
+
 
 interface InAppPaymentSheetProps {
   open: boolean;
@@ -150,86 +156,9 @@ const InAppPaymentSheet = ({
   const [stripeInstance, setStripeInstance] = useState<Promise<StripeJS | null> | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [momoLoading, setMomoLoading] = useState(false);
-  const [momoTxId, setMomoTxId] = useState<string | null>(null);
   const [momoChecking, setMomoChecking] = useState(false);
-  const [momoPushSent, setMomoPushSent] = useState(false);
-  const [operator, setOperator] = useState<"wave" | "orange" | "mtn" | "moov" | null>(null);
-  const [momoCountry, setMomoCountry] = useState<string>("CI");
-  const [momoPhone, setMomoPhone] = useState("");
-
-  const momoOperators = [
-    {
-      id: "wave" as const,
-      label: "Wave",
-      logo: waveLogo,
-      color: "#1DC8FF",
-      countries: [
-        { iso: "CI", name: "Côte d'Ivoire", dial: "+225" },
-        { iso: "SN", name: "Sénégal", dial: "+221" },
-        { iso: "BF", name: "Burkina Faso", dial: "+226" },
-        { iso: "ML", name: "Mali", dial: "+223" },
-      ],
-    },
-    {
-      id: "orange" as const,
-      label: "Orange Money",
-      logo: orangeLogo,
-      color: "#FF7900",
-      countries: [
-        { iso: "CI", name: "Côte d'Ivoire", dial: "+225" },
-        { iso: "SN", name: "Sénégal", dial: "+221" },
-        { iso: "BF", name: "Burkina Faso", dial: "+226" },
-        { iso: "ML", name: "Mali", dial: "+223" },
-        { iso: "GW", name: "Guinée-Bissau", dial: "+245" },
-      ],
-    },
-    {
-      id: "mtn" as const,
-      label: "MTN MoMo",
-      logo: null,
-      color: "#FFCC00",
-      countries: [
-        { iso: "CI", name: "Côte d'Ivoire", dial: "+225" },
-        { iso: "BJ", name: "Bénin", dial: "+229" },
-      ],
-    },
-    {
-      id: "moov" as const,
-      label: "Moov Money",
-      logo: null,
-      color: "#0066B3",
-      countries: [
-        { iso: "BJ", name: "Bénin", dial: "+229" },
-        { iso: "TG", name: "Togo", dial: "+228" },
-        { iso: "BF", name: "Burkina Faso", dial: "+226" },
-        { iso: "ML", name: "Mali", dial: "+223" },
-      ],
-    },
-  ];
-
-  const selectedOperator = momoOperators.find((o) => o.id === operator) || null;
-  const selectedMomoCountry =
-    selectedOperator?.countries.find((c) => c.iso === momoCountry) ||
-    selectedOperator?.countries[0] ||
-    null;
-  const momoPhoneDigits = momoPhone.replace(/\D/g, "");
-  const localPhoneLengths: Record<string, number> = {
-    BJ: 8,
-    BF: 8,
-    CI: 10,
-    GW: 9,
-    ML: 8,
-    SN: 9,
-    TG: 8,
-  };
-  const expectedPhoneLength = selectedMomoCountry
-    ? localPhoneLengths[selectedMomoCountry.iso]
-    : 0;
-  const normalizedLocalPhone = selectedMomoCountry && momoPhoneDigits.startsWith(selectedMomoCountry.dial.slice(1))
-    ? momoPhoneDigits.slice(selectedMomoCountry.dial.length - 1)
-    : momoPhoneDigits;
-  const momoFormValid = !!selectedOperator && !!selectedMomoCountry && normalizedLocalPhone.length === expectedPhoneLength;
+  const [displayName, setDisplayName] = useState("");
+  const [userEmail, setUserEmail] = useState("");
 
   const cardOptions = [
     { id: "wave" as const, label: "Wave Visa", logo: waveLogo },
@@ -251,6 +180,28 @@ const InAppPaymentSheet = ({
     currency: currency.toUpperCase(),
     maximumFractionDigits: 2,
   }).format(approxAmount);
+
+  // Infos payeur pour FeexPay
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.auth.getUser();
+      const user = data?.user;
+      if (!user || cancelled) return;
+      setUserEmail(user.email || "");
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, company_name")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      setDisplayName(profile?.company_name || profile?.full_name || "Marque CollabCrea");
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
 
   // Init Stripe + create PaymentIntent only after card brand confirmed
   useEffect(() => {
@@ -300,30 +251,32 @@ const InAppPaymentSheet = ({
   // Reset Mobile Money state when the sheet closes
   useEffect(() => {
     if (!open) {
-      setMomoTxId(null);
-      setMomoLoading(false);
       setMomoChecking(false);
-      setMomoPushSent(false);
-      setOperator(null);
-      setMomoPhone("");
       setError(null);
     }
   }, [open]);
 
-  // Auto-poll the FedaPay transaction while waiting for confirmation
-  useEffect(() => {
-    if (!open || !momoTxId) return;
-    const interval = setInterval(() => {
-      checkMomoStatus(momoTxId, true);
-    }, 6000);
-    return () => clearInterval(interval);
-  }, [open, momoTxId]);
-
-  const checkMomoStatus = async (transactionId: string, silent = false) => {
-    if (!silent) setMomoChecking(true);
+  const handleFeexPayCallback = async (response: {
+    reference: string;
+    status: string;
+    amount?: number;
+  }) => {
+    const status = String(response?.status || "").toUpperCase();
+    if (!["SUCCESSFUL", "SUCCESS"].includes(status)) {
+      setError("Le paiement n'a pas abouti. Réessayez.");
+      return;
+    }
+    setMomoChecking(true);
+    setError(null);
     try {
-      const { data, error: fnErr } = await supabase.functions.invoke("fedapay-collab-verify", {
-        body: { transactionId, collaborationId: collaboration.id },
+      const { data, error: fnErr } = await supabase.functions.invoke("feexpay-collab-verify", {
+        body: {
+          collaborationId: collaboration.id,
+          reference: response.reference,
+          customId: collaboration.id,
+          status,
+          amount: response.amount ?? totalFCFA,
+        },
       });
       if (fnErr) throw fnErr;
       if (data?.error) throw new Error(data.error);
@@ -335,65 +288,17 @@ const InAppPaymentSheet = ({
         );
         onSuccess?.();
         onOpenChange(false);
-        return true;
+        return;
       }
-      const statusMessages: Record<string, string> = {
-        pending: "Le paiement attend encore votre confirmation.",
-        declined: "Le paiement a été refusé. Créez une nouvelle tentative.",
-        canceled: "Le paiement a été annulé. Créez une nouvelle tentative.",
-        expired: "Le lien de paiement a expiré. Créez une nouvelle tentative.",
-      };
-      if (!silent) toast.info(statusMessages[data?.paymentStatus] || "Paiement pas encore confirmé.");
-      return false;
+      toast.info("Paiement reçu, vérification en cours...");
     } catch (err: any) {
-      console.error("FedaPay verify error:", err);
-      if (!silent) toast.error(err?.message || "Vérification impossible");
-      return false;
+      console.error("FeexPay verify error:", err);
+      setError(err?.message || "Vérification du paiement impossible");
     } finally {
-      if (!silent) setMomoChecking(false);
+      setMomoChecking(false);
     }
   };
 
-  const handleMomoPay = async () => {
-    if (!momoFormValid || !selectedOperator || !selectedMomoCountry) {
-      setError("Choisissez un opérateur et saisissez votre numéro");
-      return;
-    }
-    setMomoLoading(true);
-    setError(null);
-    try {
-      const { data, error: fnErr } = await supabase.functions.invoke(
-        "fedapay-collab-payment",
-        {
-          body: {
-            collaborationId: collaboration.id,
-            returnUrl: `${window.location.origin}/brand/collabs?tab=collabs`,
-            provider: selectedOperator.id,
-            phone: normalizedLocalPhone,
-            country: selectedMomoCountry.iso,
-          },
-        }
-      );
-      if (fnErr) throw fnErr;
-      if (data?.error) throw new Error(data.error);
-      if (!data?.transactionId) throw new Error("Paiement indisponible pour le moment");
-
-      setMomoTxId(String(data.transactionId));
-      if (data.paymentUrl) {
-        setMomoPushSent(false);
-        window.open(data.paymentUrl, "_blank", "noopener,noreferrer");
-        toast.info(`Validez le paiement ${selectedOperator.label}, puis revenez ici.`);
-      } else {
-        setMomoPushSent(true);
-        toast.info(`Confirmez la demande reçue sur votre téléphone ${selectedOperator.label}.`);
-      }
-    } catch (err: any) {
-      console.error("Mobile money payin error:", err);
-      setError(err?.message || "Erreur lors de l'initialisation du paiement");
-    } finally {
-      setMomoLoading(false);
-    }
-  };
 
 
   const elementsOptions = useMemo(
